@@ -6,44 +6,47 @@ import (
 	"strings"
 )
 
-type Map map[string]error
+type Map map[string][]error
 
-func (m Map) Get(key string) string {
-	if err := m[key]; err != nil {
-		return err.Error()
+func (m Map) Get(key string) []string {
+	if errs, ok := m[key]; ok {
+		errStrings := make([]string, len(errs))
+		for i, err := range errs {
+			errStrings[i] = err.Error()
+		}
+		return errStrings
 	}
 
-	return ""
+	return nil
 }
 
 func (m *Map) Has(key string) bool {
 	_, ok := (*m)[key]
-
 	return ok
 }
 
-func (m *Map) Set(key string, msg any) {
+func (m *Map) Set(key string, msg interface{}) {
 	if *m == nil {
 		*m = make(Map)
 	}
 
-	var err error
+	var errs []error
 	switch msg := msg.(type) {
 	case error:
-		if msg == nil {
-			return
+		if msg != nil {
+			errs = append(errs, msg)
 		}
 
-		err = msg
-
 	case string:
-		err = errors.New(msg)
+		errs = append(errs, errors.New(msg))
 
 	default:
 		panic("want error or string message")
 	}
 
-	(*m)[key] = err
+	if len(errs) > 0 {
+		(*m)[key] = append((*m)[key], errs...)
+	}
 }
 
 func (m Map) Error() string {
@@ -51,15 +54,16 @@ func (m Map) Error() string {
 		return "<nil>"
 	}
 
-	pairs := make([]string, len(m))
-	i := 0
-	for key, err := range m {
-		pairs[i] = fmt.Sprintf("%v: %v", key, err)
-
-		i++
+	var allErrors []string
+	for key, errs := range m {
+		errStrings := make([]string, len(errs))
+		for i, err := range errs {
+			errStrings[i] = err.Error()
+		}
+		allErrors = append(allErrors, fmt.Sprintf("%s: [%s]", key, strings.Join(errStrings, ", ")))
 	}
 
-	return strings.Join(pairs, "; ")
+	return strings.Join(allErrors, "; ")
 }
 
 func (m Map) String() string {
@@ -68,9 +72,13 @@ func (m Map) String() string {
 
 func (m Map) MarshalJSON() ([]byte, error) {
 	errs := make([]string, 0, len(m))
-	for key, err := range m {
-		errs = append(errs, fmt.Sprintf("%q:%q", key, err.Error()))
+	for key, errList := range m {
+		errStrings := make([]string, len(errList))
+		for i, err := range errList {
+			errStrings[i] = err.Error()
+		}
+		errs = append(errs, fmt.Sprintf("%q: [%s]", key, strings.Join(errStrings, ", ")))
 	}
 
-	return []byte(fmt.Sprintf("{%v}", strings.Join(errs, ", "))), nil
+	return []byte(fmt.Sprintf("{%s}", strings.Join(errs, ", "))), nil
 }
