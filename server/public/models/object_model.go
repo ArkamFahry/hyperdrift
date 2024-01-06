@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -10,7 +11,9 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-type UploadStatus string
+var (
+	ObjectMimeTypesValidatorExpr = regexp.MustCompile(`^[a-zA-Z]+\/[a-zA-Z+\-.]+$`)
+)
 
 const (
 	ObjectUploadStatusPending   = "pending"
@@ -55,8 +58,16 @@ func (co *CreateObject) Validate() error {
 		validationErrors.Set("name", "name should not contain any white spaces or tabs")
 	}
 
-	if len(strings.Split(co.Name, "/")) > 2 {
-		validationErrors.Set("name", "name should start with bucket name")
+	if len(strings.Split(co.Name, "/")) < 2 {
+		validationErrors.Set("name", "name should have two parts bucket name and object name")
+	}
+
+	if strings.Split(co.Name, "/")[0] == "" {
+		validationErrors.Set("name", "bucket name cannot be empty")
+	}
+
+	if strings.Split(co.Name, "/")[1] == "" {
+		validationErrors.Set("name", "object name cannot be empty")
 	}
 
 	if strings.Trim(co.MimeType, " ") == "" {
@@ -65,6 +76,10 @@ func (co *CreateObject) Validate() error {
 
 	if strings.ContainsAny(co.MimeType, " \t\r\n") {
 		validationErrors.Set("mime_type", "mime_type should not contain any white spaces or tabs")
+	}
+
+	if !ObjectMimeTypesValidatorExpr.MatchString(co.MimeType) {
+		validationErrors.Set("mime_type", "invalid mime type")
 	}
 
 	if co.ObjectSize < 0 {
