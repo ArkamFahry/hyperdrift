@@ -60,10 +60,6 @@ func (cb *CreateBucket) Validate() error {
 		}
 	}
 
-	if cb.CreatedAt.IsZero() {
-		validationErrors.Set("created_at", "created_at is required")
-	}
-
 	if validationErrors != nil {
 		return validationErrors
 	}
