@@ -15,7 +15,7 @@ var (
 	ErrorForbidden  ErrorCode = errors.New("forbidden_error")
 )
 
-type Error struct {
+type AppError struct {
 	Operation     string    `json:"operation"`
 	ErrorCode     ErrorCode `json:"error_code"`
 	Message       string    `json:"message"`
@@ -23,7 +23,7 @@ type Error struct {
 	InternalError error     `json:"internal_error"`
 }
 
-func (e *Error) Error() string {
+func (e *AppError) Error() string {
 	var errorBuilder strings.Builder
 
 	errorBuilder.WriteString("operation: ")
@@ -64,8 +64,8 @@ func (e *Error) Error() string {
 	return errorBuilder.String()
 }
 
-func NewError(operation string, errorCode ErrorCode, message string, requestId string, internalError error) *Error {
-	return &Error{
+func NewAppError(operation string, errorCode ErrorCode, message string, requestId string, internalError error) *AppError {
+	return &AppError{
 		Operation:     operation,
 		ErrorCode:     errorCode,
 		Message:       message,
