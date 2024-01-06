@@ -11,8 +11,10 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
-var BucketNameValidatorExpr = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
-var BucketAllowedMimeTypesValidatorExpr = regexp.MustCompile(`^[a-zA-Z]+\/[a-zA-Z+\-.]+$`)
+var (
+	BucketNameValidatorExpr             = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	BucketAllowedMimeTypesValidatorExpr = regexp.MustCompile(`^[a-zA-Z]+\/[a-zA-Z+\-.]+$`)
+)
 
 type CreateBucket struct {
 	Id                string    `json:"id"`
@@ -74,5 +76,6 @@ func (cb *CreateBucket) ConvertToEntity() *entities.Bucket {
 		AllowedMimeTypes:  cb.AllowedMimeTypes,
 		AllowedObjectSize: cb.AllowedObjectSize,
 		CreatedAt:         cb.CreatedAt,
+		UpdatedAt:         nil,
 	}
 }
