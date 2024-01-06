@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-type Map map[string][]error
+type MapError map[string][]error
 
-func (m Map) Get(key string) []string {
+func (m MapError) Get(key string) []string {
 	if errs, ok := m[key]; ok {
 		errStrings := make([]string, len(errs))
 		for i, err := range errs {
@@ -20,14 +20,14 @@ func (m Map) Get(key string) []string {
 	return nil
 }
 
-func (m *Map) Has(key string) bool {
+func (m *MapError) Has(key string) bool {
 	_, ok := (*m)[key]
 	return ok
 }
 
-func (m *Map) Set(key string, msg interface{}) {
+func (m *MapError) Set(key string, msg interface{}) {
 	if *m == nil {
-		*m = make(Map)
+		*m = make(MapError)
 	}
 
 	var errs []error
@@ -49,7 +49,7 @@ func (m *Map) Set(key string, msg interface{}) {
 	}
 }
 
-func (m Map) Error() string {
+func (m MapError) Error() string {
 	if m == nil {
 		return "<nil>"
 	}
@@ -66,11 +66,11 @@ func (m Map) Error() string {
 	return strings.Join(allErrors, "; ")
 }
 
-func (m Map) String() string {
+func (m MapError) String() string {
 	return m.Error()
 }
 
-func (m Map) MarshalJSON() ([]byte, error) {
+func (m MapError) MarshalJSON() ([]byte, error) {
 	errs := make([]string, 0, len(m))
 	for key, errList := range m {
 		errStrings := make([]string, len(errList))

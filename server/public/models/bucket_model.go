@@ -37,7 +37,7 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 }
 
 func (cb *CreateBucket) Validate() error {
-	var validationErrors apperr.Map
+	var validationErrors apperr.MapError
 
 	if strings.Trim(cb.Name, " ") == "" {
 		validationErrors.Set("name", "name is required")
