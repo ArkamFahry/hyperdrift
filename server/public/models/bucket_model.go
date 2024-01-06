@@ -30,7 +30,7 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 	}
 
 	return &CreateBucket{
-		Id:                ulid.Make().String(),
+		Id:                fmt.Sprintf(`%s_%s`, "bucket", ulid.Make().String()),
 		Name:              name,
 		AllowedMimeTypes:  allowedMimeTypes,
 		AllowedObjectSize: allowedObjectSize,
@@ -40,6 +40,10 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 
 func (cb *CreateBucket) Validate() error {
 	var validationErrors apperr.MapError
+
+	if strings.Trim(cb.Id, " ") == "" {
+		validationErrors.Set("id", "id is required")
+	}
 
 	if strings.Trim(cb.Name, " ") == "" {
 		validationErrors.Set("name", "name is required")
@@ -60,6 +64,10 @@ func (cb *CreateBucket) Validate() error {
 				break
 			}
 		}
+	}
+
+	if cb.CreatedAt.IsZero() {
+		validationErrors.Set("created_at", "created_at is required")
 	}
 
 	if validationErrors != nil {
