@@ -11,6 +11,7 @@ var (
 	ErrorUnknown    ErrorCode = errors.New("unknown_error")
 	ErrorValidation ErrorCode = errors.New("validation_error")
 	ErrorNotFound   ErrorCode = errors.New("not_found_error")
+	ErrorConflict   ErrorCode = errors.New("conflict_error")
 	ErrorForbidden  ErrorCode = errors.New("forbidden_error")
 )
 

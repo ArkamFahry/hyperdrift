@@ -32,6 +32,15 @@ func TestErrorNotFound(t *testing.T) {
 	}
 }
 
+func TestErrorConflict(t *testing.T) {
+	err := NewError("create.user", ErrorConflict, "user already exists", "789", errors.New("sql: record not unique"))
+
+	expected := "operation: create.user, error_code: conflict_error, message: user already exists, request_id: 789, internal_error: sql: record not unique"
+	if err.Error() != expected {
+		t.Errorf("Expected %s, but got %s", expected, err.Error())
+	}
+}
+
 func TestErrorForbidden(t *testing.T) {
 	err := NewError("update.user", ErrorForbidden, "access denied user is not admin", "202", nil)
 
