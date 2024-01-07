@@ -22,22 +22,24 @@ const (
 )
 
 type CreateObject struct {
-	Id           string    `json:"id"`
-	BucketId     string    `json:"bucket_id"`
-	Name         string    `json:"name"`
-	MimeType     string    `json:"mime_type"`
-	ObjectSize   int64     `json:"object_size"`
-	UploadStatus string    `json:"upload_status"`
-	CreatedAt    time.Time `json:"created_at"`
+	Id           string         `json:"id"`
+	BucketId     string         `json:"bucket_id"`
+	Name         string         `json:"name"`
+	MimeType     string         `json:"mime_type"`
+	ObjectSize   int64          `json:"object_size"`
+	Metadata     map[string]any `json:"metadata"`
+	UploadStatus string         `json:"upload_status"`
+	CreatedAt    time.Time      `json:"created_at"`
 }
 
-func NewCreateObject(bucketId, bucketName, name, mimeType string, objectSize int64) *CreateObject {
+func NewCreateObject(bucketId, bucketName, name, mimeType string, objectSize int64, metadata map[string]any) *CreateObject {
 	return &CreateObject{
 		Id:           fmt.Sprintf(`%s_%s`, "object", ulid.Make().String()),
 		BucketId:     bucketId,
 		Name:         fmt.Sprintf(`%s/%s`, bucketName, name),
 		MimeType:     mimeType,
 		ObjectSize:   objectSize,
+		Metadata:     metadata,
 		UploadStatus: ObjectUploadStatusPending,
 		CreatedAt:    time.Now(),
 	}
@@ -114,6 +116,7 @@ func (co *CreateObject) ConvertToEntity() *entities.Object {
 		Name:         co.Name,
 		MimeType:     co.MimeType,
 		ObjectSize:   co.ObjectSize,
+		Metadata:     co.Metadata,
 		UploadStatus: co.UploadStatus,
 		CreatedAt:    co.CreatedAt,
 		UpdatedAt:    nil,
