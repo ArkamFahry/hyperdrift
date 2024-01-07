@@ -1,87 +1,397 @@
 package models
 
 import (
-	"strings"
+	"reflect"
 	"testing"
+	"time"
+
+	"github.com/ArkamFahry/hyperdrift-storage/server/packages/apperr"
 )
 
 func TestNewCreateObject(t *testing.T) {
-	bucketId := "bucket123"
-	bucketName := "testBucket"
-	objectName := "testObject"
-	mimeType := "image/jpeg"
-	objectSize := int64(1024)
-	metadata := map[string]any{
-		"user_id": "user_1234567890",
-	}
+	t.Run("CreateObjectInstance", func(t *testing.T) {
+		bucketId := "bucket123"
+		bucketName := "myBucket"
+		name := "myObject"
+		mimeType := "application/json"
+		objectSize := int64(1024)
+		metadata := map[string]interface{}{
+			"key1": "value1",
+			"key2": 123,
+		}
+		createdAt := time.Now()
 
-	createdObject := NewCreateObject(bucketId, bucketName, objectName, mimeType, objectSize, metadata)
+		expectedObject := &CreateObject{
+			Id:           "object_someUniqueId",
+			BucketId:     bucketId,
+			Name:         "myBucket/myObject",
+			MimeType:     mimeType,
+			ObjectSize:   objectSize,
+			Metadata:     metadata,
+			UploadStatus: ObjectUploadStatusPending,
+			CreatedAt:    createdAt,
+		}
 
-	if createdObject.Id == "" {
-		t.Error("ID not generated")
-	}
+		newObj := NewCreateObject(bucketId, bucketName, name, mimeType, objectSize, metadata)
 
-	expectedObjectName := bucketName + "/" + objectName
-	if createdObject.Name != expectedObjectName {
-		t.Errorf("Expected name %s, got %s", expectedObjectName, createdObject.Name)
-	}
-
-	if createdObject.MimeType != mimeType {
-		t.Errorf("Expected MIME type %s, got %s", mimeType, createdObject.MimeType)
-	}
-
-	if createdObject.ObjectSize != objectSize {
-		t.Errorf("Expected object size %d, got %d", objectSize, createdObject.ObjectSize)
-	}
-
-	if createdObject.UploadStatus != ObjectUploadStatusPending {
-		t.Errorf("Expected upload status %s, got %s", ObjectUploadStatusPending, createdObject.UploadStatus)
-	}
-
-	if createdObject.CreatedAt.IsZero() {
-		t.Error("CreatedAt not set")
-	}
+		if newObj.BucketId != expectedObject.BucketId ||
+			newObj.Name != expectedObject.Name ||
+			newObj.MimeType != expectedObject.MimeType ||
+			newObj.ObjectSize != expectedObject.ObjectSize ||
+			!reflect.DeepEqual(newObj.Metadata, expectedObject.Metadata) ||
+			newObj.UploadStatus != expectedObject.UploadStatus {
+			t.Errorf("Generated object does not match the expected object.\nExpected: %+v\nGot: %+v", expectedObject, newObj)
+		}
+	})
 }
 
 func TestCreateObjectValidation(t *testing.T) {
-	validObject := NewCreateObject("bucket123", "testBucket", "testObject", "image/jpeg", 1024, nil)
-	if err := validObject.Validate(); err != nil {
-		t.Errorf("Expected validation to pass for valid object, but got error: %v", err)
-	}
+	t.Run("MissingId", func(t *testing.T) {
+		objectMissingID := CreateObject{
+			Name:         "bucket/object",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
 
-	emptyBucketNameObject := NewCreateObject("bucket123", "", "testObject", "image/jpeg", 1024, nil)
-	expectedError := "bucket name cannot be empty"
-	if err := emptyBucketNameObject.Validate(); err == nil || !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("Expected '%s' error for empty name, but got: %v", expectedError, err)
-	}
+		err := objectMissingID.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
 
-	emptyNameObject := NewCreateObject("bucket123", "testBucket", "", "image/jpeg", 1024, nil)
-	expectedError = "object name cannot be empty"
-	if err := emptyNameObject.Validate(); err == nil || !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("Expected '%s' error for empty name, but got: %v", expectedError, err)
-	}
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
 
-	whiteSpaceNameObject := NewCreateObject("bucket123", "testBucket", "test Object", "image/jpeg", 1024, nil)
-	expectedError = "name should not contain any white spaces or tabs"
-	if err := whiteSpaceNameObject.Validate(); err == nil || !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("Expected '%s' error for name with white spaces, but got: %v", expectedError, err)
-	}
+		expectedField := "id"
+		expectedErrorMsg := "id is required"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
 
-	emptyMimeTypeObject := NewCreateObject("bucket123", "testBucket", "testObject", "", 1024, nil)
-	expectedError = "mime_type is required"
-	if err := emptyMimeTypeObject.Validate(); err == nil || !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("Expected '%s' error for empty MIME type, but got: %v", expectedError, err)
-	}
+	t.Run("MissingName", func(t *testing.T) {
+		objectMissingName := CreateObject{
+			Id:           "123",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
 
-	invalidMimeTypeObject := NewCreateObject("bucket123", "testBucket", "testObject", "invalid/mime&type", 1024, nil)
-	expectedError = "invalid mime type"
-	if err := invalidMimeTypeObject.Validate(); err == nil || !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("Expected '%s' error for invalid MIME type, but got: %v", expectedError, err)
-	}
+		err := objectMissingName.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
 
-	negativeSizeObject := NewCreateObject("bucket123", "testBucket", "testObject", "image/jpeg", -1024, nil)
-	expectedError = "object_size should be greater than 0"
-	if err := negativeSizeObject.Validate(); err == nil || !strings.Contains(err.Error(), expectedError) {
-		t.Errorf("Expected '%s' error for negative object size, but got: %v", expectedError, err)
-	}
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "name"
+		expectedErrorMsg := "name is required"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("InvalidNameSpaces", func(t *testing.T) {
+		objectInvalidNameSpaces := CreateObject{
+			Id:           "123",
+			Name:         "bucket/ object",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectInvalidNameSpaces.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "name"
+		expectedErrorMsg := "name should not contain any white spaces or tabs"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("InvalidNameParts", func(t *testing.T) {
+		objectInvalidNameParts := CreateObject{
+			Id:           "123",
+			Name:         "bucket",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectInvalidNameParts.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "name"
+		expectedErrorMsg := "name should have two parts bucket name and object name"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("EmptyBucketName", func(t *testing.T) {
+		objectEmptyBucketName := CreateObject{
+			Id:           "123",
+			Name:         "/object",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectEmptyBucketName.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "name"
+		expectedErrorMsg := "bucket name cannot be empty"
+		if fieldErr.Field != expectedField ||
+
+			fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("EmptyObjectName", func(t *testing.T) {
+		objectEmptyObjectName := CreateObject{
+			Id:           "123",
+			Name:         "bucket/",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectEmptyObjectName.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "name"
+		expectedErrorMsg := "object name cannot be empty"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("MissingMimeType", func(t *testing.T) {
+		objectMissingMimeType := CreateObject{
+			Id:           "123",
+			Name:         "bucket/object",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectMissingMimeType.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "mime_type"
+		expectedErrorMsg := "mime_type is required"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("InvalidMimeType", func(t *testing.T) {
+		objectInvalidMimeType := CreateObject{
+			Id:           "123",
+			Name:         "bucket/object",
+			MimeType:     "image/*jbmp",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectInvalidMimeType.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "mime_type"
+		expectedErrorMsg := "invalid mime type"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("NegativeObjectSize", func(t *testing.T) {
+		objectNegativeObjectSize := CreateObject{
+			Id:           "123",
+			Name:         "bucket/object",
+			MimeType:     "application/json",
+			ObjectSize:   -10,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectNegativeObjectSize.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "object_size"
+		expectedErrorMsg := "object_size should be greater than 0"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("MissingUploadStatus", func(t *testing.T) {
+		objectMissingUploadStatus := CreateObject{
+			Id:         "123",
+			Name:       "bucket/object",
+			MimeType:   "application/json",
+			ObjectSize: 100,
+			CreatedAt:  time.Now(),
+		}
+
+		err := objectMissingUploadStatus.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "upload_status"
+		expectedErrorMsg := "upload_status is required"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("InvalidUploadStatus", func(t *testing.T) {
+		objectInvalidUploadStatus := CreateObject{
+			Id:           "123",
+			Name:         "bucket/object",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: "InvalidStatus",
+			CreatedAt:    time.Now(),
+		}
+
+		err := objectInvalidUploadStatus.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "upload_status"
+		expectedErrorMsg := "invalid upload status"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("EmptyCreatedAt", func(t *testing.T) {
+		objectEmptyCreatedAt := CreateObject{
+			Id:           "123",
+			Name:         "bucket/object",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+		}
+
+		err := objectEmptyCreatedAt.Validate()
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(*apperr.FieldError)
+		if !ok {
+			t.Error("Expected a *apperr.FieldError type")
+		}
+
+		expectedField := "created_at"
+		expectedErrorMsg := "created_at is required"
+		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
+				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		}
+	})
+
+	t.Run("ValidObject", func(t *testing.T) {
+		validObject := CreateObject{
+			Id:           "123",
+			Name:         "bucket/object",
+			MimeType:     "application/json",
+			ObjectSize:   100,
+			UploadStatus: ObjectUploadStatusCompleted,
+			CreatedAt:    time.Now(),
+		}
+
+		err := validObject.Validate()
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
 }
