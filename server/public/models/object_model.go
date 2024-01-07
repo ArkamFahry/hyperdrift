@@ -28,11 +28,19 @@ type CreateObject struct {
 	CreatedAt    time.Time      `json:"created_at"`
 }
 
+func NewObjectId() string {
+	return fmt.Sprintf(`%s_%s`, "object", utils.NewId())
+}
+
+func NewObjectName(bucketName, name string) string {
+	return fmt.Sprintf(`%s/%s`, bucketName, name)
+}
+
 func NewCreateObject(bucketId, bucketName, name, mimeType string, objectSize int64, metadata map[string]any) *CreateObject {
 	return &CreateObject{
-		Id:           fmt.Sprintf(`%s_%s`, "object", utils.NewId()),
+		Id:           NewObjectId(),
 		BucketId:     bucketId,
-		Name:         fmt.Sprintf(`%s/%s`, bucketName, name),
+		Name:         NewObjectName(bucketName, name),
 		MimeType:     mimeType,
 		ObjectSize:   objectSize,
 		Metadata:     metadata,
@@ -41,7 +49,7 @@ func NewCreateObject(bucketId, bucketName, name, mimeType string, objectSize int
 	}
 }
 
-func (co *CreateObject) Validate() error {
+func (co *CreateObject) Validate() apperr.MapError {
 	var validationErrors apperr.MapError
 
 	if validators.IsEmptyString(co.Id) {
