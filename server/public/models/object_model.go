@@ -2,17 +2,13 @@ package models
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/ArkamFahry/hyperdrift-storage/server/packages/apperr"
+	"github.com/ArkamFahry/hyperdrift-storage/server/packages/utils"
+	"github.com/ArkamFahry/hyperdrift-storage/server/packages/validators"
 	"github.com/ArkamFahry/hyperdrift-storage/server/public/entities"
-	"github.com/oklog/ulid/v2"
-)
-
-var (
-	ObjectMimeTypesValidatorExpr = regexp.MustCompile(`^[a-zA-Z]+\/[a-zA-Z+\-.]+$`)
 )
 
 const (
@@ -34,7 +30,7 @@ type CreateObject struct {
 
 func NewCreateObject(bucketId, bucketName, name, mimeType string, objectSize int64, metadata map[string]any) *CreateObject {
 	return &CreateObject{
-		Id:           fmt.Sprintf(`%s_%s`, "object", ulid.Make().String()),
+		Id:           fmt.Sprintf(`%s_%s`, "object", utils.NewId()),
 		BucketId:     bucketId,
 		Name:         fmt.Sprintf(`%s/%s`, bucketName, name),
 		MimeType:     mimeType,
@@ -48,15 +44,15 @@ func NewCreateObject(bucketId, bucketName, name, mimeType string, objectSize int
 func (co *CreateObject) Validate() error {
 	var validationErrors apperr.MapError
 
-	if strings.Trim(co.Id, " ") == "" {
+	if validators.IsEmptyString(co.Id) {
 		validationErrors.Set("id", "id is required")
 	}
 
-	if strings.Trim(co.Name, " ") == "" {
+	if validators.IsEmptyString(co.Name) {
 		validationErrors.Set("name", "name is required")
 	}
 
-	if strings.ContainsAny(co.Name, " \t\r\n") {
+	if validators.ContainsAnyWhiteSpaces(co.Name) {
 		validationErrors.Set("name", "name should not contain any white spaces or tabs")
 	}
 
@@ -72,15 +68,15 @@ func (co *CreateObject) Validate() error {
 		validationErrors.Set("name", "object name cannot be empty")
 	}
 
-	if strings.Trim(co.MimeType, " ") == "" {
+	if validators.IsEmptyString(co.MimeType) {
 		validationErrors.Set("mime_type", "mime_type is required")
 	}
 
-	if strings.ContainsAny(co.MimeType, " \t\r\n") {
+	if validators.ContainsAnyWhiteSpaces(co.MimeType) {
 		validationErrors.Set("mime_type", "mime_type should not contain any white spaces or tabs")
 	}
 
-	if !ObjectMimeTypesValidatorExpr.MatchString(co.MimeType) {
+	if validators.IsInvalidMimeTypeValid(co.MimeType) {
 		validationErrors.Set("mime_type", "invalid mime type")
 	}
 
@@ -88,7 +84,7 @@ func (co *CreateObject) Validate() error {
 		validationErrors.Set("object_size", "object_size should be greater than 0")
 	}
 
-	if strings.Trim(co.UploadStatus, " ") == "" {
+	if validators.IsEmptyString(co.UploadStatus) {
 		validationErrors.Set("upload_status", "upload_status is required")
 	}
 

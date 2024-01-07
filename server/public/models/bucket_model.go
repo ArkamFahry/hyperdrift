@@ -3,17 +3,16 @@ package models
 import (
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/ArkamFahry/hyperdrift-storage/server/packages/apperr"
+	"github.com/ArkamFahry/hyperdrift-storage/server/packages/utils"
+	"github.com/ArkamFahry/hyperdrift-storage/server/packages/validators"
 	"github.com/ArkamFahry/hyperdrift-storage/server/public/entities"
-	"github.com/oklog/ulid/v2"
 )
 
 var (
-	BucketNameValidatorExpr             = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
-	BucketAllowedMimeTypesValidatorExpr = regexp.MustCompile(`^[a-zA-Z]+\/[a-zA-Z+\-.]+$`)
+	BucketNameValidatorExpr = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 )
 
 type CreateBucket struct {
@@ -30,7 +29,7 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 	}
 
 	return &CreateBucket{
-		Id:                fmt.Sprintf(`%s_%s`, "bucket", ulid.Make().String()),
+		Id:                fmt.Sprintf(`%s_%s`, "bucket", utils.NewId()),
 		Name:              name,
 		AllowedMimeTypes:  allowedMimeTypes,
 		AllowedObjectSize: allowedObjectSize,
@@ -41,15 +40,15 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 func (cb *CreateBucket) Validate() error {
 	var validationErrors apperr.MapError
 
-	if strings.Trim(cb.Id, " ") == "" {
+	if validators.IsEmptyString(cb.Id) {
 		validationErrors.Set("id", "id is required")
 	}
 
-	if strings.Trim(cb.Name, " ") == "" {
+	if validators.IsEmptyString(cb.Name) {
 		validationErrors.Set("name", "name is required")
 	}
 
-	if strings.ContainsAny(cb.Name, " \t\r\n") {
+	if validators.ContainsAnyWhiteSpaces(cb.Name) {
 		validationErrors.Set("name", "name should not contain any white spaces or tabs")
 	}
 
@@ -59,7 +58,7 @@ func (cb *CreateBucket) Validate() error {
 
 	if len(cb.AllowedMimeTypes) > 0 {
 		for _, allowedMimeType := range cb.AllowedMimeTypes {
-			if !BucketAllowedMimeTypesValidatorExpr.MatchString(allowedMimeType) {
+			if validators.IsInvalidMimeTypeValid(allowedMimeType) {
 				validationErrors.Set("allowed_mime_types", fmt.Sprintf(`not allowed mime type "%s"`, allowedMimeType))
 				break
 			}
