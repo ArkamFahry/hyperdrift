@@ -42,28 +42,35 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 }
 
 func (cb *CreateBucket) Validate() error {
+	var validationErrors apperr.MapError
+
 	if validators.IsEmptyString(cb.Id) {
-		return apperr.NewFieldError("id", "id is required")
+		validationErrors.Set("id", "id is required")
 	}
 
 	if validators.IsEmptyString(cb.Name) {
-		return apperr.NewFieldError("name", "name is required")
+		validationErrors.Set("name", "name is required")
 	}
 
 	if validators.ContainsAnyWhiteSpaces(cb.Name) {
-		return apperr.NewFieldError("name", "name should not contain any white spaces or tabs")
+		validationErrors.Set("name", "name should not contain any white spaces or tabs")
 	}
 
 	if !BucketNameValidatorExpr.MatchString(cb.Name) {
-		return apperr.NewFieldError("name", "name should only contain letters, numbers, hyphens and underscores")
+		validationErrors.Set("name", "name should only contain letters, numbers, hyphens and underscores")
 	}
 
 	if len(cb.AllowedMimeTypes) > 0 {
 		for _, allowedMimeType := range cb.AllowedMimeTypes {
 			if validators.IsInvalidMimeTypeValid(allowedMimeType) {
-				return apperr.NewFieldError("allowed_mime_types", fmt.Sprintf(`not allowed mime type "%s"`, allowedMimeType))
+				validationErrors.Set("allowed_mime_types", fmt.Sprintf(`not allowed mime type "%s"`, allowedMimeType))
+				break
 			}
 		}
+	}
+
+	if validationErrors != nil {
+		return validationErrors
 	}
 
 	return nil

@@ -32,32 +32,37 @@ func NewEvent(name string, data map[string]any) *CreateEvent {
 }
 
 func (e *CreateEvent) Validate() error {
+	var validationErrors apperr.MapError
 	if validators.IsEmptyString(e.Id) {
-		return apperr.NewFieldError("id", "id is required")
+		validationErrors.Set("id", "id is required")
 	}
 
 	if validators.IsEmptyString(e.Name) {
-		return apperr.NewFieldError("name", "name is required")
+		validationErrors.Set("name", "name is required")
 	}
 
 	if validators.ContainsAnyWhiteSpaces(e.Name) {
-		return apperr.NewFieldError("name", "name should not contain any white spaces or tabs")
+		validationErrors.Set("name", "name should not contain any white spaces or tabs")
 	}
 
 	if e.Data == nil {
-		return apperr.NewFieldError("data", "data is required")
+		validationErrors.Set("data", "data is required")
 	}
 
 	if validators.IsEmptyString(e.Producer) {
-		return apperr.NewFieldError("producer", "producer is required")
+		validationErrors.Set("producer", "producer is required")
 	}
 
 	if validators.ContainsAnyWhiteSpaces(e.Producer) {
-		return apperr.NewFieldError("producer", "producer should not contain any white spaces or tabs")
+		validationErrors.Set("producer", "producer should not contain any white spaces or tabs")
 	}
 
 	if e.CreatedAt.IsZero() {
-		return apperr.NewFieldError("created_at", "created_at is required")
+		validationErrors.Set("created_at", "created_at is required")
+	}
+
+	if validationErrors != nil {
+		return validationErrors
 	}
 
 	return nil
