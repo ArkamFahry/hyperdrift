@@ -60,16 +60,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "id"
 		expectedErrorMsg := "id is required"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -87,16 +88,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "name is required"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -115,16 +117,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "name should not contain any white spaces or tabs"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -143,16 +146,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "name should have two parts bucket name and object name"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -171,18 +175,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "bucket name cannot be empty"
-		if fieldErr.Field != expectedField ||
-
-			fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -201,16 +204,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "object name cannot be empty"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -228,16 +232,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "mime_type"
 		expectedErrorMsg := "mime_type is required"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -256,16 +261,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "mime_type"
 		expectedErrorMsg := "invalid mime type"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -284,16 +290,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "object_size"
 		expectedErrorMsg := "object_size should be greater than 0"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -311,16 +318,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "upload_status"
 		expectedErrorMsg := "upload_status is required"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -339,16 +347,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "upload_status"
 		expectedErrorMsg := "invalid upload status"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -366,16 +375,17 @@ func TestCreateObjectValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "created_at"
 		expectedErrorMsg := "created_at is required"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 

@@ -47,16 +47,17 @@ func TestCreateBucketValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a *apperr.MapError type")
 		}
 
 		expectedField := "id"
 		expectedErrorMsg := "id is required"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -73,16 +74,17 @@ func TestCreateBucketValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "name is required"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -100,16 +102,17 @@ func TestCreateBucketValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "name should not contain any white spaces or tabs"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -127,16 +130,17 @@ func TestCreateBucketValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "name"
 		expectedErrorMsg := "name should only contain letters, numbers, hyphens and underscores"
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 
@@ -154,16 +158,17 @@ func TestCreateBucketValidation(t *testing.T) {
 			t.Error("Expected error, but got nil")
 		}
 
-		fieldErr, ok := err.(*apperr.FieldError)
+		fieldErr, ok := err.(apperr.MapError)
 		if !ok {
-			t.Error("Expected a *apperr.FieldError type")
+			t.Error("Expected a apperr.MapError type")
 		}
 
 		expectedField := "allowed_mime_types"
 		expectedErrorMsg := `not allowed mime type "application/executable*"`
-		if fieldErr.Field != expectedField || fieldErr.Message != expectedErrorMsg {
-			t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-				expectedErrorMsg, expectedField, fieldErr.Message, fieldErr.Field)
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
 		}
 	})
 

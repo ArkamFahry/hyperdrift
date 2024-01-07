@@ -45,7 +45,22 @@ func TestEventValidation(t *testing.T) {
 		}
 
 		err := eventMissingID.Validate()
-		validateExpectedFieldError(t, err, "id", "id is required")
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(apperr.MapError)
+		if !ok {
+			t.Error("Expected a apperr.MapError type")
+		}
+
+		expectedField := "id"
+		expectedErrorMsg := "id is required"
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
+		}
 	})
 
 	t.Run("MissingName", func(t *testing.T) {
@@ -57,7 +72,22 @@ func TestEventValidation(t *testing.T) {
 		}
 
 		err := eventMissingName.Validate()
-		validateExpectedFieldError(t, err, "name", "name is required")
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(apperr.MapError)
+		if !ok {
+			t.Error("Expected a apperr.MapError type")
+		}
+
+		expectedField := "name"
+		expectedErrorMsg := "name is required"
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
+		}
 	})
 
 	t.Run("NameContainsWhiteSpace", func(t *testing.T) {
@@ -70,7 +100,22 @@ func TestEventValidation(t *testing.T) {
 		}
 
 		err := eventNameWithWhiteSpace.Validate()
-		validateExpectedFieldError(t, err, "name", "name should not contain any white spaces or tabs")
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(apperr.MapError)
+		if !ok {
+			t.Error("Expected a apperr.MapError type")
+		}
+
+		expectedField := "name"
+		expectedErrorMsg := "name should not contain any white spaces or tabs"
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
+		}
 	})
 
 	t.Run("MissingData", func(t *testing.T) {
@@ -82,7 +127,22 @@ func TestEventValidation(t *testing.T) {
 		}
 
 		err := eventMissingData.Validate()
-		validateExpectedFieldError(t, err, "data", "data is required")
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(apperr.MapError)
+		if !ok {
+			t.Error("Expected a apperr.MapError type")
+		}
+
+		expectedField := "data"
+		expectedErrorMsg := "data is required"
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
+		}
 	})
 
 	t.Run("InvalidProducer", func(t *testing.T) {
@@ -95,7 +155,22 @@ func TestEventValidation(t *testing.T) {
 		}
 
 		err := eventInvalidProducer.Validate()
-		validateExpectedFieldError(t, err, "producer", "producer should not contain any white spaces or tabs")
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(apperr.MapError)
+		if !ok {
+			t.Error("Expected a apperr.MapError type")
+		}
+
+		expectedField := "producer"
+		expectedErrorMsg := "producer should not contain any white spaces or tabs"
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
+		}
 	})
 
 	t.Run("MissingCreatedAt", func(t *testing.T) {
@@ -107,7 +182,22 @@ func TestEventValidation(t *testing.T) {
 		}
 
 		err := eventMissingCreatedAt.Validate()
-		validateExpectedFieldError(t, err, "created_at", "created_at is required")
+		if err == nil {
+			t.Error("Expected error, but got nil")
+		}
+
+		fieldErr, ok := err.(apperr.MapError)
+		if !ok {
+			t.Error("Expected a apperr.MapError type")
+		}
+
+		expectedField := "created_at"
+		expectedErrorMsg := "created_at is required"
+		errMsg := fieldErr.Get(expectedField)[0]
+		if errMsg != expectedErrorMsg {
+			t.Errorf("Expected error message '%s' for field '%s', but got '%s'",
+				expectedErrorMsg, expectedField, errMsg)
+		}
 	})
 
 	t.Run("ValidEvent", func(t *testing.T) {
@@ -124,20 +214,4 @@ func TestEventValidation(t *testing.T) {
 			t.Errorf("Unexpected error: %v", err)
 		}
 	})
-}
-
-func validateExpectedFieldError(t *testing.T, err error, expectedField, expectedMsg string) {
-	if err == nil {
-		t.Error("Expected error, but got nil")
-	}
-
-	fieldErr, ok := err.(*apperr.FieldError)
-	if !ok {
-		t.Error("Expected a *apperr.FieldError type")
-	}
-
-	if fieldErr.Field != expectedField || fieldErr.Message != expectedMsg {
-		t.Errorf("Expected error message '%s' for field '%s', but got '%s' for field '%s'",
-			expectedMsg, expectedField, fieldErr.Message, fieldErr.Field)
-	}
 }
