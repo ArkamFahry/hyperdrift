@@ -49,65 +49,59 @@ func NewCreateObject(bucketId, bucketName, name, mimeType string, objectSize int
 	}
 }
 
-func (co *CreateObject) Validate() apperr.MapError {
-	var validationErrors apperr.MapError
-
+func (co *CreateObject) Validate() error {
 	if validators.IsEmptyString(co.Id) {
-		validationErrors.Set("id", "id is required")
+		return apperr.NewFieldError("id", "id is required")
 	}
 
 	if validators.IsEmptyString(co.Name) {
-		validationErrors.Set("name", "name is required")
+		return apperr.NewFieldError("name", "name is required")
 	}
 
 	if validators.ContainsAnyWhiteSpaces(co.Name) {
-		validationErrors.Set("name", "name should not contain any white spaces or tabs")
+		return apperr.NewFieldError("name", "name should not contain any white spaces or tabs")
 	}
 
 	if len(strings.Split(co.Name, "/")) < 2 {
-		validationErrors.Set("name", "name should have two parts bucket name and object name")
+		return apperr.NewFieldError("name", "name should have two parts bucket name and object name")
 	}
 
 	if strings.Split(co.Name, "/")[0] == "" {
-		validationErrors.Set("name", "bucket name cannot be empty")
+		return apperr.NewFieldError("name", "bucket name cannot be empty")
 	}
 
 	if strings.Split(co.Name, "/")[1] == "" {
-		validationErrors.Set("name", "object name cannot be empty")
+		return apperr.NewFieldError("name", "object name cannot be empty")
 	}
 
 	if validators.IsEmptyString(co.MimeType) {
-		validationErrors.Set("mime_type", "mime_type is required")
+		return apperr.NewFieldError("mime_type", "mime_type is required")
 	}
 
 	if validators.ContainsAnyWhiteSpaces(co.MimeType) {
-		validationErrors.Set("mime_type", "mime_type should not contain any white spaces or tabs")
+		return apperr.NewFieldError("mime_type", "mime_type should not contain any white spaces or tabs")
 	}
 
 	if validators.IsInvalidMimeTypeValid(co.MimeType) {
-		validationErrors.Set("mime_type", "invalid mime type")
+		return apperr.NewFieldError("mime_type", "invalid mime type")
 	}
 
 	if co.ObjectSize < 0 {
-		validationErrors.Set("object_size", "object_size should be greater than 0")
+		return apperr.NewFieldError("object_size", "object_size should be greater than 0")
 	}
 
 	if validators.IsEmptyString(co.UploadStatus) {
-		validationErrors.Set("upload_status", "upload_status is required")
+		return apperr.NewFieldError("upload_status", "upload_status is required")
 	}
 
 	switch co.UploadStatus {
 	case ObjectUploadStatusPending, ObjectUploadStatusCompleted, ObjectUploadStatusFailed:
 	default:
-		validationErrors.Set("upload_status", "invalid upload status")
+		return apperr.NewFieldError("upload_status", "invalid upload status")
 	}
 
 	if co.CreatedAt.IsZero() {
-		validationErrors.Set("created_at", "created_at is required")
-	}
-
-	if validationErrors != nil {
-		return validationErrors
+		return apperr.NewFieldError("created_at", "created_at is required")
 	}
 
 	return nil

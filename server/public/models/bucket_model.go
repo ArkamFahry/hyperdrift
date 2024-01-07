@@ -41,40 +41,29 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 	}
 }
 
-func (cb *CreateBucket) Validate() apperr.MapError {
-	var validationErrors apperr.MapError
-
+func (cb *CreateBucket) Validate() error {
 	if validators.IsEmptyString(cb.Id) {
-		validationErrors.Set("id", "id is required")
+		return apperr.NewFieldError("id", "id is required")
 	}
 
 	if validators.IsEmptyString(cb.Name) {
-		validationErrors.Set("name", "name is required")
+		return apperr.NewFieldError("name", "name is required")
 	}
 
 	if validators.ContainsAnyWhiteSpaces(cb.Name) {
-		validationErrors.Set("name", "name should not contain any white spaces or tabs")
+		return apperr.NewFieldError("name", "name should not contain any white spaces or tabs")
 	}
 
 	if !BucketNameValidatorExpr.MatchString(cb.Name) {
-		validationErrors.Set("name", "name should only contain letters, numbers, hyphens and underscores")
+		return apperr.NewFieldError("name", "name should only contain letters, numbers, hyphens and underscores")
 	}
 
 	if len(cb.AllowedMimeTypes) > 0 {
 		for _, allowedMimeType := range cb.AllowedMimeTypes {
 			if validators.IsInvalidMimeTypeValid(allowedMimeType) {
-				validationErrors.Set("allowed_mime_types", fmt.Sprintf(`not allowed mime type "%s"`, allowedMimeType))
-				break
+				return apperr.NewFieldError("allowed_mime_types", fmt.Sprintf(`not allowed mime type "%s"`, allowedMimeType))
 			}
 		}
-	}
-
-	if cb.CreatedAt.IsZero() {
-		validationErrors.Set("created_at", "created_at is required")
-	}
-
-	if validationErrors != nil {
-		return validationErrors
 	}
 
 	return nil
