@@ -23,13 +23,17 @@ type CreateBucket struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
+func NewBucketId() string {
+	return fmt.Sprintf(`%s_%s`, "bucket", utils.NewId())
+}
+
 func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize int64) *CreateBucket {
 	if allowedMimeTypes == nil {
 		allowedMimeTypes = []string{"*/*"}
 	}
 
 	return &CreateBucket{
-		Id:                fmt.Sprintf(`%s_%s`, "bucket", utils.NewId()),
+		Id:                NewBucketId(),
 		Name:              name,
 		AllowedMimeTypes:  allowedMimeTypes,
 		AllowedObjectSize: allowedObjectSize,
@@ -37,7 +41,7 @@ func NewCreateBucket(name string, allowedMimeTypes []string, allowedObjectSize i
 	}
 }
 
-func (cb *CreateBucket) Validate() error {
+func (cb *CreateBucket) Validate() apperr.MapError {
 	var validationErrors apperr.MapError
 
 	if validators.IsEmptyString(cb.Id) {
