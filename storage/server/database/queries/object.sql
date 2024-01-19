@@ -100,17 +100,17 @@ from storage.objects
 where bucket_id = sqlc.arg('bucket_id')
 limit sqlc.arg('limit') offset sqlc.arg('offset');
 
--- name: SearchObjectsByBucketNameAndPath :many
--- select id,
---        bucket,
---        name,
---        mime_type,
---        size,
---        public,
---        metadata,
---        upload_status,
---        last_accessed_at,
---        created_at,
---        updated_at
--- from storage.objects_search(sqlc.arg('bucket_name')::text, sqlc.arg('path_prefix')::text,sqlc.narg('levels')::int,
---                             sqlc.narg('limit')::int, sqlc.marg('offset')::int);
+-- name: SearchObjectsByPath :many
+select id::text,
+       bucket::text,
+       name::text,
+       mime_type::text,
+       size::bigint,
+       public::boolean,
+       metadata::jsonb,
+       upload_status::text,
+       last_accessed_at::timestamptz,
+       created_at::timestamptz,
+       updated_at::timestamptz
+from storage.objects_search(sqlc.arg('bucket_name')::text, sqlc.arg('path_prefix')::text,sqlc.narg('levels')::int,
+                            sqlc.narg('limit')::int, sqlc.narg('offset')::int);
