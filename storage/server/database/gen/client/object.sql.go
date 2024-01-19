@@ -7,6 +7,7 @@ package client
 
 import (
 	"context"
+	"time"
 )
 
 const createObject = `-- name: CreateObject :exec
@@ -80,7 +81,7 @@ type GetObjectByBucketIdAndNameParams struct {
 	Name     string
 }
 
-func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg GetObjectByBucketIdAndNameParams) (StorageObject, error) {
+func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg GetObjectByBucketIdAndNameParams) (*StorageObject, error) {
 	row := q.db.QueryRow(ctx, getObjectByBucketIdAndName, arg.BucketID, arg.Name)
 	var i StorageObject
 	err := row.Scan(
@@ -97,7 +98,7 @@ func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg GetObjectB
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
-	return i, err
+	return &i, err
 }
 
 const getObjectById = `-- name: GetObjectById :one
@@ -118,7 +119,7 @@ where id = $1
 limit 1
 `
 
-func (q *Queries) GetObjectById(ctx context.Context, id string) (StorageObject, error) {
+func (q *Queries) GetObjectById(ctx context.Context, id string) (*StorageObject, error) {
 	row := q.db.QueryRow(ctx, getObjectById, id)
 	var i StorageObject
 	err := row.Scan(
@@ -135,7 +136,7 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (StorageObject, 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
-	return i, err
+	return &i, err
 }
 
 const listAllObjectsByBucketIdPaged = `-- name: ListAllObjectsByBucketIdPaged :many
@@ -162,13 +163,13 @@ type ListAllObjectsByBucketIdPagedParams struct {
 	Limit    int32
 }
 
-func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg ListAllObjectsByBucketIdPagedParams) ([]StorageObject, error) {
+func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg ListAllObjectsByBucketIdPagedParams) ([]*StorageObject, error) {
 	rows, err := q.db.Query(ctx, listAllObjectsByBucketIdPaged, arg.BucketID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []StorageObject
+	var items []*StorageObject
 	for rows.Next() {
 		var i StorageObject
 		if err := rows.Scan(
@@ -187,7 +188,7 @@ func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg ListAll
 		); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, &i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -231,6 +232,82 @@ type MergeObjectMetadataParams struct {
 func (q *Queries) MergeObjectMetadata(ctx context.Context, arg MergeObjectMetadataParams) error {
 	_, err := q.db.Exec(ctx, mergeObjectMetadata, arg.Metadata, arg.ID)
 	return err
+}
+
+const searchObjectsByPath = `-- name: SearchObjectsByPath :many
+select id::text,
+       bucket::text,
+       name::text,
+       mime_type::text,
+       size::bigint,
+       public::boolean,
+       metadata::jsonb,
+       upload_status::text,
+       last_accessed_at::timestamptz,
+       created_at::timestamptz,
+       updated_at::timestamptz
+from storage.objects_search($1::text, $2::text,$3::int,
+                            $4::int, $5::int)
+`
+
+type SearchObjectsByPathParams struct {
+	BucketName string
+	PathPrefix string
+	Levels     *int32
+	Limit      *int32
+	Offset     *int32
+}
+
+type SearchObjectsByPathRow struct {
+	ID             string
+	Bucket         string
+	Name           string
+	MimeType       string
+	Size           int64
+	Public         bool
+	Metadata       []byte
+	UploadStatus   string
+	LastAccessedAt time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (q *Queries) SearchObjectsByPath(ctx context.Context, arg SearchObjectsByPathParams) ([]*SearchObjectsByPathRow, error) {
+	rows, err := q.db.Query(ctx, searchObjectsByPath,
+		arg.BucketName,
+		arg.PathPrefix,
+		arg.Levels,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*SearchObjectsByPathRow
+	for rows.Next() {
+		var i SearchObjectsByPathRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Bucket,
+			&i.Name,
+			&i.MimeType,
+			&i.Size,
+			&i.Public,
+			&i.Metadata,
+			&i.UploadStatus,
+			&i.LastAccessedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateObject = `-- name: UpdateObject :exec

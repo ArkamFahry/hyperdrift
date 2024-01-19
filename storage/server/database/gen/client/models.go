@@ -5,21 +5,21 @@
 package client
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 type StorageBucket struct {
 	ID                   string
 	Name                 string
 	AllowedMimeTypes     []string
-	MaxAllowedObjectSize pgtype.Int8
+	MaxAllowedObjectSize *int64
 	Public               bool
 	Disabled             bool
 	Locked               bool
-	LockReason           pgtype.Text
-	LockedAt             pgtype.Timestamptz
-	CreatedAt            pgtype.Timestamptz
-	UpdatedAt            pgtype.Timestamptz
+	LockReason           *string
+	LockedAt             *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            *time.Time
 }
 
 type StorageObject struct {
@@ -32,7 +32,7 @@ type StorageObject struct {
 	Public         bool
 	Metadata       []byte
 	UploadStatus   string
-	LastAccessedAt pgtype.Timestamptz
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
+	LastAccessedAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
 }

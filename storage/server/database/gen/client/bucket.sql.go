@@ -7,8 +7,6 @@ package client
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addAllowedMimeTypesToBucket = `-- name: AddAllowedMimeTypesToBucket :exec
@@ -55,7 +53,7 @@ type CreateBucketParams struct {
 	ID                   string
 	Name                 string
 	AllowedMimeTypes     []string
-	MaxAllowedObjectSize pgtype.Int8
+	MaxAllowedObjectSize *int64
 	Public               bool
 	Disabled             bool
 }
@@ -122,7 +120,7 @@ where id = $1
 limit 1
 `
 
-func (q *Queries) GetBucketById(ctx context.Context, id string) (StorageBucket, error) {
+func (q *Queries) GetBucketById(ctx context.Context, id string) (*StorageBucket, error) {
 	row := q.db.QueryRow(ctx, getBucketById, id)
 	var i StorageBucket
 	err := row.Scan(
@@ -138,7 +136,7 @@ func (q *Queries) GetBucketById(ctx context.Context, id string) (StorageBucket, 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
-	return i, err
+	return &i, err
 }
 
 const getBucketByName = `-- name: GetBucketByName :one
@@ -158,7 +156,7 @@ where name = $1
 limit 1
 `
 
-func (q *Queries) GetBucketByName(ctx context.Context, name string) (StorageBucket, error) {
+func (q *Queries) GetBucketByName(ctx context.Context, name string) (*StorageBucket, error) {
 	row := q.db.QueryRow(ctx, getBucketByName, name)
 	var i StorageBucket
 	err := row.Scan(
@@ -174,7 +172,7 @@ func (q *Queries) GetBucketByName(ctx context.Context, name string) (StorageBuck
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
-	return i, err
+	return &i, err
 }
 
 const getBucketObjectCountById = `-- name: GetBucketObjectCountById :one
@@ -244,13 +242,13 @@ select id,
 from storage.buckets
 `
 
-func (q *Queries) ListAllBuckets(ctx context.Context) ([]StorageBucket, error) {
+func (q *Queries) ListAllBuckets(ctx context.Context) ([]*StorageBucket, error) {
 	rows, err := q.db.Query(ctx, listAllBuckets)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []StorageBucket
+	var items []*StorageBucket
 	for rows.Next() {
 		var i StorageBucket
 		if err := rows.Scan(
@@ -268,7 +266,7 @@ func (q *Queries) ListAllBuckets(ctx context.Context) ([]StorageBucket, error) {
 		); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, &i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -293,17 +291,17 @@ limit $2 offset $1
 `
 
 type ListBucketsPagedParams struct {
-	Offset pgtype.Int4
-	Limit  pgtype.Int4
+	Offset *int32
+	Limit  *int32
 }
 
-func (q *Queries) ListBucketsPaged(ctx context.Context, arg ListBucketsPagedParams) ([]StorageBucket, error) {
+func (q *Queries) ListBucketsPaged(ctx context.Context, arg ListBucketsPagedParams) ([]*StorageBucket, error) {
 	rows, err := q.db.Query(ctx, listBucketsPaged, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []StorageBucket
+	var items []*StorageBucket
 	for rows.Next() {
 		var i StorageBucket
 		if err := rows.Scan(
@@ -321,7 +319,7 @@ func (q *Queries) ListBucketsPaged(ctx context.Context, arg ListBucketsPagedPara
 		); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, &i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -338,7 +336,7 @@ where id = $2
 `
 
 type LockBucketParams struct {
-	LockReason pgtype.Text
+	LockReason *string
 	ID         string
 }
 
@@ -403,18 +401,18 @@ limit $3 offset $2
 `
 
 type SearchBucketsPagedParams struct {
-	Name   pgtype.Text
-	Offset pgtype.Int4
-	Limit  pgtype.Int4
+	Name   *string
+	Offset *int32
+	Limit  *int32
 }
 
-func (q *Queries) SearchBucketsPaged(ctx context.Context, arg SearchBucketsPagedParams) ([]StorageBucket, error) {
+func (q *Queries) SearchBucketsPaged(ctx context.Context, arg SearchBucketsPagedParams) ([]*StorageBucket, error) {
 	rows, err := q.db.Query(ctx, searchBucketsPaged, arg.Name, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []StorageBucket
+	var items []*StorageBucket
 	for rows.Next() {
 		var i StorageBucket
 		if err := rows.Scan(
@@ -432,7 +430,7 @@ func (q *Queries) SearchBucketsPaged(ctx context.Context, arg SearchBucketsPaged
 		); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, &i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -460,7 +458,7 @@ where id = $2
 `
 
 type UpdateBucketMaxAllowedObjectSizeParams struct {
-	MaxAllowedObjectSize pgtype.Int8
+	MaxAllowedObjectSize *int64
 	ID                   string
 }
 
