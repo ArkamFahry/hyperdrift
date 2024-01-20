@@ -3,10 +3,11 @@ package models
 import "errors"
 
 type Config struct {
-	AppId   string `json:"app_id" mapstructure:"app_id"`
-	AppName string `json:"app_name" mapstructure:"app_name"`
-	AppHost string `json:"app_host" mapstructure:"app_host"`
-	AppPort int    `json:"app_port" mapstructure:"app_port"`
+	AppId          string `json:"app_id" mapstructure:"app_id"`
+	AppName        string `json:"app_name" mapstructure:"app_name"`
+	AppEnvironment string `json:"app_environment" mapstructure:"app_environment"`
+	AppHost        string `json:"app_host" mapstructure:"app_host"`
+	AppPort        string `json:"app_port" mapstructure:"app_port"`
 
 	PostgresUrl string `json:"postgres_url" mapstructure:"postgres_url"`
 
@@ -32,8 +33,8 @@ func (c *Config) SetDefault() {
 		c.AppHost = "0.0.0.0"
 	}
 
-	if c.AppPort == 0 {
-		c.AppPort = 8000
+	if c.AppPort == "" {
+		c.AppPort = "3001"
 	}
 
 	if c.S3Region == "" {
