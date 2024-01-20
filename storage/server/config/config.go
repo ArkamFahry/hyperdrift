@@ -14,7 +14,7 @@ type Config struct {
 	config *models.Config
 }
 
-func NewConfig(viper *viper.Viper, logger *zap.Logger) *Config {
+func NewConfig(viper *viper.Viper, logger *zap.Logger) IConfig {
 	var config models.Config
 
 	err := viper.ReadInConfig()
@@ -34,9 +34,13 @@ func NewConfig(viper *viper.Viper, logger *zap.Logger) *Config {
 		logger.Fatal("error validating config file", zap.Error(err))
 	}
 
-	return &Config{config: &config}
+	var iConfig IConfig = &Config{
+		config: &config,
+	}
+
+	return iConfig
 }
 
-func (c *Config) Get() *models.Config {
+func (c *Config) GetConfig() *models.Config {
 	return c.config
 }
