@@ -15,3 +15,13 @@ type Bucket struct {
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            *time.Time `json:"updated_at"`
 }
+
+type CreateBucket struct {
+	Id                   string    `json:"id"`
+	Name                 string    `json:"name"`
+	AllowedMimeTypes     []string  `json:"allowed_mime_types"`
+	MaxAllowedObjectSize int64     `json:"max_allowed_object_size"`
+	Public               bool      `json:"public"`
+	Disabled             bool      `json:"enabled"`
+	CreatedAt            time.Time `json:"created_at"`
+}
