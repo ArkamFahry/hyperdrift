@@ -6,11 +6,11 @@ import (
 )
 
 type Config struct {
-	AppId          string `json:"app_id" mapstructure:"app_id"`
-	AppName        string `json:"app_name" mapstructure:"app_name"`
-	AppEnvironment string `json:"app_environment" mapstructure:"app_environment"`
-	AppHost        string `json:"app_host" mapstructure:"app_host"`
-	AppPort        string `json:"app_port" mapstructure:"app_port"`
+	ServerId          string `json:"server_id" mapstructure:"server_id"`
+	ServerName        string `json:"server_name" mapstructure:"server_name"`
+	ServerEnvironment string `json:"server_environment" mapstructure:"server_environment"`
+	ServerHost        string `json:"server_host" mapstructure:"server_host"`
+	ServerPort        string `json:"server_port" mapstructure:"server_port"`
 
 	PostgresUrl string `json:"postgres_url" mapstructure:"postgres_url"`
 

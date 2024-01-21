@@ -17,7 +17,7 @@ func NewApi(logger *zap.Logger, config *config.Config) {
 		Logger: logger,
 	}))
 
-	port := config.AppPort
+	port := config.ServerPort
 
 	err := app.Listen(":" + port)
 	if err != nil {
