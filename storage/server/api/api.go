@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewApi(logger *zap.Logger, config config.IConfig) {
+func NewApi(logger *zap.Logger, config *config.Config) {
 
 	app := fiber.New(fiber.Config{
 		Immutable: true,
@@ -17,7 +17,7 @@ func NewApi(logger *zap.Logger, config config.IConfig) {
 		Logger: logger,
 	}))
 
-	port := config.GetConfig().AppPort
+	port := config.AppPort
 
 	err := app.Listen(":" + port)
 	if err != nil {
