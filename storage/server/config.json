@@ -1,0 +1,27 @@
+{
+  "server_id": "",
+  "server_name": "",
+  "server_environment": "",
+  "server_host": "",
+  "server_port": "",
+
+  "postgres_url": "",
+
+  "s3_endpoint": "",
+  "s3_access_key_id": "",
+  "s3_secret_access_key": "",
+  "s3_region": "",
+  "s3_bucket_name": "",
+  "s3_force_path_style": false,
+  "s3_disable_ssl": false,
+
+  "default_buckets": [
+    {
+      "name": "",
+      "allowed_mime_types": [],
+      "max_allowed_object_size": null,
+      "public": false,
+      "disabled": false
+    }
+  ]
+}
