@@ -6,7 +6,7 @@ type Bucket struct {
 	Id                   string     `json:"id"`
 	Name                 string     `json:"name"`
 	AllowedMimeTypes     []string   `json:"allowed_mime_types"`
-	MaxAllowedObjectSize int64      `json:"max_allowed_object_size"`
+	MaxAllowedObjectSize *int64     `json:"max_allowed_object_size"`
 	Public               bool       `json:"public"`
 	Disabled             bool       `json:"enabled"`
 	Locked               bool       `json:"locked"`
@@ -20,7 +20,7 @@ type CreateBucket struct {
 	Id                   string    `json:"id"`
 	Name                 string    `json:"name"`
 	AllowedMimeTypes     []string  `json:"allowed_mime_types"`
-	MaxAllowedObjectSize int64     `json:"max_allowed_object_size"`
+	MaxAllowedObjectSize *int64    `json:"max_allowed_object_size"`
 	Public               bool      `json:"public"`
 	Disabled             bool      `json:"enabled"`
 	CreatedAt            time.Time `json:"created_at"`
