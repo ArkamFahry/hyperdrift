@@ -23,6 +23,14 @@ type Config struct {
 	S3BucketName      string `json:"s3_bucket_name" mapstructure:"s3_bucket_name"`
 	S3ForcePathStyle  bool   `json:"s3_force_path_style" mapstructure:"s3_force_path_style"`
 	S3DisableSSL      bool   `json:"s3_disable_ssl" mapstructure:"s3_disable_ssl"`
+
+	DefaultBuckets []struct {
+		Name                 string   `json:"name" mapstructure:"name"`
+		AllowedMimeTypes     []string `json:"allowed_mime_types" mapstructure:"allowed_mime_types"`
+		MaxAllowedObjectSize *int64   `json:"max_allowed_object_size" mapstructure:"max_allowed_object_size"`
+		Public               bool     `json:"public" mapstructure:"public"`
+		Disabled             bool     `json:"disabled" mapstructure:"disabled"`
+	} `json:"default_buckets" mapstructure:"default_buckets"`
 }
 
 func NewConfig(viper *viper.Viper, logger *zap.Logger) *Config {
