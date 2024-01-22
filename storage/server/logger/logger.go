@@ -9,9 +9,9 @@ func NewLogger(viper *viper.Viper) *zap.Logger {
 	var logger *zap.Logger
 	var err error
 
-	logLevel := viper.GetString("LOG_LEVEL")
+	serverEnvironment := viper.GetString("server_environment")
 
-	switch logLevel {
+	switch serverEnvironment {
 	case "dev":
 		logger, err = zap.NewDevelopment()
 	case "test":
