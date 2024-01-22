@@ -17,6 +17,7 @@
 
   "default_buckets": [
     {
+      "id": "",
       "name": "",
       "allowed_mime_types": [],
       "max_allowed_object_size": null,

@@ -25,6 +25,7 @@ type Config struct {
 	S3DisableSSL      bool   `json:"s3_disable_ssl" mapstructure:"s3_disable_ssl"`
 
 	DefaultBuckets []struct {
+		Id                   string   `json:"id" mapstructure:"id"`
 		Name                 string   `json:"name" mapstructure:"name"`
 		AllowedMimeTypes     []string `json:"allowed_mime_types" mapstructure:"allowed_mime_types"`
 		MaxAllowedObjectSize *int64   `json:"max_allowed_object_size" mapstructure:"max_allowed_object_size"`
@@ -36,18 +37,24 @@ type Config struct {
 	DefaultPreSignedDownloadUrlExpiresIn int `json:"default_pre_signed_download_url_expires_in" mapstructure:"default_pre_signed_download_url_expires_in"`
 }
 
-func NewConfig(viper *viper.Viper, logger *zap.Logger) *Config {
+func NewConfig() *Config {
 	var config Config
 
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("../")
+	v := viper.New()
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
 
-	err := viper.ReadInConfig()
+	v.AddConfigPath(".")
+	v.AddConfigPath("../")
+
+	err = v.ReadInConfig()
 	if err != nil {
 		logger.Fatal("error reading config", zap.Error(err))
 	}
 
-	err = viper.Unmarshal(&config)
+	err = v.Unmarshal(&config)
 	if err != nil {
 		logger.Fatal("error unmarshaling config", zap.Error(err))
 	}
