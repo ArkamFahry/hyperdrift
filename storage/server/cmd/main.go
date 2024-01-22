@@ -4,13 +4,11 @@ import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/api"
 	"github.com/ArkamFahry/hyperdrift/storage/server/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/logger"
-	"github.com/spf13/viper"
 )
 
 func main() {
-	newViper := viper.New()
-	newLogger := logger.NewLogger(newViper)
-	newConfig := config.NewConfig(newViper, newLogger)
+	appConfig := config.NewConfig()
+	appLogger := logger.NewLogger(appConfig)
 
-	api.NewApi(newLogger, newConfig)
+	api.NewApi(appLogger, appConfig)
 }
