@@ -7,7 +7,7 @@ create table if not exists storage.objects
     bucket_id        text                                           not null check ( storage.text_non_empty_trimmed_text(bucket_id) ),
     name             text                                           not null check ( storage.text_non_empty_trimmed_text(name) ),
     path_tokens      text[]                                         not null generated always as (string_to_array(name, '/')) stored,
-    mime_type        text        default 'application/octet-stream' not null check ( storage.text_non_empty_trimmed_text(mime_type) ),
+    content_type        text        default 'application/octet-stream' not null check ( storage.text_non_empty_trimmed_text(content_type) ),
     size             bigint      default 0                          not null,
     public           boolean     default false                      not null,
     metadata         jsonb                                          null,

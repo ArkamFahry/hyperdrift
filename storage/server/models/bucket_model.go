@@ -5,7 +5,7 @@ import "time"
 type Bucket struct {
 	Id                   string     `json:"id"`
 	Name                 string     `json:"name"`
-	AllowedMimeTypes     []string   `json:"allowed_mime_types"`
+	AllowedContentTypes  []string   `json:"allowed_content_types"`
 	MaxAllowedObjectSize *int64     `json:"max_allowed_object_size"`
 	Public               bool       `json:"public"`
 	Disabled             bool       `json:"enabled"`
@@ -19,7 +19,7 @@ type Bucket struct {
 type CreateBucket struct {
 	Id                   string    `json:"id"`
 	Name                 string    `json:"name"`
-	AllowedMimeTypes     []string  `json:"allowed_mime_types"`
+	AllowedContentTypes  []string  `json:"allowed_content_types"`
 	MaxAllowedObjectSize *int64    `json:"max_allowed_object_size"`
 	Public               bool      `json:"public"`
 	Disabled             bool      `json:"enabled"`
