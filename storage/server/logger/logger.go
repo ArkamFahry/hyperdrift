@@ -1,15 +1,15 @@
 package logger
 
 import (
-	"github.com/spf13/viper"
+	"github.com/ArkamFahry/hyperdrift/storage/server/config"
 	"go.uber.org/zap"
 )
 
-func NewLogger(viper *viper.Viper) *zap.Logger {
+func NewLogger(config *config.Config) *zap.Logger {
 	var logger *zap.Logger
 	var err error
 
-	serverEnvironment := viper.GetString("server_environment")
+	serverEnvironment := config.ServerEnvironment
 
 	switch serverEnvironment {
 	case "dev":
