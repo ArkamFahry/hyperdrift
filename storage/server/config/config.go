@@ -31,26 +31,32 @@ type Config struct {
 		Public               bool     `json:"public" mapstructure:"public"`
 		Disabled             bool     `json:"disabled" mapstructure:"disabled"`
 	} `json:"default_buckets" mapstructure:"default_buckets"`
+
+	DefaultPreSignedUploadUrlExpiresIn   int `json:"default_pre_signed_upload_url_expires_in" mapstructure:"default_pre_signed_upload_url_expires_in"`
+	DefaultPreSignedDownloadUrlExpiresIn int `json:"default_pre_signed_download_url_expires_in" mapstructure:"default_pre_signed_download_url_expires_in"`
 }
 
 func NewConfig(viper *viper.Viper, logger *zap.Logger) *Config {
 	var config Config
 
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("../")
+
 	err := viper.ReadInConfig()
 	if err != nil {
-		logger.Fatal("error reading config file", zap.Error(err))
+		logger.Fatal("error reading config", zap.Error(err))
 	}
 
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		logger.Fatal("error unmarshaling config file", zap.Error(err))
+		logger.Fatal("error unmarshaling config", zap.Error(err))
 	}
 
 	setDefaultConfig(&config)
 
 	err = validateConfig(&config)
 	if err != nil {
-		logger.Fatal("error validating config file", zap.Error(err))
+		logger.Fatal("error validating config", zap.Error(err))
 	}
 
 	return &config
@@ -79,6 +85,14 @@ func setDefaultConfig(config *Config) {
 
 	if config.S3Region == "" {
 		config.S3Region = "us-east-1"
+	}
+
+	if config.DefaultPreSignedUploadUrlExpiresIn == 0 {
+		config.DefaultPreSignedUploadUrlExpiresIn = 1800
+	}
+
+	if config.DefaultPreSignedDownloadUrlExpiresIn == 0 {
+		config.DefaultPreSignedDownloadUrlExpiresIn = 1800
 	}
 }
 

@@ -23,5 +23,8 @@
       "public": false,
       "disabled": false
     }
-  ]
+  ],
+
+  "default_pre_signed_upload_url_expires_in": 0,
+  "default_pre_signed_download_url_expires_in": 0
 }
