@@ -25,3 +25,13 @@ type CreateBucket struct {
 	Disabled             bool      `json:"enabled"`
 	CreatedAt            time.Time `json:"created_at"`
 }
+
+type AddAllowedContentTypeToBucket struct {
+	Id                  string   `json:"id"`
+	AllowedContentTypes []string `json:"allowed_content_types"`
+}
+
+type RemoveAllowedContentTypeFromBucket struct {
+	Id                  string   `json:"id"`
+	AllowedContentTypes []string `json:"allowed_content_types"`
+}
