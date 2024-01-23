@@ -14,6 +14,13 @@ import (
 	"time"
 )
 
+type IStorage interface {
+	CreatePreSignedUploadObject(ctx context.Context, createPreSignedUploadObject *models.CreatePreSignedUploadObject) (*models.PreSignedObject, error)
+	CreatePreSignedDownloadObject(ctx context.Context, createPreSignedDownloadObject *models.CreatePreSignedDownloadObject) (*models.PreSignedObject, error)
+	CheckIfObjectExists(ctx context.Context, checkIfObjectExists *models.CheckIfObjectExists) (bool, error)
+	DeleteObject(ctx context.Context, deleteObject *models.DeleteObject) error
+}
+
 type S3Storage struct {
 	s3Client          *s3.Client
 	s3PreSignedClient *s3.PresignClient
@@ -22,7 +29,9 @@ type S3Storage struct {
 	logger            *zap.Logger
 }
 
-func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) *S3Storage {
+var _ IStorage = (*S3Storage)(nil)
+
+func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) IStorage {
 	return &S3Storage{
 		s3Client:          s3Client,
 		s3PreSignedClient: s3.NewPresignClient(s3Client),
@@ -45,11 +54,11 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, createPreSi
 
 	key := createS3Key(createPreSignedUploadObject.Bucket, createPreSignedUploadObject.Name)
 
-	preSignedUploadUrl, err := s.s3PreSignedClient.PresignPutObject(ctx, &s3.PutObjectInput{
+	preSignedPutObject, err := s.s3PreSignedClient.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(s.bucketName),
 		Key:           aws.String(key),
 		ContentLength: aws.Int64(createPreSignedUploadObject.Size),
-		ContentType:   aws.String(createPreSignedUploadObject.MimeType),
+		ContentType:   aws.String(createPreSignedUploadObject.ContentType),
 	},
 
 		func(po *s3.PresignOptions) {
@@ -62,7 +71,7 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, createPreSi
 	}
 
 	return &models.PreSignedObject{
-		Url:       preSignedUploadUrl.URL,
+		Url:       preSignedPutObject.URL,
 		Method:    "PUT",
 		ExpiresAt: time.Now().Add(expiresIn).Unix(),
 	}, nil
@@ -81,7 +90,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, createPre
 
 	key := createS3Key(createPreSignedDownloadObject.Bucket, createPreSignedDownloadObject.Name)
 
-	preSignedDownloadUrl, err := s.s3PreSignedClient.PresignGetObject(ctx, &s3.GetObjectInput{
+	preSignedGetObject, err := s.s3PreSignedClient.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
 	},
@@ -95,7 +104,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, createPre
 	}
 
 	return &models.PreSignedObject{
-		Url:       preSignedDownloadUrl.URL,
+		Url:       preSignedGetObject.URL,
 		Method:    "GET",
 		ExpiresAt: time.Now().Add(expiresIn).Unix(),
 	}, nil
