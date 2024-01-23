@@ -1,9 +1,9 @@
 -- name: CreateBucket :exec
 insert into storage.buckets
-(id, name, allowed_mime_types, max_allowed_object_size, public, disabled)
+(id, name, allowed_content_types, max_allowed_object_size, public, disabled)
 values (sqlc.arg('id'),
         sqlc.arg('name'),
-        sqlc.narg('allowed_mime_types'),
+        sqlc.narg('allowed_content_types'),
         sqlc.narg('max_allowed_object_size'),
         sqlc.arg('public'),
         sqlc.arg('disabled'))
@@ -11,12 +11,12 @@ returning *;
 
 -- name: AddAllowedMimeTypesToBucket :exec
 update storage.buckets
-set allowed_mime_types = array_append(allowed_mime_types, sqlc.arg('mime_type')::text[])
+set allowed_content_types = array_append(allowed_content_types, sqlc.arg('mime_type')::text[])
 where id = sqlc.arg('id');
 
 -- name: RemoveAllowedMimeTypesFromBucket :exec
 update storage.buckets
-set allowed_mime_types = array_remove(allowed_mime_types, sqlc.arg('mime_type')::text[])
+set allowed_content_types = array_remove(allowed_content_types, sqlc.arg('mime_type')::text[])
 where id = sqlc.arg('id');
 
 -- name: UpdateBucketMaxAllowedObjectSize :exec
@@ -66,7 +66,7 @@ where id = sqlc.arg('id');
 -- name: GetBucketById :one
 select id,
        name,
-       allowed_mime_types,
+       allowed_content_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -82,7 +82,7 @@ limit 1;
 -- name: GetBucketByName :one
 select id,
        name,
-       allowed_mime_types,
+       allowed_content_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -98,7 +98,7 @@ limit 1;
 -- name: ListAllBuckets :many
 select id,
        name,
-       allowed_mime_types,
+       allowed_content_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -112,7 +112,7 @@ from storage.buckets;
 -- name: ListBucketsPaged :many
 select id,
        name,
-       allowed_mime_types,
+       allowed_content_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -127,7 +127,7 @@ limit sqlc.narg('limit') offset sqlc.narg('offset');
 -- name: SearchBucketsPaged :many
 select id,
        name,
-       allowed_mime_types,
+       allowed_content_types,
        max_allowed_object_size,
        public,
        disabled,

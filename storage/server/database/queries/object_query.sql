@@ -1,6 +1,6 @@
 -- name: CreateObject :exec
 insert into storage.objects
-    (id, bucket_id, name, size, mime_type, public, metadata)
+    (id, bucket_id, name, size, content_type, public, metadata)
 values (sqlc.arg('id'),
         sqlc.arg('bucket_id'),
         sqlc.arg('name'),
@@ -24,7 +24,7 @@ where id = sqlc.arg('id');
 update storage.objects
 set
     size = coalesce(sqlc.arg('size'), size),
-    mime_type = coalesce(sqlc.arg('mime_type'), mime_type),
+    content_type = coalesce(sqlc.arg('content_type'), content_type),
     metadata = coalesce(sqlc.arg('metadata'), metadata)
 where id = sqlc.arg('id');
 
@@ -53,7 +53,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       mime_type,
+       content_type,
        size,
        public,
        metadata,
@@ -70,7 +70,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       mime_type,
+       content_type,
        size,
        public,
        metadata,
@@ -88,7 +88,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       mime_type,
+       content_type,
        size,
        public,
        metadata,
@@ -104,7 +104,7 @@ limit sqlc.arg('limit') offset sqlc.arg('offset');
 select id::text,
        bucket::text,
        name::text,
-       mime_type::text,
+       content_type::text,
        size::bigint,
        public::boolean,
        metadata::jsonb,
