@@ -11,7 +11,7 @@ import (
 type StorageBucket struct {
 	ID                   string
 	Name                 string
-	AllowedMimeTypes     []string
+	AllowedContentTypes  []string
 	MaxAllowedObjectSize *int64
 	Public               bool
 	Disabled             bool
@@ -27,7 +27,7 @@ type StorageObject struct {
 	BucketID       string
 	Name           string
 	PathTokens     []string
-	MimeType       string
+	ContentType    string
 	Size           int64
 	Public         bool
 	Metadata       []byte
