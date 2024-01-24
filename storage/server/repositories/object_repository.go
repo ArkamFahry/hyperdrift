@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"github.com/ArkamFahry/hyperdrift/storage/server/database/gen/client"
 	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 )
 
@@ -12,4 +13,31 @@ type IObjectRepository interface {
 	MoveObject(ctx context.Context, moveObject *models.MoveObject) error
 	GetObjectByBucketIdAndId(ctx context.Context, bucketId string, id string) (*models.Object, error)
 	SearchObjectByBucketIdAndName(ctx context.Context, bucketId string, name string) ([]*models.Object, error)
+}
+
+type ObjectRepository struct {
+	db *client.Queries
+}
+
+func NewObjectRepository(db *client.Queries) IObjectRepository {
+	return &ObjectRepository{
+		db: db,
+	}
+}
+
+func (or *ObjectRepository) CreateObject(ctx context.Context, createObject *models.CreateObject) error {
+	err := or.db.CreateObject(ctx, &client.CreateObjectParams{
+		ID:          createObject.Id,
+		BucketID:    createObject.BucketId,
+		Name:        createObject.Name,
+		ContentType: createObject.ContentType,
+		Size:        createObject.Size,
+		Public:      createObject.Public,
+		Metadata:    createObject.Metadata,
+	})
+	if err != nil {
+		return err
+	}
+	
+	return nil
 }
