@@ -2,7 +2,13 @@ package models
 
 type Pagination struct {
 	Cursor string `json:"cursor"`
-	Limit  int64  `json:"limit"`
+	Limit  int32  `json:"limit"`
+}
+
+func (p *Pagination) SetDefaults() {
+	if p.Limit == 0 {
+		p.Limit = 10
+	}
 }
 
 type PaginationResult struct {
