@@ -10,7 +10,7 @@ type Bucket struct {
 	Public               bool       `json:"public"`
 	Disabled             bool       `json:"enabled"`
 	Locked               bool       `json:"locked"`
-	LockReason           string     `json:"lock_reason"`
+	LockReason           *string    `json:"lock_reason"`
 	LockedAt             *time.Time `json:"locked_at"`
 	CreatedAt            time.Time  `json:"created_at"`
 	UpdatedAt            *time.Time `json:"updated_at"`
@@ -29,7 +29,7 @@ type CreateBucket struct {
 type UpdateBucket struct {
 	Id                   string `json:"id"`
 	MaxAllowedObjectSize *int64 `json:"max_allowed_object_size"`
-	Public               bool   `json:"public"`
+	Public               *bool  `json:"public"`
 }
 
 type AddAllowedContentTypesToBucket struct {
