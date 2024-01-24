@@ -12,7 +12,7 @@ import (
 
 const createObject = `-- name: CreateObject :exec
 insert into storage.objects
-    (id, bucket_id, name, size, content_type, public, metadata)
+    (id, bucket_id, name, content_type, size, public, metadata)
 values ($1,
         $2,
         $3,
@@ -24,13 +24,13 @@ returning id, bucket_id, name, path_tokens, content_type, size, public, metadata
 `
 
 type CreateObjectParams struct {
-	ID       string
-	BucketID string
-	Name     string
-	MimeType int64
-	Size     string
-	Public   bool
-	Metadata []byte
+	ID          string
+	BucketID    string
+	Name        string
+	ContentType string
+	Size        int64
+	Public      bool
+	Metadata    []byte
 }
 
 func (q *Queries) CreateObject(ctx context.Context, arg *CreateObjectParams) error {
@@ -38,7 +38,7 @@ func (q *Queries) CreateObject(ctx context.Context, arg *CreateObjectParams) err
 		arg.ID,
 		arg.BucketID,
 		arg.Name,
-		arg.MimeType,
+		arg.ContentType,
 		arg.Size,
 		arg.Public,
 		arg.Metadata,
@@ -246,7 +246,7 @@ select id::text,
        last_accessed_at::timestamptz,
        created_at::timestamptz,
        updated_at::timestamptz
-from storage.objects_search($1::text, $2::text,$3::int,
+from storage.objects_search($1::text, $2::text, $3::int,
                             $4::int, $5::int)
 `
 
@@ -312,10 +312,9 @@ func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByP
 
 const updateObject = `-- name: UpdateObject :exec
 update storage.objects
-set
-    size = coalesce($1, size),
+set size         = coalesce($1, size),
     content_type = coalesce($2, content_type),
-    metadata = coalesce($3, metadata)
+    metadata     = coalesce($3, metadata)
 where id = $4
 `
 

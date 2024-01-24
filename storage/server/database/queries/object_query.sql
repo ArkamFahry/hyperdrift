@@ -1,10 +1,10 @@
 -- name: CreateObject :exec
 insert into storage.objects
-    (id, bucket_id, name, size, content_type, public, metadata)
+    (id, bucket_id, name, content_type, size, public, metadata)
 values (sqlc.arg('id'),
         sqlc.arg('bucket_id'),
         sqlc.arg('name'),
-        sqlc.arg('mime_type'),
+        sqlc.arg('content_type'),
         sqlc.arg('size'),
         sqlc.arg('public'),
         sqlc.arg('metadata'))
@@ -22,10 +22,9 @@ where id = sqlc.arg('id');
 
 -- name: UpdateObject :exec
 update storage.objects
-set
-    size = coalesce(sqlc.arg('size'), size),
+set size         = coalesce(sqlc.arg('size'), size),
     content_type = coalesce(sqlc.arg('content_type'), content_type),
-    metadata = coalesce(sqlc.arg('metadata'), metadata)
+    metadata     = coalesce(sqlc.arg('metadata'), metadata)
 where id = sqlc.arg('id');
 
 -- name: MakeObjectPublic :exec
@@ -112,5 +111,5 @@ select id::text,
        last_accessed_at::timestamptz,
        created_at::timestamptz,
        updated_at::timestamptz
-from storage.objects_search(sqlc.arg('bucket_name')::text, sqlc.arg('path_prefix')::text,sqlc.narg('levels')::int,
+from storage.objects_search(sqlc.arg('bucket_name')::text, sqlc.arg('path_prefix')::text, sqlc.narg('levels')::int,
                             sqlc.narg('limit')::int, sqlc.narg('offset')::int);
