@@ -9,19 +9,20 @@ values (sqlc.arg('id'),
         sqlc.arg('disabled'))
 returning *;
 
--- name: AddAllowedMimeTypesToBucket :exec
+-- name: UpdateBucket :exec
 update storage.buckets
-set allowed_content_types = array_append(allowed_content_types, sqlc.arg('mime_type')::text[])
+set max_allowed_object_size = coalesce(sqlc.narg('max_allowed_object_size'), max_allowed_object_size),
+    public                  = coalesce(sqlc.narg('public'), public)
 where id = sqlc.arg('id');
 
--- name: RemoveAllowedMimeTypesFromBucket :exec
+-- name: AddAllowedContentTypesToBucket :exec
 update storage.buckets
-set allowed_content_types = array_remove(allowed_content_types, sqlc.arg('mime_type')::text[])
+set allowed_content_types = array_append(allowed_content_types, sqlc.arg('allowed_content_types')::text[])
 where id = sqlc.arg('id');
 
--- name: UpdateBucketMaxAllowedObjectSize :exec
+-- name: RemoveAllowedContentTypesFromBucket :exec
 update storage.buckets
-set max_allowed_object_size = sqlc.arg('max_allowed_object_size')
+set allowed_content_types = array_remove(allowed_content_types, sqlc.arg('allowed_content_types')::text[])
 where id = sqlc.arg('id');
 
 -- name: DisableBucket :exec
@@ -47,7 +48,7 @@ where id = sqlc.arg('id');
 -- name: LockBucket :exec
 update storage.buckets
 set locked      = true,
-    lock_reason = sqlc.arg('lock_reason'),
+    lock_reason = sqlc.arg('lock_reason')::text,
     locked_at   = now()
 where id = sqlc.arg('id');
 
@@ -109,7 +110,7 @@ select id,
        updated_at
 from storage.buckets;
 
--- name: ListBucketsPaged :many
+-- name: ListBucketsPaginated :many
 select id,
        name,
        allowed_content_types,
@@ -122,9 +123,10 @@ select id,
        created_at,
        updated_at
 from storage.buckets
-limit sqlc.narg('limit') offset sqlc.narg('offset');
+where id >= sqlc.arg('cursor')
+limit sqlc.narg('limit');
 
--- name: SearchBucketsPaged :many
+-- name: SearchBucketsPaginated :many
 select id,
        name,
        allowed_content_types,

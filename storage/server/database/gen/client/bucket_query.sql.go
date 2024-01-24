@@ -9,19 +9,19 @@ import (
 	"context"
 )
 
-const addAllowedMimeTypesToBucket = `-- name: AddAllowedMimeTypesToBucket :exec
+const addAllowedContentTypesToBucket = `-- name: AddAllowedContentTypesToBucket :exec
 update storage.buckets
 set allowed_content_types = array_append(allowed_content_types, $1::text[])
 where id = $2
 `
 
-type AddAllowedMimeTypesToBucketParams struct {
-	MimeType []string
-	ID       string
+type AddAllowedContentTypesToBucketParams struct {
+	AllowedContentTypes []string
+	ID                  string
 }
 
-func (q *Queries) AddAllowedMimeTypesToBucket(ctx context.Context, arg *AddAllowedMimeTypesToBucketParams) error {
-	_, err := q.db.Exec(ctx, addAllowedMimeTypesToBucket, arg.MimeType, arg.ID)
+func (q *Queries) AddAllowedContentTypesToBucket(ctx context.Context, arg *AddAllowedContentTypesToBucketParams) error {
+	_, err := q.db.Exec(ctx, addAllowedContentTypesToBucket, arg.AllowedContentTypes, arg.ID)
 	return err
 }
 
@@ -274,7 +274,7 @@ func (q *Queries) ListAllBuckets(ctx context.Context) ([]*StorageBucket, error) 
 	return items, nil
 }
 
-const listBucketsPaged = `-- name: ListBucketsPaged :many
+const listBucketsPaginated = `-- name: ListBucketsPaginated :many
 select id,
        name,
        allowed_content_types,
@@ -287,16 +287,17 @@ select id,
        created_at,
        updated_at
 from storage.buckets
-limit $2 offset $1
+where id >= $1
+limit $2
 `
 
-type ListBucketsPagedParams struct {
-	Offset *int32
+type ListBucketsPaginatedParams struct {
+	Cursor string
 	Limit  *int32
 }
 
-func (q *Queries) ListBucketsPaged(ctx context.Context, arg *ListBucketsPagedParams) ([]*StorageBucket, error) {
-	rows, err := q.db.Query(ctx, listBucketsPaged, arg.Offset, arg.Limit)
+func (q *Queries) ListBucketsPaginated(ctx context.Context, arg *ListBucketsPaginatedParams) ([]*StorageBucket, error) {
+	rows, err := q.db.Query(ctx, listBucketsPaginated, arg.Cursor, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -330,13 +331,13 @@ func (q *Queries) ListBucketsPaged(ctx context.Context, arg *ListBucketsPagedPar
 const lockBucket = `-- name: LockBucket :exec
 update storage.buckets
 set locked      = true,
-    lock_reason = $1,
+    lock_reason = $1::text,
     locked_at   = now()
 where id = $2
 `
 
 type LockBucketParams struct {
-	LockReason *string
+	LockReason string
 	ID         string
 }
 
@@ -367,23 +368,23 @@ func (q *Queries) MakeBucketPublic(ctx context.Context, id string) error {
 	return err
 }
 
-const removeAllowedMimeTypesFromBucket = `-- name: RemoveAllowedMimeTypesFromBucket :exec
+const removeAllowedContentTypesFromBucket = `-- name: RemoveAllowedContentTypesFromBucket :exec
 update storage.buckets
 set allowed_content_types = array_remove(allowed_content_types, $1::text[])
 where id = $2
 `
 
-type RemoveAllowedMimeTypesFromBucketParams struct {
-	MimeType []string
-	ID       string
+type RemoveAllowedContentTypesFromBucketParams struct {
+	AllowedContentTypes []string
+	ID                  string
 }
 
-func (q *Queries) RemoveAllowedMimeTypesFromBucket(ctx context.Context, arg *RemoveAllowedMimeTypesFromBucketParams) error {
-	_, err := q.db.Exec(ctx, removeAllowedMimeTypesFromBucket, arg.MimeType, arg.ID)
+func (q *Queries) RemoveAllowedContentTypesFromBucket(ctx context.Context, arg *RemoveAllowedContentTypesFromBucketParams) error {
+	_, err := q.db.Exec(ctx, removeAllowedContentTypesFromBucket, arg.AllowedContentTypes, arg.ID)
 	return err
 }
 
-const searchBucketsPaged = `-- name: SearchBucketsPaged :many
+const searchBucketsPaginated = `-- name: SearchBucketsPaginated :many
 select id,
        name,
        allowed_content_types,
@@ -400,14 +401,14 @@ where name ilike $1
 limit $3 offset $2
 `
 
-type SearchBucketsPagedParams struct {
+type SearchBucketsPaginatedParams struct {
 	Name   *string
 	Offset *int32
 	Limit  *int32
 }
 
-func (q *Queries) SearchBucketsPaged(ctx context.Context, arg *SearchBucketsPagedParams) ([]*StorageBucket, error) {
-	rows, err := q.db.Query(ctx, searchBucketsPaged, arg.Name, arg.Offset, arg.Limit)
+func (q *Queries) SearchBucketsPaginated(ctx context.Context, arg *SearchBucketsPaginatedParams) ([]*StorageBucket, error) {
+	rows, err := q.db.Query(ctx, searchBucketsPaginated, arg.Name, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -451,18 +452,20 @@ func (q *Queries) UnlockBucket(ctx context.Context, id string) error {
 	return err
 }
 
-const updateBucketMaxAllowedObjectSize = `-- name: UpdateBucketMaxAllowedObjectSize :exec
+const updateBucket = `-- name: UpdateBucket :exec
 update storage.buckets
-set max_allowed_object_size = $1
-where id = $2
+set max_allowed_object_size = coalesce($1, max_allowed_object_size),
+    public                  = coalesce($2, public)
+where id = $3
 `
 
-type UpdateBucketMaxAllowedObjectSizeParams struct {
+type UpdateBucketParams struct {
 	MaxAllowedObjectSize *int64
+	Public               *bool
 	ID                   string
 }
 
-func (q *Queries) UpdateBucketMaxAllowedObjectSize(ctx context.Context, arg *UpdateBucketMaxAllowedObjectSizeParams) error {
-	_, err := q.db.Exec(ctx, updateBucketMaxAllowedObjectSize, arg.MaxAllowedObjectSize, arg.ID)
+func (q *Queries) UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error {
+	_, err := q.db.Exec(ctx, updateBucket, arg.MaxAllowedObjectSize, arg.Public, arg.ID)
 	return err
 }
