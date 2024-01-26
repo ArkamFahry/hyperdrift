@@ -3,7 +3,7 @@
 //   sqlc v1.25.0
 // source: object_query.sql
 
-package client
+package database
 
 import (
 	"context"
