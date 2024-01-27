@@ -33,37 +33,31 @@ type UpdateBucket struct {
 }
 
 type AddAllowedContentTypesToBucket struct {
-	Id                  string     `json:"id"`
-	AllowedContentTypes []string   `json:"allowed_content_types"`
-	UpdatedAt           *time.Time `json:"updated_at"`
+	Id                  string   `json:"id"`
+	AllowedContentTypes []string `json:"allowed_content_types"`
 }
 
 type RemoveAllowedContentTypesFromBucket struct {
-	Id                  string     `json:"id"`
-	AllowedContentTypes []string   `json:"allowed_content_types"`
-	UpdatedAt           *time.Time `json:"updated_at"`
+	Id                  string   `json:"id"`
+	AllowedContentTypes []string `json:"allowed_content_types"`
 }
 
 type MakeBucketPublic struct {
-	Id        string     `json:"id"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	Id string `json:"id"`
 }
 
 type MakeBucketPrivate struct {
-	Id        string     `json:"id"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	Id string `json:"id"`
 }
 
 type LockBucket struct {
 	Id         string     `json:"id"`
 	LockReason string     `json:"lock_reason"`
 	LockedAt   *time.Time `json:"locked_at"`
-	UpdatedAt  *time.Time `json:"updated_at"`
 }
 
 type UnlockBucket struct {
-	Id        string     `json:"id"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	Id string `json:"id"`
 }
 
 type DeleteBucket struct {
