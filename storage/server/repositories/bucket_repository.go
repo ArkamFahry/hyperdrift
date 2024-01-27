@@ -3,7 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
-	"github.com/ArkamFahry/hyperdrift/storage/server/database/gen/client"
+	"github.com/ArkamFahry/hyperdrift/storage/server/database"
 	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 	"github.com/jackc/pgx/v5"
 )
@@ -25,17 +25,17 @@ type IBucketRepository interface {
 }
 
 type BucketRepository struct {
-	db *client.Queries
+	db *database.Queries
 }
 
-func NewBucketRepository(db *client.Queries) IBucketRepository {
+func NewBucketRepository(db *database.Queries) IBucketRepository {
 	return &BucketRepository{
 		db: db,
 	}
 }
 
 func (br *BucketRepository) CreateBucket(ctx context.Context, createBucket *models.CreateBucket) error {
-	err := br.db.CreateBucket(ctx, &client.CreateBucketParams{
+	err := br.db.CreateBucket(ctx, &database.CreateBucketParams{
 		ID:                   createBucket.Id,
 		Name:                 createBucket.Name,
 		AllowedContentTypes:  createBucket.AllowedContentTypes,
@@ -51,7 +51,7 @@ func (br *BucketRepository) CreateBucket(ctx context.Context, createBucket *mode
 }
 
 func (br *BucketRepository) UpdateBucket(ctx context.Context, updateBucket *models.UpdateBucket) error {
-	err := br.db.UpdateBucket(ctx, &client.UpdateBucketParams{
+	err := br.db.UpdateBucket(ctx, &database.UpdateBucketParams{
 		ID:                   updateBucket.Id,
 		MaxAllowedObjectSize: updateBucket.MaxAllowedObjectSize,
 		Public:               updateBucket.Public,
@@ -64,7 +64,7 @@ func (br *BucketRepository) UpdateBucket(ctx context.Context, updateBucket *mode
 }
 
 func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, addAllowedContentTypeToBucket *models.AddAllowedContentTypesToBucket) error {
-	err := br.db.AddAllowedContentTypesToBucket(ctx, &client.AddAllowedContentTypesToBucketParams{
+	err := br.db.AddAllowedContentTypesToBucket(ctx, &database.AddAllowedContentTypesToBucketParams{
 		ID:                  addAllowedContentTypeToBucket.Id,
 		AllowedContentTypes: addAllowedContentTypeToBucket.AllowedContentTypes,
 	})
@@ -76,7 +76,7 @@ func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, a
 }
 
 func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Context, removeAllowedContentTypeFromBucket *models.RemoveAllowedContentTypesFromBucket) error {
-	err := br.db.RemoveAllowedContentTypesFromBucket(ctx, &client.RemoveAllowedContentTypesFromBucketParams{
+	err := br.db.RemoveAllowedContentTypesFromBucket(ctx, &database.RemoveAllowedContentTypesFromBucketParams{
 		ID:                  removeAllowedContentTypeFromBucket.Id,
 		AllowedContentTypes: removeAllowedContentTypeFromBucket.AllowedContentTypes,
 	})
@@ -106,7 +106,7 @@ func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, makeBucketPri
 }
 
 func (br *BucketRepository) LockBucket(ctx context.Context, lockBucket *models.LockBucket) error {
-	err := br.db.LockBucket(ctx, &client.LockBucketParams{
+	err := br.db.LockBucket(ctx, &database.LockBucketParams{
 		ID:         lockBucket.Id,
 		LockReason: lockBucket.LockReason,
 	})
@@ -216,7 +216,7 @@ func (br *BucketRepository) ListAllBuckets(ctx context.Context) ([]*models.Bucke
 func (br *BucketRepository) ListBucketsPaginated(ctx context.Context, pagination *models.Pagination) ([]*models.Bucket, *models.PaginationResult, bool, error) {
 	pagination.SetDefaults()
 
-	buckets, err := br.db.ListBucketsPaginated(ctx, &client.ListBucketsPaginatedParams{
+	buckets, err := br.db.ListBucketsPaginated(ctx, &database.ListBucketsPaginatedParams{
 		Cursor: pagination.Cursor,
 		Limit:  &pagination.Limit,
 	})

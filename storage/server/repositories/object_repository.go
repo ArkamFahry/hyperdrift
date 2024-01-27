@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"github.com/ArkamFahry/hyperdrift/storage/server/database/gen/client"
+	"github.com/ArkamFahry/hyperdrift/storage/server/database"
 	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 )
 
@@ -16,17 +16,17 @@ type IObjectRepository interface {
 }
 
 type ObjectRepository struct {
-	db *client.Queries
+	db *database.Queries
 }
 
-func NewObjectRepository(db *client.Queries) IObjectRepository {
+func NewObjectRepository(db *database.Queries) IObjectRepository {
 	return &ObjectRepository{
 		db: db,
 	}
 }
 
 func (or *ObjectRepository) CreateObject(ctx context.Context, createObject *models.CreateObject) error {
-	err := or.db.CreateObject(ctx, &client.CreateObjectParams{
+	err := or.db.CreateObject(ctx, &database.CreateObjectParams{
 		ID:          createObject.Id,
 		BucketID:    createObject.BucketId,
 		Name:        createObject.Name,
@@ -38,6 +38,6 @@ func (or *ObjectRepository) CreateObject(ctx context.Context, createObject *mode
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
