@@ -17,15 +17,17 @@ func NewTransaction(db *pgxpool.Pool) *Transaction {
 	}
 }
 
-func (t *Transaction) WithTransaction(ctx context.Context, fn func(*Queries) error) error {
-	tx, err := t.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return err
+func (t *Transaction) WithTransaction(ctx context.Context, txnOptions *pgx.TxOptions, fn func(tx pgx.Tx) error) error {
+	if txnOptions == nil {
+		txnOptions = &pgx.TxOptions{}
 	}
 
-	q := New(tx)
+	tx, err := t.db.BeginTx(ctx, *txnOptions)
+	if err != nil {
+		return fmt.Errorf("begin error: %w", err)
+	}
 
-	err = fn(q)
+	err = fn(tx)
 
 	if err != nil {
 		rbErr := tx.Rollback(ctx)
@@ -37,7 +39,7 @@ func (t *Transaction) WithTransaction(ctx context.Context, fn func(*Queries) err
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("commit error: %w", err)
 	}
 
 	return nil
