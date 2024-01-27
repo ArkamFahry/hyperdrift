@@ -22,7 +22,7 @@ create table if not exists storage.buckets
     constraint buckets_name_uq unique (name)
 );
 
-create index if not exists buckets_name_idx on storage.buckets (name);
+create index if not exists buckets_name_idx on storage.buckets using btree (name);
 
 create or replace trigger buckets_set_updated_at
     before update
