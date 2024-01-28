@@ -12,6 +12,7 @@ type Querier interface {
 	AddAllowedContentTypesToBucket(ctx context.Context, arg *AddAllowedContentTypesToBucketParams) error
 	CountBuckets(ctx context.Context) (int64, error)
 	CreateBucket(ctx context.Context, arg *CreateBucketParams) error
+	CreateEvent(ctx context.Context, arg *CreateEventParams) error
 	CreateObject(ctx context.Context, arg *CreateObjectParams) error
 	DeleteBucket(ctx context.Context, id string) error
 	DeleteObject(ctx context.Context, id string) error

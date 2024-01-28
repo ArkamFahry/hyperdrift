@@ -22,6 +22,15 @@ type StorageBucket struct {
 	UpdatedAt            *time.Time
 }
 
+type StorageEvent struct {
+	ID        string
+	Name      string
+	Payload   []byte
+	Status    string
+	Producer  string
+	Timestamp time.Time
+}
+
 type StorageObject struct {
 	ID             string
 	BucketID       string
