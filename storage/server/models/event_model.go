@@ -1,27 +1,48 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/oklog/ulid/v2"
 	"time"
 )
 
-const EventProducer = "hyperdrift-storage"
+const (
+	EventStatusPending    = "pending"
+	EventStatusProcessing = "processing"
+	EventStatusCompleted  = "completed"
+	EventStatusFailed     = "failed"
+)
 
-type Event struct {
-	Id        string    `json:"id"`
-	Name      string    `json:"name"`
-	Payload   any       `json:"payload"`
-	Status    string    `json:"status"`
-	Producer  string    `json:"producer"`
-	Timestamp time.Time `json:"timestamp"`
+const EventProducer = "hyperdrift.storage"
+
+type Event[T any] struct {
+	Id        string     `json:"id"`
+	Name      string     `json:"name"`
+	Content   T          `json:"content"`
+	Status    string     `json:"status"`
+	Retries   int        `json:"retries"`
+	ExpiresAt *time.Time `json:"expires_at"`
+	CreatedAt time.Time  `json:"created_at"`
 }
 
-func NewEventCreate(id string, name string, payload any) *Event {
-	return &Event{
-		Id:        id,
+func NewEvent[T any](name string, content T) *Event[T] {
+	return &Event[T]{
+		Id:        fmt.Sprintf(`event_%s`, ulid.Make().String()),
 		Name:      name,
-		Payload:   payload,
-		Status:    "pending",
-		Producer:  EventProducer,
-		Timestamp: time.Now(),
+		Content:   content,
+		Status:    EventStatusPending,
+		Retries:   0,
+		ExpiresAt: nil,
+		CreatedAt: time.Now(),
 	}
+}
+
+func (e *Event[T]) ContentToByte() (error, []byte) {
+	contentByte, err := json.Marshal(e.Content)
+	if err != nil {
+		return fmt.Errorf("failed to marshal '%s' event content error: %w", e.Name, err), nil
+	}
+
+	return nil, contentByte
 }
