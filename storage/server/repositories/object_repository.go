@@ -7,10 +7,10 @@ import (
 )
 
 type IObjectRepository interface {
-	CreateObject(ctx context.Context, createObject *models.CreateObject) error
-	RenameObject(ctx context.Context, renameObject *models.RenameObject) error
-	CopyObject(ctx context.Context, copyObject *models.CopyObject) error
-	MoveObject(ctx context.Context, moveObject *models.MoveObject) error
+	CreateObject(ctx context.Context, createObject *models.ObjectCreate) error
+	RenameObject(ctx context.Context, renameObject *models.ObjectRename) error
+	CopyObject(ctx context.Context, copyObject *models.ObjectCaopy) error
+	MoveObject(ctx context.Context, moveObject *models.ObjectMove) error
 	GetObjectByBucketIdAndId(ctx context.Context, bucketId string, id string) (*models.Object, error)
 	SearchObjectByBucketIdAndName(ctx context.Context, bucketId string, name string) ([]*models.Object, error)
 }
@@ -25,7 +25,7 @@ func NewObjectRepository(db *database.Queries) IObjectRepository {
 	}
 }
 
-func (or *ObjectRepository) CreateObject(ctx context.Context, createObject *models.CreateObject) error {
+func (or *ObjectRepository) CreateObject(ctx context.Context, createObject *models.ObjectCreate) error {
 	err := or.db.CreateObject(ctx, &database.CreateObjectParams{
 		ID:          createObject.Id,
 		BucketID:    createObject.BucketId,

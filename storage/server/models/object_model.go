@@ -16,7 +16,7 @@ type Object struct {
 	UpdatedAt      *time.Time `json:"updated_at"`
 }
 
-type CreateObject struct {
+type ObjectCreate struct {
 	Id             string     `json:"id"`
 	Name           string     `json:"name"`
 	BucketId       string     `json:"bucket_id"`
@@ -29,17 +29,17 @@ type CreateObject struct {
 	CreatedAt      time.Time  `json:"created_at"`
 }
 
-type RenameObject struct {
+type ObjectRename struct {
 	OldName string `json:"old_name"`
 	NewName string `json:"new_name"`
 }
 
-type CopyObject struct {
+type ObjectCopy struct {
 	OldPath string `json:"old_path"`
 	NewPath string `json:"new_path"`
 }
 
-type MoveObject struct {
+type ObjectMove struct {
 	OldPath string `json:"old_path"`
 	NewPath string `json:"new_path"`
 }
@@ -50,7 +50,7 @@ type PreSignedObject struct {
 	ExpiresAt int64  `json:"expires_at"`
 }
 
-type CreatePreSignedUploadObject struct {
+type PreSignedUploadObjectCreate struct {
 	Bucket      string `json:"bucket"`
 	Name        string `json:"name"`
 	ExpiresIn   *int64 `json:"expires_in"`
@@ -58,18 +58,18 @@ type CreatePreSignedUploadObject struct {
 	Size        int64  `json:"size"`
 }
 
-type CreatePreSignedDownloadObject struct {
+type PreSignedDownloadObjectCreate struct {
 	Bucket    string `json:"bucket"`
 	Name      string `json:"name"`
 	ExpiresIn *int64 `json:"expires_in"`
 }
 
-type CheckIfObjectExists struct {
+type ObjectExistsCheck struct {
 	Bucket string `json:"bucket"`
 	Name   string `json:"name"`
 }
 
-type DeleteObject struct {
+type ObjectDelete struct {
 	Bucket string `json:"bucket"`
 	Name   string `json:"name"`
 }

@@ -9,15 +9,15 @@ import (
 )
 
 type IBucketRepository interface {
-	CreateBucket(ctx context.Context, createBucket *models.CreateBucket) error
-	UpdateBucket(ctx context.Context, updateBucket *models.UpdateBucket) error
-	AddAllowedContentTypeToBucket(ctx context.Context, addAllowedContentTypeToBucket *models.AddAllowedContentTypesToBucket) error
-	RemoveAllowedContentTypeFromBucket(ctx context.Context, removeAllowedContentTypeFromBucket *models.RemoveAllowedContentTypesFromBucket) error
-	MakeBucketPublic(ctx context.Context, makeBucketPublic *models.MakeBucketPublic) error
-	MakeBucketPrivate(ctx context.Context, makeBucketPrivate *models.MakeBucketPrivate) error
-	LockBucket(ctx context.Context, lockBucket *models.LockBucket) error
-	UnlockBucket(ctx context.Context, unlockBucket *models.UnlockBucket) error
-	DeleteBucket(ctx context.Context, deleteBucket *models.DeleteBucket) error
+	CreateBucket(ctx context.Context, createBucket *models.BucketCreate) error
+	UpdateBucket(ctx context.Context, updateBucket *models.BucketUpdate) error
+	AddAllowedContentTypeToBucket(ctx context.Context, addAllowedContentTypeToBucket *models.BucketAddAllowedContentTypes) error
+	RemoveAllowedContentTypeFromBucket(ctx context.Context, removeAllowedContentTypeFromBucket *models.BucketRemoveAllowedContentTypes) error
+	MakeBucketPublic(ctx context.Context, makeBucketPublic *models.BucketMakePublic) error
+	MakeBucketPrivate(ctx context.Context, makeBucketPrivate *models.BucketMakePrivate) error
+	LockBucket(ctx context.Context, lockBucket *models.BucketLock) error
+	UnlockBucket(ctx context.Context, unlockBucket *models.BucketUnlock) error
+	DeleteBucket(ctx context.Context, deleteBucket *models.BucketDelete) error
 	GetBucketById(ctx context.Context, id string) (*models.Bucket, bool, error)
 	GetBucketByName(ctx context.Context, name string) (*models.Bucket, bool, error)
 	ListAllBuckets(ctx context.Context) ([]*models.Bucket, bool, error)
@@ -34,7 +34,7 @@ func NewBucketRepository(db *database.Queries) IBucketRepository {
 	}
 }
 
-func (br *BucketRepository) CreateBucket(ctx context.Context, createBucket *models.CreateBucket) error {
+func (br *BucketRepository) CreateBucket(ctx context.Context, createBucket *models.BucketCreate) error {
 	err := br.db.CreateBucket(ctx, &database.CreateBucketParams{
 		ID:                   createBucket.Id,
 		Name:                 createBucket.Name,
@@ -50,7 +50,7 @@ func (br *BucketRepository) CreateBucket(ctx context.Context, createBucket *mode
 	return nil
 }
 
-func (br *BucketRepository) UpdateBucket(ctx context.Context, updateBucket *models.UpdateBucket) error {
+func (br *BucketRepository) UpdateBucket(ctx context.Context, updateBucket *models.BucketUpdate) error {
 	err := br.db.UpdateBucket(ctx, &database.UpdateBucketParams{
 		ID:                   updateBucket.Id,
 		MaxAllowedObjectSize: updateBucket.MaxAllowedObjectSize,
@@ -63,7 +63,7 @@ func (br *BucketRepository) UpdateBucket(ctx context.Context, updateBucket *mode
 	return nil
 }
 
-func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, addAllowedContentTypeToBucket *models.AddAllowedContentTypesToBucket) error {
+func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, addAllowedContentTypeToBucket *models.BucketAddAllowedContentTypes) error {
 	err := br.db.AddAllowedContentTypesToBucket(ctx, &database.AddAllowedContentTypesToBucketParams{
 		ID:                  addAllowedContentTypeToBucket.Id,
 		AllowedContentTypes: addAllowedContentTypeToBucket.AllowedContentTypes,
@@ -75,7 +75,7 @@ func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, a
 	return nil
 }
 
-func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Context, removeAllowedContentTypeFromBucket *models.RemoveAllowedContentTypesFromBucket) error {
+func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Context, removeAllowedContentTypeFromBucket *models.BucketRemoveAllowedContentTypes) error {
 	err := br.db.RemoveAllowedContentTypesFromBucket(ctx, &database.RemoveAllowedContentTypesFromBucketParams{
 		ID:                  removeAllowedContentTypeFromBucket.Id,
 		AllowedContentTypes: removeAllowedContentTypeFromBucket.AllowedContentTypes,
@@ -87,7 +87,7 @@ func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Conte
 	return nil
 }
 
-func (br *BucketRepository) MakeBucketPublic(ctx context.Context, makeBucketPublic *models.MakeBucketPublic) error {
+func (br *BucketRepository) MakeBucketPublic(ctx context.Context, makeBucketPublic *models.BucketMakePublic) error {
 	err := br.db.MakeBucketPublic(ctx, makeBucketPublic.Id)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func (br *BucketRepository) MakeBucketPublic(ctx context.Context, makeBucketPubl
 	return nil
 }
 
-func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, makeBucketPrivate *models.MakeBucketPrivate) error {
+func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, makeBucketPrivate *models.BucketMakePrivate) error {
 	err := br.db.MakeBucketPrivate(ctx, makeBucketPrivate.Id)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, makeBucketPri
 	return nil
 }
 
-func (br *BucketRepository) LockBucket(ctx context.Context, lockBucket *models.LockBucket) error {
+func (br *BucketRepository) LockBucket(ctx context.Context, lockBucket *models.BucketLock) error {
 	err := br.db.LockBucket(ctx, &database.LockBucketParams{
 		ID:         lockBucket.Id,
 		LockReason: lockBucket.LockReason,
@@ -117,7 +117,7 @@ func (br *BucketRepository) LockBucket(ctx context.Context, lockBucket *models.L
 	return nil
 }
 
-func (br *BucketRepository) UnlockBucket(ctx context.Context, unlockBucket *models.UnlockBucket) error {
+func (br *BucketRepository) UnlockBucket(ctx context.Context, unlockBucket *models.BucketUnlock) error {
 	err := br.db.UnlockBucket(ctx, unlockBucket.Id)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func (br *BucketRepository) UnlockBucket(ctx context.Context, unlockBucket *mode
 	return nil
 }
 
-func (br *BucketRepository) DeleteBucket(ctx context.Context, deleteBucket *models.DeleteBucket) error {
+func (br *BucketRepository) DeleteBucket(ctx context.Context, deleteBucket *models.BucketDelete) error {
 	err := br.db.DeleteBucket(ctx, deleteBucket.Id)
 	if err != nil {
 		return err
