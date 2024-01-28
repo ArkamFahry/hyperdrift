@@ -25,7 +25,7 @@ type Event[T any] struct {
 	Name      string     `json:"name"`
 	Content   T          `json:"content"`
 	Status    string     `json:"status"`
-	Retries   int        `json:"retries"`
+	Retries   int32      `json:"retries"`
 	ExpiresAt *time.Time `json:"expires_at"`
 	CreatedAt time.Time  `json:"created_at"`
 }
@@ -42,11 +42,11 @@ func NewEvent[T any](name string, content T) *Event[T] {
 	}
 }
 
-func (e *Event[T]) ContentToByte() (error, []byte) {
+func (e *Event[T]) ContentToByte() ([]byte, error) {
 	contentByte, err := json.Marshal(e.Content)
 	if err != nil {
-		return fmt.Errorf("failed to marshal '%s' event content error: %w", e.Name, err), nil
+		return nil, fmt.Errorf("failed to marshal '%s' event content error: %w", e.Name, err)
 	}
 
-	return nil, contentByte
+	return contentByte, nil
 }
