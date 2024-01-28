@@ -25,18 +25,18 @@ type IBucketRepository interface {
 }
 
 type BucketRepository struct {
-	db *database.Queries
+	queries     *database.Queries
+	transaction *database.Transaction
 }
 
 func NewBucketRepository(db *database.Queries) IBucketRepository {
 	return &BucketRepository{
-		db: db,
+		queries: db,
 	}
 }
 
 func (br *BucketRepository) CreateBucket(ctx context.Context, bucketCreate *models.BucketCreate) error {
-
-	err := br.db.CreateBucket(ctx, &database.CreateBucketParams{
+	err := br.queries.CreateBucket(ctx, &database.CreateBucketParams{
 		ID:                   bucketCreate.Id,
 		Name:                 bucketCreate.Name,
 		AllowedContentTypes:  bucketCreate.AllowedContentTypes,
@@ -47,12 +47,11 @@ func (br *BucketRepository) CreateBucket(ctx context.Context, bucketCreate *mode
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func (br *BucketRepository) UpdateBucket(ctx context.Context, bucketUpdate *models.BucketUpdate) error {
-	err := br.db.UpdateBucket(ctx, &database.UpdateBucketParams{
+	err := br.queries.UpdateBucket(ctx, &database.UpdateBucketParams{
 		ID:                   bucketUpdate.Id,
 		MaxAllowedObjectSize: bucketUpdate.MaxAllowedObjectSize,
 		Public:               bucketUpdate.Public,
@@ -65,7 +64,7 @@ func (br *BucketRepository) UpdateBucket(ctx context.Context, bucketUpdate *mode
 }
 
 func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, bucketAddAllowedContentType *models.BucketAddAllowedContentTypes) error {
-	err := br.db.AddAllowedContentTypesToBucket(ctx, &database.AddAllowedContentTypesToBucketParams{
+	err := br.queries.AddAllowedContentTypesToBucket(ctx, &database.AddAllowedContentTypesToBucketParams{
 		ID:                  bucketAddAllowedContentType.Id,
 		AllowedContentTypes: bucketAddAllowedContentType.AllowedContentTypes,
 	})
@@ -77,7 +76,7 @@ func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, b
 }
 
 func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Context, bucketRemoveAllowedContentType *models.BucketRemoveAllowedContentTypes) error {
-	err := br.db.RemoveAllowedContentTypesFromBucket(ctx, &database.RemoveAllowedContentTypesFromBucketParams{
+	err := br.queries.RemoveAllowedContentTypesFromBucket(ctx, &database.RemoveAllowedContentTypesFromBucketParams{
 		ID:                  bucketRemoveAllowedContentType.Id,
 		AllowedContentTypes: bucketRemoveAllowedContentType.AllowedContentTypes,
 	})
@@ -89,7 +88,7 @@ func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Conte
 }
 
 func (br *BucketRepository) MakeBucketPublic(ctx context.Context, bucketMakePublic *models.BucketMakePublic) error {
-	err := br.db.MakeBucketPublic(ctx, bucketMakePublic.Id)
+	err := br.queries.MakeBucketPublic(ctx, bucketMakePublic.Id)
 	if err != nil {
 		return err
 	}
@@ -98,7 +97,7 @@ func (br *BucketRepository) MakeBucketPublic(ctx context.Context, bucketMakePubl
 }
 
 func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, bucketMakePrivate *models.BucketMakePrivate) error {
-	err := br.db.MakeBucketPrivate(ctx, bucketMakePrivate.Id)
+	err := br.queries.MakeBucketPrivate(ctx, bucketMakePrivate.Id)
 	if err != nil {
 		return err
 	}
@@ -107,7 +106,7 @@ func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, bucketMakePri
 }
 
 func (br *BucketRepository) LockBucket(ctx context.Context, bucketLock *models.BucketLock) error {
-	err := br.db.LockBucket(ctx, &database.LockBucketParams{
+	err := br.queries.LockBucket(ctx, &database.LockBucketParams{
 		ID:         bucketLock.Id,
 		LockReason: bucketLock.LockReason,
 	})
@@ -119,7 +118,7 @@ func (br *BucketRepository) LockBucket(ctx context.Context, bucketLock *models.B
 }
 
 func (br *BucketRepository) UnlockBucket(ctx context.Context, bucketUnlock *models.BucketUnlock) error {
-	err := br.db.UnlockBucket(ctx, bucketUnlock.Id)
+	err := br.queries.UnlockBucket(ctx, bucketUnlock.Id)
 	if err != nil {
 		return err
 	}
@@ -128,7 +127,7 @@ func (br *BucketRepository) UnlockBucket(ctx context.Context, bucketUnlock *mode
 }
 
 func (br *BucketRepository) DeleteBucket(ctx context.Context, bucketDelete *models.BucketDelete) error {
-	err := br.db.DeleteBucket(ctx, bucketDelete.Id)
+	err := br.queries.DeleteBucket(ctx, bucketDelete.Id)
 	if err != nil {
 		return err
 	}
@@ -137,7 +136,7 @@ func (br *BucketRepository) DeleteBucket(ctx context.Context, bucketDelete *mode
 }
 
 func (br *BucketRepository) GetBucketById(ctx context.Context, id string) (*models.Bucket, bool, error) {
-	bucket, err := br.db.GetBucketById(ctx, id)
+	bucket, err := br.queries.GetBucketById(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
@@ -161,7 +160,7 @@ func (br *BucketRepository) GetBucketById(ctx context.Context, id string) (*mode
 }
 
 func (br *BucketRepository) GetBucketByName(ctx context.Context, name string) (*models.Bucket, bool, error) {
-	bucket, err := br.db.GetBucketByName(ctx, name)
+	bucket, err := br.queries.GetBucketByName(ctx, name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
@@ -185,7 +184,7 @@ func (br *BucketRepository) GetBucketByName(ctx context.Context, name string) (*
 }
 
 func (br *BucketRepository) ListAllBuckets(ctx context.Context) ([]*models.Bucket, bool, error) {
-	buckets, err := br.db.ListAllBuckets(ctx)
+	buckets, err := br.queries.ListAllBuckets(ctx)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
@@ -217,7 +216,7 @@ func (br *BucketRepository) ListAllBuckets(ctx context.Context) ([]*models.Bucke
 func (br *BucketRepository) ListBucketsPaginated(ctx context.Context, pagination *models.Pagination) ([]*models.Bucket, *models.PaginationResult, bool, error) {
 	pagination.SetDefaults()
 
-	buckets, err := br.db.ListBucketsPaginated(ctx, &database.ListBucketsPaginatedParams{
+	buckets, err := br.queries.ListBucketsPaginated(ctx, &database.ListBucketsPaginatedParams{
 		Cursor: pagination.Cursor,
 		Limit:  &pagination.Limit,
 	})

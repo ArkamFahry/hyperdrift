@@ -16,17 +16,17 @@ type IObjectRepository interface {
 }
 
 type ObjectRepository struct {
-	db *database.Queries
+	queries *database.Queries
 }
 
 func NewObjectRepository(db *database.Queries) IObjectRepository {
 	return &ObjectRepository{
-		db: db,
+		queries: db,
 	}
 }
 
 func (or *ObjectRepository) CreateObject(ctx context.Context, createObject *models.ObjectCreate) error {
-	err := or.db.CreateObject(ctx, &database.CreateObjectParams{
+	err := or.queries.CreateObject(ctx, &database.CreateObjectParams{
 		ID:          createObject.Id,
 		BucketID:    createObject.BucketId,
 		Name:        createObject.Name,
