@@ -12,32 +12,35 @@ import (
 
 const createEvent = `-- name: CreateEvent :exec
 insert into storage.events
-    (id, name, payload, status, producer, timestamp)
+    (id, name, content, status, retries, expires_at, created_at)
 values ($1,
         $2,
         $3,
         $4,
         $5,
-        $6)
+        $6,
+        $7)
 `
 
 type CreateEventParams struct {
 	ID        string
 	Name      string
-	Payload   []byte
+	Content   []byte
 	Status    string
-	Producer  string
-	Timestamp time.Time
+	Retries   int32
+	ExpiresAt *time.Time
+	CreatedAt time.Time
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg *CreateEventParams) error {
 	_, err := q.db.Exec(ctx, createEvent,
 		arg.ID,
 		arg.Name,
-		arg.Payload,
+		arg.Content,
 		arg.Status,
-		arg.Producer,
-		arg.Timestamp,
+		arg.Retries,
+		arg.ExpiresAt,
+		arg.CreatedAt,
 	)
 	return err
 }
