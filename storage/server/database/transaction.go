@@ -17,12 +17,8 @@ func NewTransaction(db *pgxpool.Pool) *Transaction {
 	}
 }
 
-func (t *Transaction) WithTransaction(ctx context.Context, txnOptions *pgx.TxOptions, fn func(tx pgx.Tx) error) error {
-	if txnOptions == nil {
-		txnOptions = &pgx.TxOptions{}
-	}
-
-	tx, err := t.db.BeginTx(ctx, *txnOptions)
+func (t *Transaction) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
+	tx, err := t.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("begin error: %w", err)
 	}
