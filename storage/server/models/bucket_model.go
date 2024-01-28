@@ -34,6 +34,10 @@ type BucketCreate struct {
 	CreatedAt            time.Time `json:"created_at"`
 }
 
+func (bc *BucketCreate) ToEvent() *Event[BucketCreate] {
+	return NewEvent[BucketCreate]("bucket.create", *bc)
+}
+
 type BucketUpdate struct {
 	Id                   string `json:"id"`
 	MaxAllowedObjectSize *int64 `json:"max_allowed_object_size"`
