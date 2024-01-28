@@ -16,6 +16,10 @@ const (
 
 const EventProducer = "hyperdrift.storage"
 
+func NewEventId() string {
+	return fmt.Sprintf(`event_%s`, ulid.Make().String())
+}
+
 type Event[T any] struct {
 	Id        string     `json:"id"`
 	Name      string     `json:"name"`
@@ -28,7 +32,7 @@ type Event[T any] struct {
 
 func NewEvent[T any](name string, content T) *Event[T] {
 	return &Event[T]{
-		Id:        fmt.Sprintf(`event_%s`, ulid.Make().String()),
+		Id:        NewEventId(),
 		Name:      name,
 		Content:   content,
 		Status:    EventStatusPending,

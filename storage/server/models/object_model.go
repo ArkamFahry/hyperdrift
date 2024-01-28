@@ -1,6 +1,14 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"github.com/oklog/ulid/v2"
+	"time"
+)
+
+func NewObjectId() string {
+	return fmt.Sprintf(`object_%s`, ulid.Make().String())
+}
 
 type Object struct {
 	Id             string     `json:"id"`
