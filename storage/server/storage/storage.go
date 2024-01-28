@@ -41,24 +41,24 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 	}
 }
 
-func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, createPreSignedUploadObject *models.PreSignedUploadObjectCreate) (*models.PreSignedObject, error) {
+func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *models.PreSignedUploadObjectCreate) (*models.PreSignedObject, error) {
 	const op = "storage.PreSignedUploadObjectCreate"
 
 	var expiresIn time.Duration
 
-	if createPreSignedUploadObject.ExpiresIn != nil {
-		expiresIn = time.Duration(*createPreSignedUploadObject.ExpiresIn)
+	if preSignedUploadObjectCreate.ExpiresIn != nil {
+		expiresIn = time.Duration(*preSignedUploadObjectCreate.ExpiresIn)
 	} else {
 		expiresIn = time.Duration(s.config.DefaultPreSignedUploadUrlExpiresIn)
 	}
 
-	key := createS3Key(createPreSignedUploadObject.Bucket, createPreSignedUploadObject.Name)
+	key := createS3Key(preSignedUploadObjectCreate.Bucket, preSignedUploadObjectCreate.Name)
 
 	preSignedPutObject, err := s.s3PreSignedClient.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(s.bucketName),
 		Key:           aws.String(key),
-		ContentLength: aws.Int64(createPreSignedUploadObject.Size),
-		ContentType:   aws.String(createPreSignedUploadObject.ContentType),
+		ContentLength: aws.Int64(preSignedUploadObjectCreate.Size),
+		ContentType:   aws.String(preSignedUploadObjectCreate.ContentType),
 	},
 
 		func(po *s3.PresignOptions) {
@@ -77,18 +77,18 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, createPreSi
 	}, nil
 }
 
-func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, createPreSignedDownloadObject *models.PreSignedDownloadObjectCreate) (*models.PreSignedObject, error) {
+func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *models.PreSignedDownloadObjectCreate) (*models.PreSignedObject, error) {
 	const op = "storage.PreSignedDownloadObjectCreate"
 
 	var expiresIn time.Duration
 
-	if createPreSignedDownloadObject.ExpiresIn != nil {
-		expiresIn = time.Duration(*createPreSignedDownloadObject.ExpiresIn)
+	if preSignedDownloadObjectCreate.ExpiresIn != nil {
+		expiresIn = time.Duration(*preSignedDownloadObjectCreate.ExpiresIn)
 	} else {
 		expiresIn = time.Duration(s.config.DefaultPreSignedDownloadUrlExpiresIn)
 	}
 
-	key := createS3Key(createPreSignedDownloadObject.Bucket, createPreSignedDownloadObject.Name)
+	key := createS3Key(preSignedDownloadObjectCreate.Bucket, preSignedDownloadObjectCreate.Name)
 
 	preSignedGetObject, err := s.s3PreSignedClient.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucketName),
@@ -110,10 +110,10 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, createPre
 	}, nil
 }
 
-func (s *S3Storage) CheckIfObjectExists(ctx context.Context, checkIfObjectExists *models.ObjectExistsCheck) (bool, error) {
+func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *models.ObjectExistsCheck) (bool, error) {
 	const op = "storage.ObjectExistsCheck"
 
-	key := createS3Key(checkIfObjectExists.Bucket, checkIfObjectExists.Name)
+	key := createS3Key(objectExistsCheck.Bucket, objectExistsCheck.Name)
 
 	_, err := s.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(s.bucketName),
@@ -131,10 +131,10 @@ func (s *S3Storage) CheckIfObjectExists(ctx context.Context, checkIfObjectExists
 	return true, nil
 }
 
-func (s *S3Storage) DeleteObject(ctx context.Context, deleteObject *models.ObjectDelete) error {
+func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *models.ObjectDelete) error {
 	const op = "storage.ObjectDelete"
 
-	key := createS3Key(deleteObject.Bucket, deleteObject.Name)
+	key := createS3Key(objectDelete.Bucket, objectDelete.Name)
 
 	_, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucketName),

@@ -15,17 +15,8 @@ type Event struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-type EventCreate struct {
-	Id        string    `json:"id"`
-	Name      string    `json:"name"`
-	Payload   any       `json:"payload"`
-	Status    string    `json:"status"`
-	Producer  string    `json:"producer"`
-	Timestamp time.Time `json:"timestamp"`
-}
-
-func NewEventCreate(id string, name string, payload any) *EventCreate {
-	return &EventCreate{
+func NewEventCreate(id string, name string, payload any) *Event {
+	return &Event{
 		Id:        id,
 		Name:      name,
 		Payload:   payload,

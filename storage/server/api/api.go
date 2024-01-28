@@ -8,7 +8,6 @@ import (
 )
 
 func NewApi(logger *zap.Logger, config *config.Config) {
-
 	app := fiber.New(fiber.Config{
 		Immutable: true,
 	})
