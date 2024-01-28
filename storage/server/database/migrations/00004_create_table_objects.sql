@@ -12,7 +12,7 @@ create table if not exists storage.objects
     public           boolean     default false                      not null,
     metadata         jsonb                                          null,
     upload_status    text        default 'pending'                  not null check (
-        upload_status in ('pending', 'in_progress', 'processing', 'complete', 'failed')
+        upload_status in ('pending', 'in_progress', 'processing', 'completed', 'failed')
         ),
     last_accessed_at timestamptz                                    null,
     created_at       timestamptz default now()                      not null,
