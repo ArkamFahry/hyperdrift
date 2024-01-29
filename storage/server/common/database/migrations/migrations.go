@@ -3,8 +3,8 @@ package migrations
 import (
 	"database/sql"
 	"embed"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
 
-	"github.com/ArkamFahry/hyperdrift/storage/server/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"

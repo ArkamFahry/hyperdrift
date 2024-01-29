@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/ArkamFahry/hyperdrift/storage/server/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
 	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"

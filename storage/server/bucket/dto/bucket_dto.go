@@ -1,28 +1,6 @@
-package models
+package dto
 
-import (
-	"fmt"
-	"github.com/oklog/ulid/v2"
-	"time"
-)
-
-func NewBucketId() string {
-	return fmt.Sprintf(`bucket_%s`, ulid.Make().String())
-}
-
-type Bucket struct {
-	Id                   string     `json:"id"`
-	Name                 string     `json:"name"`
-	AllowedContentTypes  []string   `json:"allowed_content_types"`
-	MaxAllowedObjectSize *int64     `json:"max_allowed_object_size"`
-	Public               bool       `json:"public"`
-	Disabled             bool       `json:"enabled"`
-	Locked               bool       `json:"locked"`
-	LockReason           *string    `json:"lock_reason"`
-	LockedAt             *time.Time `json:"locked_at"`
-	CreatedAt            time.Time  `json:"created_at"`
-	UpdatedAt            *time.Time `json:"updated_at"`
-}
+import "time"
 
 type BucketCreate struct {
 	Id                   string    `json:"id"`
@@ -32,10 +10,6 @@ type BucketCreate struct {
 	Public               bool      `json:"public"`
 	Disabled             bool      `json:"enabled"`
 	CreatedAt            time.Time `json:"created_at"`
-}
-
-func (bc *BucketCreate) ToEvent() *Event[BucketCreate] {
-	return NewEvent[BucketCreate]("bucket.create", *bc)
 }
 
 type BucketUpdate struct {

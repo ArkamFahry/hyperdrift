@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/ArkamFahry/hyperdrift/storage/server/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"

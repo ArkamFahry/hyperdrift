@@ -1,4 +1,4 @@
-package models
+package dtos
 
 type Pagination struct {
 	Cursor string `json:"cursor"`

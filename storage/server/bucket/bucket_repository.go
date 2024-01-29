@@ -1,41 +1,42 @@
-package repositories
+package bucket
 
 import (
 	"context"
 	"errors"
+	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/dtos"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database"
-	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 	"github.com/jackc/pgx/v5"
 )
 
 type IBucketRepository interface {
-	CreateBucket(ctx context.Context, createBucket *models.BucketCreate) error
-	UpdateBucket(ctx context.Context, updateBucket *models.BucketUpdate) error
-	AddAllowedContentTypeToBucket(ctx context.Context, addAllowedContentTypeToBucket *models.BucketAddAllowedContentTypes) error
-	RemoveAllowedContentTypeFromBucket(ctx context.Context, removeAllowedContentTypeFromBucket *models.BucketRemoveAllowedContentTypes) error
-	MakeBucketPublic(ctx context.Context, makeBucketPublic *models.BucketMakePublic) error
-	MakeBucketPrivate(ctx context.Context, makeBucketPrivate *models.BucketMakePrivate) error
-	LockBucket(ctx context.Context, lockBucket *models.BucketLock) error
-	UnlockBucket(ctx context.Context, unlockBucket *models.BucketUnlock) error
-	DeleteBucket(ctx context.Context, deleteBucket *models.BucketDelete) error
-	GetBucketById(ctx context.Context, id string) (*models.Bucket, bool, error)
-	GetBucketByName(ctx context.Context, name string) (*models.Bucket, bool, error)
-	ListAllBuckets(ctx context.Context) ([]*models.Bucket, bool, error)
-	ListBucketsPaginated(ctx context.Context, pagination *models.Pagination) ([]*models.Bucket, *models.PaginationResult, bool, error)
+	CreateBucket(ctx context.Context, createBucket *dto.BucketCreate) error
+	UpdateBucket(ctx context.Context, updateBucket *dto.BucketUpdate) error
+	AddAllowedContentTypeToBucket(ctx context.Context, addAllowedContentTypeToBucket *dto.BucketAddAllowedContentTypes) error
+	RemoveAllowedContentTypeFromBucket(ctx context.Context, removeAllowedContentTypeFromBucket *dto.BucketRemoveAllowedContentTypes) error
+	MakeBucketPublic(ctx context.Context, makeBucketPublic *dto.BucketMakePublic) error
+	MakeBucketPrivate(ctx context.Context, makeBucketPrivate *dto.BucketMakePrivate) error
+	LockBucket(ctx context.Context, lockBucket *dto.BucketLock) error
+	UnlockBucket(ctx context.Context, unlockBucket *dto.BucketUnlock) error
+	DeleteBucket(ctx context.Context, deleteBucket *dto.BucketDelete) error
+	GetBucketById(ctx context.Context, id string) (*Bucket, bool, error)
+	GetBucketByName(ctx context.Context, name string) (*Bucket, bool, error)
+	ListAllBuckets(ctx context.Context) ([]*Bucket, bool, error)
+	ListBucketsPaginated(ctx context.Context, pagination *dtos.Pagination) ([]*Bucket, *dtos.PaginationResult, bool, error)
 }
 
-type BucketRepository struct {
+type Repository struct {
 	queries     *database.Queries
 	transaction *database.Transaction
 }
 
 func NewBucketRepository(db *database.Queries) IBucketRepository {
-	return &BucketRepository{
+	return &Repository{
 		queries: db,
 	}
 }
 
-func (br *BucketRepository) CreateBucket(ctx context.Context, bucketCreate *models.BucketCreate) error {
+func (br *Repository) CreateBucket(ctx context.Context, bucketCreate *dto.BucketCreate) error {
 	err := br.queries.CreateBucket(ctx, &database.CreateBucketParams{
 		ID:                   bucketCreate.Id,
 		Name:                 bucketCreate.Name,
@@ -50,7 +51,7 @@ func (br *BucketRepository) CreateBucket(ctx context.Context, bucketCreate *mode
 	return nil
 }
 
-func (br *BucketRepository) UpdateBucket(ctx context.Context, bucketUpdate *models.BucketUpdate) error {
+func (br *Repository) UpdateBucket(ctx context.Context, bucketUpdate *dto.BucketUpdate) error {
 	err := br.queries.UpdateBucket(ctx, &database.UpdateBucketParams{
 		ID:                   bucketUpdate.Id,
 		MaxAllowedObjectSize: bucketUpdate.MaxAllowedObjectSize,
@@ -63,7 +64,7 @@ func (br *BucketRepository) UpdateBucket(ctx context.Context, bucketUpdate *mode
 	return nil
 }
 
-func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, bucketAddAllowedContentType *models.BucketAddAllowedContentTypes) error {
+func (br *Repository) AddAllowedContentTypeToBucket(ctx context.Context, bucketAddAllowedContentType *dto.BucketAddAllowedContentTypes) error {
 	err := br.queries.AddAllowedContentTypesToBucket(ctx, &database.AddAllowedContentTypesToBucketParams{
 		ID:                  bucketAddAllowedContentType.Id,
 		AllowedContentTypes: bucketAddAllowedContentType.AllowedContentTypes,
@@ -75,7 +76,7 @@ func (br *BucketRepository) AddAllowedContentTypeToBucket(ctx context.Context, b
 	return nil
 }
 
-func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Context, bucketRemoveAllowedContentType *models.BucketRemoveAllowedContentTypes) error {
+func (br *Repository) RemoveAllowedContentTypeFromBucket(ctx context.Context, bucketRemoveAllowedContentType *dto.BucketRemoveAllowedContentTypes) error {
 	err := br.queries.RemoveAllowedContentTypesFromBucket(ctx, &database.RemoveAllowedContentTypesFromBucketParams{
 		ID:                  bucketRemoveAllowedContentType.Id,
 		AllowedContentTypes: bucketRemoveAllowedContentType.AllowedContentTypes,
@@ -87,7 +88,7 @@ func (br *BucketRepository) RemoveAllowedContentTypeFromBucket(ctx context.Conte
 	return nil
 }
 
-func (br *BucketRepository) MakeBucketPublic(ctx context.Context, bucketMakePublic *models.BucketMakePublic) error {
+func (br *Repository) MakeBucketPublic(ctx context.Context, bucketMakePublic *dto.BucketMakePublic) error {
 	err := br.queries.MakeBucketPublic(ctx, bucketMakePublic.Id)
 	if err != nil {
 		return err
@@ -96,7 +97,7 @@ func (br *BucketRepository) MakeBucketPublic(ctx context.Context, bucketMakePubl
 	return nil
 }
 
-func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, bucketMakePrivate *models.BucketMakePrivate) error {
+func (br *Repository) MakeBucketPrivate(ctx context.Context, bucketMakePrivate *dto.BucketMakePrivate) error {
 	err := br.queries.MakeBucketPrivate(ctx, bucketMakePrivate.Id)
 	if err != nil {
 		return err
@@ -105,7 +106,7 @@ func (br *BucketRepository) MakeBucketPrivate(ctx context.Context, bucketMakePri
 	return nil
 }
 
-func (br *BucketRepository) LockBucket(ctx context.Context, bucketLock *models.BucketLock) error {
+func (br *Repository) LockBucket(ctx context.Context, bucketLock *dto.BucketLock) error {
 	err := br.queries.LockBucket(ctx, &database.LockBucketParams{
 		ID:         bucketLock.Id,
 		LockReason: bucketLock.LockReason,
@@ -117,7 +118,7 @@ func (br *BucketRepository) LockBucket(ctx context.Context, bucketLock *models.B
 	return nil
 }
 
-func (br *BucketRepository) UnlockBucket(ctx context.Context, bucketUnlock *models.BucketUnlock) error {
+func (br *Repository) UnlockBucket(ctx context.Context, bucketUnlock *dto.BucketUnlock) error {
 	err := br.queries.UnlockBucket(ctx, bucketUnlock.Id)
 	if err != nil {
 		return err
@@ -126,7 +127,7 @@ func (br *BucketRepository) UnlockBucket(ctx context.Context, bucketUnlock *mode
 	return nil
 }
 
-func (br *BucketRepository) DeleteBucket(ctx context.Context, bucketDelete *models.BucketDelete) error {
+func (br *Repository) DeleteBucket(ctx context.Context, bucketDelete *dto.BucketDelete) error {
 	err := br.queries.DeleteBucket(ctx, bucketDelete.Id)
 	if err != nil {
 		return err
@@ -135,7 +136,7 @@ func (br *BucketRepository) DeleteBucket(ctx context.Context, bucketDelete *mode
 	return nil
 }
 
-func (br *BucketRepository) GetBucketById(ctx context.Context, id string) (*models.Bucket, bool, error) {
+func (br *Repository) GetBucketById(ctx context.Context, id string) (*Bucket, bool, error) {
 	bucket, err := br.queries.GetBucketById(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -144,7 +145,7 @@ func (br *BucketRepository) GetBucketById(ctx context.Context, id string) (*mode
 		return nil, false, err
 	}
 
-	return &models.Bucket{
+	return &Bucket{
 		Id:                   bucket.ID,
 		Name:                 bucket.Name,
 		AllowedContentTypes:  bucket.AllowedContentTypes,
@@ -159,7 +160,7 @@ func (br *BucketRepository) GetBucketById(ctx context.Context, id string) (*mode
 	}, true, nil
 }
 
-func (br *BucketRepository) GetBucketByName(ctx context.Context, name string) (*models.Bucket, bool, error) {
+func (br *Repository) GetBucketByName(ctx context.Context, name string) (*Bucket, bool, error) {
 	bucket, err := br.queries.GetBucketByName(ctx, name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -168,7 +169,7 @@ func (br *BucketRepository) GetBucketByName(ctx context.Context, name string) (*
 		return nil, false, err
 	}
 
-	return &models.Bucket{
+	return &Bucket{
 		Id:                   bucket.ID,
 		Name:                 bucket.Name,
 		AllowedContentTypes:  bucket.AllowedContentTypes,
@@ -183,7 +184,7 @@ func (br *BucketRepository) GetBucketByName(ctx context.Context, name string) (*
 	}, true, nil
 }
 
-func (br *BucketRepository) ListAllBuckets(ctx context.Context) ([]*models.Bucket, bool, error) {
+func (br *Repository) ListAllBuckets(ctx context.Context) ([]*Bucket, bool, error) {
 	buckets, err := br.queries.ListAllBuckets(ctx)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -192,10 +193,10 @@ func (br *BucketRepository) ListAllBuckets(ctx context.Context) ([]*models.Bucke
 		return nil, false, err
 	}
 
-	var bucketModels []*models.Bucket
+	var bucketModels []*Bucket
 
 	for _, bucket := range buckets {
-		bucketModels = append(bucketModels, &models.Bucket{
+		bucketModels = append(bucketModels, &Bucket{
 			Id:                   bucket.ID,
 			Name:                 bucket.Name,
 			AllowedContentTypes:  bucket.AllowedContentTypes,
@@ -213,7 +214,7 @@ func (br *BucketRepository) ListAllBuckets(ctx context.Context) ([]*models.Bucke
 	return bucketModels, true, nil
 }
 
-func (br *BucketRepository) ListBucketsPaginated(ctx context.Context, pagination *models.Pagination) ([]*models.Bucket, *models.PaginationResult, bool, error) {
+func (br *Repository) ListBucketsPaginated(ctx context.Context, pagination *dtos.Pagination) ([]*Bucket, *dtos.PaginationResult, bool, error) {
 	pagination.SetDefaults()
 
 	buckets, err := br.queries.ListBucketsPaginated(ctx, &database.ListBucketsPaginatedParams{
@@ -227,10 +228,10 @@ func (br *BucketRepository) ListBucketsPaginated(ctx context.Context, pagination
 		return nil, nil, false, err
 	}
 
-	var bucketModels []*models.Bucket
+	var bucketModels []*Bucket
 
 	for _, bucket := range buckets {
-		bucketModels = append(bucketModels, &models.Bucket{
+		bucketModels = append(bucketModels, &Bucket{
 			Id:                   bucket.ID,
 			Name:                 bucket.Name,
 			AllowedContentTypes:  bucket.AllowedContentTypes,

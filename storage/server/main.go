@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/api"
-	"github.com/ArkamFahry/hyperdrift/storage/server/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/logger"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database/migrations"
-	"github.com/ArkamFahry/hyperdrift/storage/server/logger"
 )
 
 func main() {
