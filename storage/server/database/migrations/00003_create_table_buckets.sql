@@ -4,6 +4,7 @@
 create table if not exists storage.buckets
 (
     id                      text                      not null check ( storage.text_non_empty_trimmed_text(id) ),
+    version                 int         default 0     not null check ( version >= 0 ),
     name                    text                      not null check ( storage.text_non_empty_trimmed_text(name) ),
     allowed_content_types   text[]                    null check (
         storage.array_null_or_contains_empty_trimmed_text(allowed_content_types)
@@ -19,6 +20,7 @@ create table if not exists storage.buckets
     created_at              timestamptz default now() not null,
     updated_at              timestamptz               null,
     constraint buckets_id_pk primary key (id),
+    constraint buckets_id_version_uq unique (id, version),
     constraint buckets_name_uq unique (name)
 );
 

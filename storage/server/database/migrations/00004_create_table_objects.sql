@@ -4,6 +4,7 @@
 create table if not exists storage.objects
 (
     id               text                                           not null check ( storage.text_non_empty_trimmed_text(id) ),
+    version          int         default 0                          not null check ( version >= 0 ),
     bucket_id        text                                           not null check ( storage.text_non_empty_trimmed_text(bucket_id) ),
     name             text                                           not null check ( storage.text_non_empty_trimmed_text(name) ),
     path_tokens      text[]                                         not null generated always as (string_to_array(name, '/')) stored,
@@ -18,6 +19,7 @@ create table if not exists storage.objects
     created_at       timestamptz default now()                      not null,
     updated_at       timestamptz                                    null,
     constraint objects_id_pk primary key (id),
+    constraint objects_id_version_uq unique (id, version),
     constraint objects_bucket_id_fk foreign key (bucket_id) references storage.buckets (id) on delete no action,
     constraint objects_name_uq unique (bucket_id, name)
 );
