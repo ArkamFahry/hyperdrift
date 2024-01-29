@@ -14,8 +14,7 @@ create table if not exists storage.events
     expires_at timestamptz,
     created_at timestamptz default now()     not null,
     constraint events_id_pk primary key (id),
-    constraint events_id_version_uq unique (id, version),
-    constraint events_name_uq unique (name)
+    constraint events_id_version_uq unique (id, version)
 );
 
 -- +goose StatementEnd
