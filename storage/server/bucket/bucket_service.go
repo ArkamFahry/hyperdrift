@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/entities"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,22 +13,22 @@ import (
 	"strings"
 )
 
-type Service struct {
+type BucketService struct {
 	database    *database.Queries
 	transaction *database.Transaction
 	logger      *zap.Logger
 }
 
-func NewService(db *pgxpool.Pool, logger *zap.Logger) *Service {
-	return &Service{
+func NewBucketService(db *pgxpool.Pool, logger *zap.Logger) *BucketService {
+	return &BucketService{
 		database:    database.New(db),
 		transaction: database.NewTransaction(db),
 		logger:      logger,
 	}
 }
 
-func (bs *Service) CreateBucket(ctx context.Context, bucketCreate *dto.BucketCreate) error {
-	const op = "services.BucketService.CreateBucket"
+func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.BucketCreate) error {
+	const op = "bucket.BucketService.CreateBucket"
 
 	if bucketCreate.AllowedContentTypes != nil {
 		err := validateAllowedContentTypes(bucketCreate.AllowedContentTypes)
@@ -67,6 +68,30 @@ func (bs *Service) CreateBucket(ctx context.Context, bucketCreate *dto.BucketCre
 	}
 
 	return nil
+}
+
+func (bs *BucketService) GetBucket(ctx context.Context, id string) (*entities.Bucket, error) {
+	const op = "bucket.BucketService.GetBucket"
+
+	bucket, err := bs.database.GetBucketById(ctx, id)
+	if err != nil {
+		bs.logger.Error("failed to get bucket", zap.Error(err), zap.String("operation", op))
+		return nil, err
+	}
+
+	return &entities.Bucket{
+		Id:                   bucket.ID,
+		Name:                 bucket.Name,
+		AllowedContentTypes:  bucket.AllowedContentTypes,
+		MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
+		Public:               bucket.Public,
+		Disabled:             bucket.Disabled,
+		Locked:               bucket.Locked,
+		LockReason:           bucket.LockReason,
+		LockedAt:             bucket.LockedAt,
+		CreatedAt:            bucket.CreatedAt,
+		UpdatedAt:            bucket.UpdatedAt,
+	}, nil
 }
 
 func validateAllowedContentTypes(mimeTypes []string) error {
