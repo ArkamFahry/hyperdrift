@@ -10,21 +10,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type IStorage interface {
-	EmptyBucket(ctx context.Context, emptyBucket *dto.BucketEmpty) error
-}
-
-type S3Storage struct {
+type BucketStorage struct {
 	s3Client   *s3.Client
 	bucketName string
 	config     *config.Config
 	logger     *zap.Logger
 }
 
-var _ IStorage = (*S3Storage)(nil)
-
-func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) IStorage {
-	return &S3Storage{
+func NewBucketStorage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) *BucketStorage {
+	return &BucketStorage{
 		s3Client:   s3Client,
 		bucketName: config.S3BucketName,
 		config:     config,
@@ -32,8 +26,8 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 	}
 }
 
-func (s *S3Storage) EmptyBucket(ctx context.Context, emptyBucket *dto.BucketEmpty) error {
-	const op = "bucket_storage.EmptyBucket"
+func (s *BucketStorage) EmptyBucket(ctx context.Context, emptyBucket *dto.BucketEmpty) error {
+	const op = "BucketStorage.EmptyBucket"
 
 	key := createS3Key(emptyBucket.Id)
 
