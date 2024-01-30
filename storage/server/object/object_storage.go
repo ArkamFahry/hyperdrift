@@ -1,10 +1,11 @@
-package storage
+package object
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/object/dto"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -41,7 +42,7 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 }
 
 func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *dto.PreSignedUploadObjectCreate) (*dto.PreSignedObject, error) {
-	const op = "storage.PreSignedUploadObjectCreate"
+	const op = "object_storage.PreSignedUploadObjectCreate"
 
 	var expiresIn time.Duration
 
@@ -77,7 +78,7 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 }
 
 func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *dto.PreSignedDownloadObjectCreate) (*dto.PreSignedObject, error) {
-	const op = "storage.PreSignedDownloadObjectCreate"
+	const op = "object_storage.PreSignedDownloadObjectCreate"
 
 	var expiresIn time.Duration
 
@@ -110,7 +111,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 }
 
 func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *dto.ObjectExistsCheck) (bool, error) {
-	const op = "storage.ObjectExistsCheck"
+	const op = "object_storage.ObjectExistsCheck"
 
 	key := createS3Key(objectExistsCheck.Bucket, objectExistsCheck.Name)
 
@@ -131,7 +132,7 @@ func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *
 }
 
 func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *dto.ObjectDelete) error {
-	const op = "storage.ObjectDelete"
+	const op = "object_storage.ObjectDelete"
 
 	key := createS3Key(objectDelete.Bucket, objectDelete.Name)
 
