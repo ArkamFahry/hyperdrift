@@ -46,6 +46,10 @@ type BucketUnlock struct {
 	Id string `json:"id"`
 }
 
+type BucketEmpty struct {
+	Id string `json:"id"`
+}
+
 type BucketDelete struct {
 	Id string `json:"id"`
 }
