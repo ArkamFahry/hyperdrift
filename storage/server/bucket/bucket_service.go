@@ -18,7 +18,7 @@ type Service struct {
 	logger      *zap.Logger
 }
 
-func NewBucketService(db *pgxpool.Pool, logger *zap.Logger) *Service {
+func NewService(db *pgxpool.Pool, logger *zap.Logger) *Service {
 	return &Service{
 		database:    database.New(db),
 		transaction: database.NewTransaction(db),
