@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewApi(logger *zap.Logger, config *config.Config) {
+func NewAppModule(logger *zap.Logger, config *config.Config) {
 	app := fiber.New(fiber.Config{
 		Immutable: true,
 	})
