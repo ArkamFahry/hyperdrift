@@ -1,10 +1,10 @@
 package database
 
 import (
+	"context"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
-	"golang.org/x/net/context"
 )
 
 type Database struct {
