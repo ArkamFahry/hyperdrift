@@ -10,6 +10,7 @@ import (
 
 type StorageBucket struct {
 	ID                   string
+	Version              int32
 	Name                 string
 	AllowedContentTypes  []string
 	MaxAllowedObjectSize *int64
@@ -35,6 +36,7 @@ type StorageEvent struct {
 
 type StorageObject struct {
 	ID             string
+	Version        int32
 	BucketID       string
 	Name           string
 	PathTokens     []string

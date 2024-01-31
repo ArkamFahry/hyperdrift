@@ -7,21 +7,23 @@ package database
 
 import (
 	"context"
+	"time"
 )
 
 const addAllowedContentTypesToBucket = `-- name: AddAllowedContentTypesToBucket :exec
 update storage.buckets
 set allowed_content_types = array_append(allowed_content_types, $1::text[])
-where id = $2
+where id = $2 and version = $3
 `
 
 type AddAllowedContentTypesToBucketParams struct {
 	AllowedContentTypes []string
 	ID                  string
+	Version             int32
 }
 
 func (q *Queries) AddAllowedContentTypesToBucket(ctx context.Context, arg *AddAllowedContentTypesToBucketParams) error {
-	_, err := q.db.Exec(ctx, addAllowedContentTypesToBucket, arg.AllowedContentTypes, arg.ID)
+	_, err := q.db.Exec(ctx, addAllowedContentTypesToBucket, arg.AllowedContentTypes, arg.ID, arg.Version)
 	return err
 }
 
@@ -46,7 +48,7 @@ values ($1,
         $4,
         $5,
         $6)
-returning id, name, allowed_content_types, max_allowed_object_size, public, disabled, locked, lock_reason, locked_at, created_at, updated_at
+returning id, version, name, allowed_content_types, max_allowed_object_size, public, disabled, locked, lock_reason, locked_at, created_at, updated_at
 `
 
 type CreateBucketParams struct {
@@ -84,27 +86,38 @@ func (q *Queries) DeleteBucket(ctx context.Context, id string) error {
 const disableBucket = `-- name: DisableBucket :exec
 update storage.buckets
 set disabled = true
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) DisableBucket(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, disableBucket, id)
+type DisableBucketParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) DisableBucket(ctx context.Context, arg *DisableBucketParams) error {
+	_, err := q.db.Exec(ctx, disableBucket, arg.ID, arg.Version)
 	return err
 }
 
 const enableBucket = `-- name: EnableBucket :exec
 update storage.buckets
 set disabled = false
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) EnableBucket(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, enableBucket, id)
+type EnableBucketParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) EnableBucket(ctx context.Context, arg *EnableBucketParams) error {
+	_, err := q.db.Exec(ctx, enableBucket, arg.ID, arg.Version)
 	return err
 }
 
 const getBucketById = `-- name: GetBucketById :one
 select id,
+       version,
        name,
        allowed_content_types,
        max_allowed_object_size,
@@ -125,6 +138,7 @@ func (q *Queries) GetBucketById(ctx context.Context, id string) (*StorageBucket,
 	var i StorageBucket
 	err := row.Scan(
 		&i.ID,
+		&i.Version,
 		&i.Name,
 		&i.AllowedContentTypes,
 		&i.MaxAllowedObjectSize,
@@ -141,6 +155,7 @@ func (q *Queries) GetBucketById(ctx context.Context, id string) (*StorageBucket,
 
 const getBucketByName = `-- name: GetBucketByName :one
 select id,
+       version,
        name,
        allowed_content_types,
        max_allowed_object_size,
@@ -161,6 +176,7 @@ func (q *Queries) GetBucketByName(ctx context.Context, name string) (*StorageBuc
 	var i StorageBucket
 	err := row.Scan(
 		&i.ID,
+		&i.Version,
 		&i.Name,
 		&i.AllowedContentTypes,
 		&i.MaxAllowedObjectSize,
@@ -188,19 +204,6 @@ func (q *Queries) GetBucketObjectCountById(ctx context.Context, id string) (int6
 	return count, err
 }
 
-const getBucketObjectCountByName = `-- name: GetBucketObjectCountByName :one
-select count(1) as count
-from storage.objects
-where bucket_id = (select id from storage.buckets where storage.buckets.name = $1)
-`
-
-func (q *Queries) GetBucketObjectCountByName(ctx context.Context, name string) (int64, error) {
-	row := q.db.QueryRow(ctx, getBucketObjectCountByName, name)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const getBucketSizeById = `-- name: GetBucketSizeById :one
 select sum(size) as size
 from storage.objects
@@ -214,21 +217,9 @@ func (q *Queries) GetBucketSizeById(ctx context.Context, id string) (int64, erro
 	return size, err
 }
 
-const getBucketSizeByName = `-- name: GetBucketSizeByName :one
-select sum(size) as size
-from storage.objects
-where bucket_id = (select id from storage.buckets where storage.buckets.name = $1)
-`
-
-func (q *Queries) GetBucketSizeByName(ctx context.Context, name string) (int64, error) {
-	row := q.db.QueryRow(ctx, getBucketSizeByName, name)
-	var size int64
-	err := row.Scan(&size)
-	return size, err
-}
-
 const listAllBuckets = `-- name: ListAllBuckets :many
 select id,
+       version,
        name,
        allowed_content_types,
        max_allowed_object_size,
@@ -253,6 +244,7 @@ func (q *Queries) ListAllBuckets(ctx context.Context) ([]*StorageBucket, error) 
 		var i StorageBucket
 		if err := rows.Scan(
 			&i.ID,
+			&i.Version,
 			&i.Name,
 			&i.AllowedContentTypes,
 			&i.MaxAllowedObjectSize,
@@ -296,15 +288,29 @@ type ListBucketsPaginatedParams struct {
 	Limit  *int32
 }
 
-func (q *Queries) ListBucketsPaginated(ctx context.Context, arg *ListBucketsPaginatedParams) ([]*StorageBucket, error) {
+type ListBucketsPaginatedRow struct {
+	ID                   string
+	Name                 string
+	AllowedContentTypes  []string
+	MaxAllowedObjectSize *int64
+	Public               bool
+	Disabled             bool
+	Locked               bool
+	LockReason           *string
+	LockedAt             *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            *time.Time
+}
+
+func (q *Queries) ListBucketsPaginated(ctx context.Context, arg *ListBucketsPaginatedParams) ([]*ListBucketsPaginatedRow, error) {
 	rows, err := q.db.Query(ctx, listBucketsPaginated, arg.Cursor, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*StorageBucket
+	var items []*ListBucketsPaginatedRow
 	for rows.Next() {
-		var i StorageBucket
+		var i ListBucketsPaginatedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -333,54 +339,66 @@ update storage.buckets
 set locked      = true,
     lock_reason = $1::text,
     locked_at   = now()
-where id = $2
+where id = $2 and version = $3
 `
 
 type LockBucketParams struct {
 	LockReason string
 	ID         string
+	Version    int32
 }
 
 func (q *Queries) LockBucket(ctx context.Context, arg *LockBucketParams) error {
-	_, err := q.db.Exec(ctx, lockBucket, arg.LockReason, arg.ID)
+	_, err := q.db.Exec(ctx, lockBucket, arg.LockReason, arg.ID, arg.Version)
 	return err
 }
 
 const makeBucketPrivate = `-- name: MakeBucketPrivate :exec
 update storage.buckets
 set public = false
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) MakeBucketPrivate(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, makeBucketPrivate, id)
+type MakeBucketPrivateParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) MakeBucketPrivate(ctx context.Context, arg *MakeBucketPrivateParams) error {
+	_, err := q.db.Exec(ctx, makeBucketPrivate, arg.ID, arg.Version)
 	return err
 }
 
 const makeBucketPublic = `-- name: MakeBucketPublic :exec
 update storage.buckets
 set public = true
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) MakeBucketPublic(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, makeBucketPublic, id)
+type MakeBucketPublicParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) MakeBucketPublic(ctx context.Context, arg *MakeBucketPublicParams) error {
+	_, err := q.db.Exec(ctx, makeBucketPublic, arg.ID, arg.Version)
 	return err
 }
 
 const removeAllowedContentTypesFromBucket = `-- name: RemoveAllowedContentTypesFromBucket :exec
 update storage.buckets
 set allowed_content_types = array_remove(allowed_content_types, $1::text[])
-where id = $2
+where id = $2 and version = $3
 `
 
 type RemoveAllowedContentTypesFromBucketParams struct {
 	AllowedContentTypes []string
 	ID                  string
+	Version             int32
 }
 
 func (q *Queries) RemoveAllowedContentTypesFromBucket(ctx context.Context, arg *RemoveAllowedContentTypesFromBucketParams) error {
-	_, err := q.db.Exec(ctx, removeAllowedContentTypesFromBucket, arg.AllowedContentTypes, arg.ID)
+	_, err := q.db.Exec(ctx, removeAllowedContentTypesFromBucket, arg.AllowedContentTypes, arg.ID, arg.Version)
 	return err
 }
 
@@ -407,15 +425,29 @@ type SearchBucketsPaginatedParams struct {
 	Limit  *int32
 }
 
-func (q *Queries) SearchBucketsPaginated(ctx context.Context, arg *SearchBucketsPaginatedParams) ([]*StorageBucket, error) {
+type SearchBucketsPaginatedRow struct {
+	ID                   string
+	Name                 string
+	AllowedContentTypes  []string
+	MaxAllowedObjectSize *int64
+	Public               bool
+	Disabled             bool
+	Locked               bool
+	LockReason           *string
+	LockedAt             *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            *time.Time
+}
+
+func (q *Queries) SearchBucketsPaginated(ctx context.Context, arg *SearchBucketsPaginatedParams) ([]*SearchBucketsPaginatedRow, error) {
 	rows, err := q.db.Query(ctx, searchBucketsPaginated, arg.Name, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*StorageBucket
+	var items []*SearchBucketsPaginatedRow
 	for rows.Next() {
-		var i StorageBucket
+		var i SearchBucketsPaginatedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -444,11 +476,16 @@ update storage.buckets
 set locked      = false,
     lock_reason = null,
     locked_at   = null
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) UnlockBucket(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, unlockBucket, id)
+type UnlockBucketParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) UnlockBucket(ctx context.Context, arg *UnlockBucketParams) error {
+	_, err := q.db.Exec(ctx, unlockBucket, arg.ID, arg.Version)
 	return err
 }
 
@@ -456,16 +493,22 @@ const updateBucket = `-- name: UpdateBucket :exec
 update storage.buckets
 set max_allowed_object_size = coalesce($1, max_allowed_object_size),
     public                  = coalesce($2, public)
-where id = $3
+where id = $3 and version = $4
 `
 
 type UpdateBucketParams struct {
 	MaxAllowedObjectSize *int64
 	Public               *bool
 	ID                   string
+	Version              int32
 }
 
 func (q *Queries) UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error {
-	_, err := q.db.Exec(ctx, updateBucket, arg.MaxAllowedObjectSize, arg.Public, arg.ID)
+	_, err := q.db.Exec(ctx, updateBucket,
+		arg.MaxAllowedObjectSize,
+		arg.Public,
+		arg.ID,
+		arg.Version,
+	)
 	return err
 }

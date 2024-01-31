@@ -20,7 +20,7 @@ values ($1,
         $5,
         $6,
         $7)
-returning id, bucket_id, name, path_tokens, content_type, size, public, metadata, upload_status, last_accessed_at, created_at, updated_at
+returning id, version, bucket_id, name, path_tokens, content_type, size, public, metadata, upload_status, last_accessed_at, created_at, updated_at
 `
 
 type CreateObjectParams struct {
@@ -81,9 +81,24 @@ type GetObjectByBucketIdAndNameParams struct {
 	Name     string
 }
 
-func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObjectByBucketIdAndNameParams) (*StorageObject, error) {
+type GetObjectByBucketIdAndNameRow struct {
+	ID             string
+	BucketID       string
+	Name           string
+	PathTokens     []string
+	ContentType    string
+	Size           int64
+	Public         bool
+	Metadata       []byte
+	UploadStatus   string
+	LastAccessedAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
+}
+
+func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObjectByBucketIdAndNameParams) (*GetObjectByBucketIdAndNameRow, error) {
 	row := q.db.QueryRow(ctx, getObjectByBucketIdAndName, arg.BucketID, arg.Name)
-	var i StorageObject
+	var i GetObjectByBucketIdAndNameRow
 	err := row.Scan(
 		&i.ID,
 		&i.BucketID,
@@ -119,9 +134,24 @@ where id = $1
 limit 1
 `
 
-func (q *Queries) GetObjectById(ctx context.Context, id string) (*StorageObject, error) {
+type GetObjectByIdRow struct {
+	ID             string
+	BucketID       string
+	Name           string
+	PathTokens     []string
+	ContentType    string
+	Size           int64
+	Public         bool
+	Metadata       []byte
+	UploadStatus   string
+	LastAccessedAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
+}
+
+func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdRow, error) {
 	row := q.db.QueryRow(ctx, getObjectById, id)
-	var i StorageObject
+	var i GetObjectByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.BucketID,
@@ -163,15 +193,30 @@ type ListAllObjectsByBucketIdPagedParams struct {
 	Limit    int32
 }
 
-func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg *ListAllObjectsByBucketIdPagedParams) ([]*StorageObject, error) {
+type ListAllObjectsByBucketIdPagedRow struct {
+	ID             string
+	BucketID       string
+	Name           string
+	PathTokens     []string
+	ContentType    string
+	Size           int64
+	Public         bool
+	Metadata       []byte
+	UploadStatus   string
+	LastAccessedAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
+}
+
+func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg *ListAllObjectsByBucketIdPagedParams) ([]*ListAllObjectsByBucketIdPagedRow, error) {
 	rows, err := q.db.Query(ctx, listAllObjectsByBucketIdPaged, arg.BucketID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*StorageObject
+	var items []*ListAllObjectsByBucketIdPagedRow
 	for rows.Next() {
-		var i StorageObject
+		var i ListAllObjectsByBucketIdPagedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.BucketID,
@@ -199,38 +244,49 @@ func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg *ListAl
 const makeObjectPrivate = `-- name: MakeObjectPrivate :exec
 update storage.objects
 set public = false
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) MakeObjectPrivate(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, makeObjectPrivate, id)
+type MakeObjectPrivateParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) MakeObjectPrivate(ctx context.Context, arg *MakeObjectPrivateParams) error {
+	_, err := q.db.Exec(ctx, makeObjectPrivate, arg.ID, arg.Version)
 	return err
 }
 
 const makeObjectPublic = `-- name: MakeObjectPublic :exec
 update storage.objects
 set public = true
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) MakeObjectPublic(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, makeObjectPublic, id)
+type MakeObjectPublicParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) MakeObjectPublic(ctx context.Context, arg *MakeObjectPublicParams) error {
+	_, err := q.db.Exec(ctx, makeObjectPublic, arg.ID, arg.Version)
 	return err
 }
 
 const mergeObjectMetadata = `-- name: MergeObjectMetadata :exec
 update storage.objects
 set metadata = metadata || $1
-where id = $2
+where id = $2 and version = $3
 `
 
 type MergeObjectMetadataParams struct {
 	Metadata []byte
 	ID       string
+	Version  int32
 }
 
 func (q *Queries) MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetadataParams) error {
-	_, err := q.db.Exec(ctx, mergeObjectMetadata, arg.Metadata, arg.ID)
+	_, err := q.db.Exec(ctx, mergeObjectMetadata, arg.Metadata, arg.ID, arg.Version)
 	return err
 }
 
@@ -315,7 +371,7 @@ update storage.objects
 set size         = coalesce($1, size),
     content_type = coalesce($2, content_type),
     metadata     = coalesce($3, metadata)
-where id = $4
+where id = $4 and version = $5
 `
 
 type UpdateObjectParams struct {
@@ -323,6 +379,7 @@ type UpdateObjectParams struct {
 	ContentType string
 	Metadata    []byte
 	ID          string
+	Version     int32
 }
 
 func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) error {
@@ -331,6 +388,7 @@ func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) err
 		arg.ContentType,
 		arg.Metadata,
 		arg.ID,
+		arg.Version,
 	)
 	return err
 }
@@ -338,26 +396,32 @@ func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) err
 const updateObjectLastAccessedAt = `-- name: UpdateObjectLastAccessedAt :exec
 update storage.objects
 set last_accessed_at = now()
-where id = $1
+where id = $1 and version = $2
 `
 
-func (q *Queries) UpdateObjectLastAccessedAt(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, updateObjectLastAccessedAt, id)
+type UpdateObjectLastAccessedAtParams struct {
+	ID      string
+	Version int32
+}
+
+func (q *Queries) UpdateObjectLastAccessedAt(ctx context.Context, arg *UpdateObjectLastAccessedAtParams) error {
+	_, err := q.db.Exec(ctx, updateObjectLastAccessedAt, arg.ID, arg.Version)
 	return err
 }
 
 const updateObjectUploadStatus = `-- name: UpdateObjectUploadStatus :exec
 update storage.objects
 set upload_status = $1
-where id = $2
+where id = $2 and version = $3
 `
 
 type UpdateObjectUploadStatusParams struct {
 	UploadStatus string
 	ID           string
+	Version      int32
 }
 
 func (q *Queries) UpdateObjectUploadStatus(ctx context.Context, arg *UpdateObjectUploadStatusParams) error {
-	_, err := q.db.Exec(ctx, updateObjectUploadStatus, arg.UploadStatus, arg.ID)
+	_, err := q.db.Exec(ctx, updateObjectUploadStatus, arg.UploadStatus, arg.ID, arg.Version)
 	return err
 }
