@@ -32,10 +32,19 @@ create or replace trigger buckets_set_updated_at
     for each row
 execute function storage.set_updated_at();
 
+create or replace trigger buckets_increment_version
+    before update
+    on storage.buckets
+    for each row
+execute function storage.increment_version();
+
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+
+drop trigger if exists buckets_increment_version on storage.buckets;
 
 drop trigger if exists buckets_set_updated_at on storage.buckets;
 

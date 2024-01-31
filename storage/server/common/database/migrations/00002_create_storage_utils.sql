@@ -77,10 +77,24 @@ begin
 end;
 $$ language plpgsql;
 
+create or replace function storage.increment_version()
+    returns trigger as
+$$
+begin
+    if new is distinct from old then
+        new.version = new.version + 1;
+    end if;
+
+    return new;
+end;
+$$ language plpgsql;
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+
+drop function if exists storage.increment_version();
 
 drop function if exists storage.set_updated_at();
 

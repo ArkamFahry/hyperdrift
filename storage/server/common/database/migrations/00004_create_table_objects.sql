@@ -30,12 +30,20 @@ create or replace trigger objects_set_updated_at
     before update
     on storage.objects
     for each row
-execute function util.set_updated_at();
+execute function storage.set_updated_at();
+
+create or replace trigger objects_increment_version
+    before update
+    on storage.objects
+    for each row
+execute function storage.increment_version();
 
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+
+drop trigger if exists objects_increment_version on storage.objects;
 
 drop trigger if exists objects_set_updated_at on storage.objects;
 
