@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -38,6 +39,8 @@ type Config struct {
 }
 
 func NewConfig() *Config {
+	const op = "config.NewConfig"
+
 	var config Config
 
 	v := viper.New()
@@ -51,19 +54,19 @@ func NewConfig() *Config {
 
 	err = v.ReadInConfig()
 	if err != nil {
-		logger.Fatal("error reading config", zap.Error(err))
+		logger.Fatal("error reading config", zap.Error(err), zapfield.Operation(op))
 	}
 
 	err = v.Unmarshal(&config)
 	if err != nil {
-		logger.Fatal("error unmarshaling config", zap.Error(err))
+		logger.Fatal("error unmarshaling config", zap.Error(err), zapfield.Operation(op))
 	}
 
 	setDefaultConfig(&config)
 
 	err = validateConfig(&config)
 	if err != nil {
-		logger.Fatal("error validating config", zap.Error(err))
+		logger.Fatal("error validating config", zap.Error(err), zapfield.Operation(op))
 	}
 
 	return &config

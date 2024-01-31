@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/ArkamFahry/hyperdrift/storage/server/object/dto"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
@@ -14,14 +15,14 @@ import (
 	"time"
 )
 
-type IStorage interface {
+type IObjectStorage interface {
 	CreatePreSignedUploadObject(ctx context.Context, createPreSignedUploadObject *dto.PreSignedUploadObjectCreate) (*dto.PreSignedObject, error)
 	CreatePreSignedDownloadObject(ctx context.Context, createPreSignedDownloadObject *dto.PreSignedDownloadObjectCreate) (*dto.PreSignedObject, error)
 	CheckIfObjectExists(ctx context.Context, checkIfObjectExists *dto.ObjectExistsCheck) (bool, error)
 	DeleteObject(ctx context.Context, deleteObject *dto.ObjectDelete) error
 }
 
-type S3Storage struct {
+type ObjectStorage struct {
 	s3Client          *s3.Client
 	s3PreSignedClient *s3.PresignClient
 	bucketName        string
@@ -29,10 +30,10 @@ type S3Storage struct {
 	logger            *zap.Logger
 }
 
-var _ IStorage = (*S3Storage)(nil)
+var _ IObjectStorage = (*ObjectStorage)(nil)
 
-func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) IStorage {
-	return &S3Storage{
+func NewObjectStorage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) IObjectStorage {
+	return &ObjectStorage{
 		s3Client:          s3Client,
 		s3PreSignedClient: s3.NewPresignClient(s3Client),
 		bucketName:        config.S3BucketName,
@@ -41,8 +42,8 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 	}
 }
 
-func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *dto.PreSignedUploadObjectCreate) (*dto.PreSignedObject, error) {
-	const op = "object_storage.PreSignedUploadObjectCreate"
+func (s *ObjectStorage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *dto.PreSignedUploadObjectCreate) (*dto.PreSignedObject, error) {
+	const op = "ObjectStorage.PreSignedUploadObjectCreate"
 
 	var expiresIn time.Duration
 
@@ -66,7 +67,7 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 		},
 	)
 	if err != nil {
-		s.logger.Error("failed to create pre-signed upload url", zap.Error(err), zap.String("operation", op))
+		s.logger.Error("failed to create pre-signed upload url", zap.Error(err), zapfield.Operation(op))
 		return nil, err
 	}
 
@@ -77,8 +78,8 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 	}, nil
 }
 
-func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *dto.PreSignedDownloadObjectCreate) (*dto.PreSignedObject, error) {
-	const op = "object_storage.PreSignedDownloadObjectCreate"
+func (s *ObjectStorage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *dto.PreSignedDownloadObjectCreate) (*dto.PreSignedObject, error) {
+	const op = "ObjectStorage.PreSignedDownloadObjectCreate"
 
 	var expiresIn time.Duration
 
@@ -99,7 +100,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 		},
 	)
 	if err != nil {
-		s.logger.Error("failed to create pre-signed download url", zap.Error(err), zap.String("operation", op))
+		s.logger.Error("failed to create pre-signed download url", zap.Error(err), zapfield.Operation(op))
 		return nil, err
 	}
 
@@ -110,8 +111,8 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 	}, nil
 }
 
-func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *dto.ObjectExistsCheck) (bool, error) {
-	const op = "object_storage.ObjectExistsCheck"
+func (s *ObjectStorage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *dto.ObjectExistsCheck) (bool, error) {
+	const op = "ObjectStorage.ObjectExistsCheck"
 
 	key := createS3Key(objectExistsCheck.Bucket, objectExistsCheck.Name)
 
@@ -124,15 +125,15 @@ func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *
 		if errors.As(err, &responseError) && responseError.ResponseError.HTTPStatusCode() == http.StatusNotFound {
 			return false, nil
 		}
-		s.logger.Error("failed to check if object exists", zap.Error(err), zap.String("operation", op))
+		s.logger.Error("failed to check if object exists", zap.Error(err), zapfield.Operation(op))
 		return false, err
 	}
 
 	return true, nil
 }
 
-func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *dto.ObjectDelete) error {
-	const op = "object_storage.ObjectDelete"
+func (s *ObjectStorage) DeleteObject(ctx context.Context, objectDelete *dto.ObjectDelete) error {
+	const op = "ObjectStorage.ObjectDelete"
 
 	key := createS3Key(objectDelete.Bucket, objectDelete.Name)
 
@@ -141,7 +142,7 @@ func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *dto.ObjectDe
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		s.logger.Error("failed to delete object", zap.Error(err), zap.String("operation", op))
+		s.logger.Error("failed to delete object", zap.Error(err), zapfield.Operation(op))
 		return err
 	}
 

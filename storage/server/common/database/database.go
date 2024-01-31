@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
@@ -18,7 +19,7 @@ func NewDatabasePool(config *config.Config, logger *zap.Logger) *Database {
 	if err != nil {
 		logger.Fatal("failed to connect to create pgx pool database connection",
 			zap.Error(err),
-			zap.String("operation", op),
+			zapfield.Operation(op),
 		)
 	}
 
