@@ -15,13 +15,6 @@ import (
 	"time"
 )
 
-type IObjectStorage interface {
-	CreatePreSignedUploadObject(ctx context.Context, createPreSignedUploadObject *dto.PreSignedUploadObjectCreate) (*dto.PreSignedObject, error)
-	CreatePreSignedDownloadObject(ctx context.Context, createPreSignedDownloadObject *dto.PreSignedDownloadObjectCreate) (*dto.PreSignedObject, error)
-	CheckIfObjectExists(ctx context.Context, checkIfObjectExists *dto.ObjectExistsCheck) (bool, error)
-	DeleteObject(ctx context.Context, deleteObject *dto.ObjectDelete) error
-}
-
 type ObjectStorage struct {
 	s3Client          *s3.Client
 	s3PreSignedClient *s3.PresignClient
@@ -30,9 +23,7 @@ type ObjectStorage struct {
 	logger            *zap.Logger
 }
 
-var _ IObjectStorage = (*ObjectStorage)(nil)
-
-func NewObjectStorage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) IObjectStorage {
+func NewObjectStorage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) *ObjectStorage {
 	return &ObjectStorage{
 		s3Client:          s3Client,
 		s3PreSignedClient: s3.NewPresignClient(s3Client),
