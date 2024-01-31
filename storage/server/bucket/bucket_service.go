@@ -27,7 +27,7 @@ func NewBucketService(db *pgxpool.Pool, logger *zap.Logger) *BucketService {
 }
 
 func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.BucketCreate) error {
-	const op = "bucket.BucketService.CreateBucket"
+	const op = "BucketService.CreateBucket"
 
 	if bucketCreate.AllowedContentTypes != nil {
 		err := validators.ValidateAllowedContentTypes(bucketCreate.AllowedContentTypes)
@@ -70,7 +70,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 }
 
 func (bs *BucketService) GetBucket(ctx context.Context, id string) (*entities.Bucket, error) {
-	const op = "bucket.BucketService.GetBucket"
+	const op = "BucketService.GetBucket"
 
 	bucket, err := bs.database.GetBucketById(ctx, id)
 	if err != nil {
