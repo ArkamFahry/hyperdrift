@@ -2,15 +2,14 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/dto"
 	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/entities"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/database"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/validators"
+	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
-	"regexp"
-	"strings"
 )
 
 type BucketService struct {
@@ -31,17 +30,17 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 	const op = "bucket.BucketService.CreateBucket"
 
 	if bucketCreate.AllowedContentTypes != nil {
-		err := validateAllowedContentTypes(bucketCreate.AllowedContentTypes)
+		err := validators.ValidateAllowedContentTypes(bucketCreate.AllowedContentTypes)
 		if err != nil {
-			bs.logger.Error("failed to validate mime types", zap.Error(err), zap.String("operation", op))
+			bs.logger.Error("failed to validate mime types", zap.Error(err), zapfield.Operation(op))
 			return err
 		}
 	}
 
 	if bucketCreate.MaxAllowedObjectSize != nil {
-		err := validateMaxAllowedObjectSize(*bucketCreate.MaxAllowedObjectSize)
+		err := validators.ValidateMaxAllowedObjectSize(*bucketCreate.MaxAllowedObjectSize)
 		if err != nil {
-			bs.logger.Error("failed to validate max allowed object size", zap.Error(err), zap.String("operation", op))
+			bs.logger.Error("failed to validate max allowed object size", zap.Error(err), zapfield.Operation(op))
 			return err
 		}
 	}
@@ -56,14 +55,14 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 			Disabled:             bucketCreate.Disabled,
 		})
 		if err != nil {
-			bs.logger.Error("failed to create bucket", zap.Error(err), zap.String("operation", op))
+			bs.logger.Error("failed to create bucket", zap.Error(err), zapfield.Operation(op))
 			return err
 		}
 
 		return nil
 	})
 	if err != nil {
-		bs.logger.Error("failed to create bucket", zap.Error(err), zap.String("operation", op))
+		bs.logger.Error("failed to create bucket", zap.Error(err), zapfield.Operation(op))
 		return err
 	}
 
@@ -75,7 +74,7 @@ func (bs *BucketService) GetBucket(ctx context.Context, id string) (*entities.Bu
 
 	bucket, err := bs.database.GetBucketById(ctx, id)
 	if err != nil {
-		bs.logger.Error("failed to get bucket", zap.Error(err), zap.String("operation", op))
+		bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
 		return nil, err
 	}
 
@@ -92,35 +91,4 @@ func (bs *BucketService) GetBucket(ctx context.Context, id string) (*entities.Bu
 		CreatedAt:            bucket.CreatedAt,
 		UpdatedAt:            bucket.UpdatedAt,
 	}, nil
-}
-
-func validateAllowedContentTypes(mimeTypes []string) error {
-	var invalidContentTypes []string
-	for _, mimeType := range mimeTypes {
-		if !validateContentType(mimeType) {
-			invalidContentTypes = append(invalidContentTypes, mimeType)
-		}
-	}
-
-	if len(invalidContentTypes) > 0 {
-		return fmt.Errorf("invalid content types: [%s]", strings.Join(invalidContentTypes, ", "))
-	}
-
-	return nil
-}
-
-func validateMaxAllowedObjectSize(maxAllowedObjectSize int64) error {
-	if maxAllowedObjectSize < 0 {
-		return fmt.Errorf("max allowed object size must be 0 or greater than 0")
-	}
-
-	return nil
-}
-
-func validateContentType(mimeType string) bool {
-	mimeTypePattern := `^[a-zA-Z]+/[a-zA-Z0-9\-\.\+]+$`
-
-	re := regexp.MustCompile(mimeTypePattern)
-
-	return re.MatchString(mimeType)
 }
