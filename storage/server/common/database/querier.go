@@ -9,7 +9,6 @@ import (
 )
 
 type Querier interface {
-	AddAllowedContentTypesToBucket(ctx context.Context, arg *AddAllowedContentTypesToBucketParams) error
 	CountBuckets(ctx context.Context) (int64, error)
 	CreateBucket(ctx context.Context, arg *CreateBucketParams) error
 	CreateEvent(ctx context.Context, arg *CreateEventParams) error
@@ -21,7 +20,7 @@ type Querier interface {
 	GetBucketById(ctx context.Context, id string) (*StorageBucket, error)
 	GetBucketByName(ctx context.Context, name string) (*StorageBucket, error)
 	GetBucketObjectCountById(ctx context.Context, id string) (int64, error)
-	GetBucketSizeById(ctx context.Context, id string) (int64, error)
+	GetBucketSizeById(ctx context.Context, id string) (*GetBucketSizeByIdRow, error)
 	GetObjectByBucketIdAndName(ctx context.Context, arg *GetObjectByBucketIdAndNameParams) (*GetObjectByBucketIdAndNameRow, error)
 	GetObjectById(ctx context.Context, id string) (*GetObjectByIdRow, error)
 	ListAllBuckets(ctx context.Context) ([]*StorageBucket, error)
@@ -33,11 +32,11 @@ type Querier interface {
 	MakeObjectPrivate(ctx context.Context, arg *MakeObjectPrivateParams) error
 	MakeObjectPublic(ctx context.Context, arg *MakeObjectPublicParams) error
 	MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetadataParams) error
-	RemoveAllowedContentTypesFromBucket(ctx context.Context, arg *RemoveAllowedContentTypesFromBucketParams) error
 	SearchBucketsPaginated(ctx context.Context, arg *SearchBucketsPaginatedParams) ([]*SearchBucketsPaginatedRow, error)
 	SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByPathParams) ([]*SearchObjectsByPathRow, error)
 	UnlockBucket(ctx context.Context, arg *UnlockBucketParams) error
 	UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error
+	UpdateBucketAllowedContentTypes(ctx context.Context, arg *UpdateBucketAllowedContentTypesParams) error
 	UpdateObject(ctx context.Context, arg *UpdateObjectParams) error
 	UpdateObjectLastAccessedAt(ctx context.Context, arg *UpdateObjectLastAccessedAtParams) error
 	UpdateObjectUploadStatus(ctx context.Context, arg *UpdateObjectUploadStatusParams) error

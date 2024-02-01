@@ -10,23 +10,6 @@ import (
 	"time"
 )
 
-const addAllowedContentTypesToBucket = `-- name: AddAllowedContentTypesToBucket :exec
-update storage.buckets
-set allowed_content_types = array_append(allowed_content_types, $1::text[])
-where id = $2 and version = $3
-`
-
-type AddAllowedContentTypesToBucketParams struct {
-	AllowedContentTypes []string
-	ID                  string
-	Version             int32
-}
-
-func (q *Queries) AddAllowedContentTypesToBucket(ctx context.Context, arg *AddAllowedContentTypesToBucketParams) error {
-	_, err := q.db.Exec(ctx, addAllowedContentTypesToBucket, arg.AllowedContentTypes, arg.ID, arg.Version)
-	return err
-}
-
 const countBuckets = `-- name: CountBuckets :one
 select count(1) as count
 from storage.buckets
@@ -205,16 +188,22 @@ func (q *Queries) GetBucketObjectCountById(ctx context.Context, id string) (int6
 }
 
 const getBucketSizeById = `-- name: GetBucketSizeById :one
-select sum(size) as size
+select id, name, sum(size) as size
 from storage.objects
 where bucket_id = $1
 `
 
-func (q *Queries) GetBucketSizeById(ctx context.Context, id string) (int64, error) {
+type GetBucketSizeByIdRow struct {
+	ID   string
+	Name string
+	Size int64
+}
+
+func (q *Queries) GetBucketSizeById(ctx context.Context, id string) (*GetBucketSizeByIdRow, error) {
 	row := q.db.QueryRow(ctx, getBucketSizeById, id)
-	var size int64
-	err := row.Scan(&size)
-	return size, err
+	var i GetBucketSizeByIdRow
+	err := row.Scan(&i.ID, &i.Name, &i.Size)
+	return &i, err
 }
 
 const listAllBuckets = `-- name: ListAllBuckets :many
@@ -285,7 +274,7 @@ limit $2
 
 type ListBucketsPaginatedParams struct {
 	Cursor string
-	Limit  *int32
+	Limit  int32
 }
 
 type ListBucketsPaginatedRow struct {
@@ -382,23 +371,6 @@ type MakeBucketPublicParams struct {
 
 func (q *Queries) MakeBucketPublic(ctx context.Context, arg *MakeBucketPublicParams) error {
 	_, err := q.db.Exec(ctx, makeBucketPublic, arg.ID, arg.Version)
-	return err
-}
-
-const removeAllowedContentTypesFromBucket = `-- name: RemoveAllowedContentTypesFromBucket :exec
-update storage.buckets
-set allowed_content_types = array_remove(allowed_content_types, $1::text[])
-where id = $2 and version = $3
-`
-
-type RemoveAllowedContentTypesFromBucketParams struct {
-	AllowedContentTypes []string
-	ID                  string
-	Version             int32
-}
-
-func (q *Queries) RemoveAllowedContentTypesFromBucket(ctx context.Context, arg *RemoveAllowedContentTypesFromBucketParams) error {
-	_, err := q.db.Exec(ctx, removeAllowedContentTypesFromBucket, arg.AllowedContentTypes, arg.ID, arg.Version)
 	return err
 }
 
@@ -510,5 +482,22 @@ func (q *Queries) UpdateBucket(ctx context.Context, arg *UpdateBucketParams) err
 		arg.ID,
 		arg.Version,
 	)
+	return err
+}
+
+const updateBucketAllowedContentTypes = `-- name: UpdateBucketAllowedContentTypes :exec
+update storage.buckets
+set allowed_content_types = $1
+where id = $2 and version = $3
+`
+
+type UpdateBucketAllowedContentTypesParams struct {
+	AllowedContentTypes []string
+	ID                  string
+	Version             int32
+}
+
+func (q *Queries) UpdateBucketAllowedContentTypes(ctx context.Context, arg *UpdateBucketAllowedContentTypesParams) error {
+	_, err := q.db.Exec(ctx, updateBucketAllowedContentTypes, arg.AllowedContentTypes, arg.ID, arg.Version)
 	return err
 }
