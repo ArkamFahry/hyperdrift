@@ -33,8 +33,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 	const op = "BucketService.CreateBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(bucketCreate.Name) {
-		bs.logger.Error("bucket name cannot be empty", zapfield.Operation(op))
-		return nil, fmt.Errorf("bucket name cannot be empty")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty", op, "", nil)
 	}
 
 	if bucketCreate.AllowedContentTypes != nil {
