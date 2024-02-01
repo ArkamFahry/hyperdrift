@@ -3,7 +3,7 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/dto"
+
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -27,10 +27,10 @@ func NewBucketStorage(s3Client *s3.Client, config *config.Config, logger *zap.Lo
 	}
 }
 
-func (s *BucketStorage) EmptyBucket(ctx context.Context, emptyBucket *dto.BucketEmpty) error {
+func (s *BucketStorage) EmptyBucket(ctx context.Context, name string) error {
 	const op = "BucketStorage.EmptyBucket"
 
-	key := createS3BucketPathKey(emptyBucket.Id)
+	key := createS3BucketPathKey(name)
 
 	_, err := s.s3Client.ListObjects(ctx, &s3.ListObjectsInput{
 		Bucket: aws.String(s.bucketName),
