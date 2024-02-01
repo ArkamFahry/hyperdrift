@@ -95,8 +95,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities
 	const op = "BucketService.EnableBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		bs.logger.Error("bucket id cannot be empty", zapfield.Operation(op))
-		return nil, fmt.Errorf("bucket id cannot be empty")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty", op, "", nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -144,7 +143,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 		bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
 		if err != nil {
 			if database.IsNotFoundError(err) {
-				return fmt.Errorf("bucket with id '%s' not found", id)
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
 			}
 			bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
 			return err
@@ -154,11 +153,10 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 			err = bs.query.WithTx(tx).DisableBucket(ctx, id)
 			if err != nil {
 				bs.logger.Error("failed to disable bucket", zap.Error(err), zapfield.Operation(op))
-				return err
+				return srverr.NewServiceError(srverr.UnknownError, "failed to disable bucket", op, "", err)
 			}
 		} else {
-			bs.logger.Error("failed to disable bucket as it is already disabled", zap.Error(err), zapfield.Operation(op))
-			return fmt.Errorf("bucket is already disabled")
+			return srverr.NewServiceError(srverr.BadRequestError, "bucket is already disabled", op, "", nil)
 		}
 
 		return nil
