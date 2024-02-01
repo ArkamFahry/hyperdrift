@@ -142,7 +142,7 @@ func (bc *BucketController) DeleteBucket(ctx *fiber.Ctx) error {
 func (bc *BucketController) GetBucket(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
-	bucket, err := bc.bucketService.GetBucket(ctx.Context(), id)
+	bucket, err := bc.bucketService.GetBucketById(ctx.Context(), id)
 	if err != nil {
 		return err
 	}
