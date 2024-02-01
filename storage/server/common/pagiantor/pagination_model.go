@@ -1,11 +1,11 @@
-package dtos
+package pagiantor
 
-type Pagination struct {
+type PaginationInput struct {
 	Cursor string `json:"cursor"`
 	Limit  int32  `json:"limit"`
 }
 
-func (p *Pagination) SetDefaults() {
+func (p *PaginationInput) SetDefaults() {
 	if p.Limit == 0 {
 		p.Limit = 10
 	}
