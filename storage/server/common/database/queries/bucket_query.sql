@@ -6,53 +6,52 @@ values (sqlc.arg('id'),
         sqlc.narg('allowed_content_types'),
         sqlc.narg('max_allowed_object_size'),
         sqlc.arg('public'),
-        sqlc.arg('disabled'))
-returning *;
+        sqlc.arg('disabled'));
 
 -- name: UpdateBucket :exec
 update storage.buckets
 set max_allowed_object_size = coalesce(sqlc.narg('max_allowed_object_size'), max_allowed_object_size),
     public                  = coalesce(sqlc.narg('public'), public)
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: UpdateBucketAllowedContentTypes :exec
 update storage.buckets
 set allowed_content_types = sqlc.arg('allowed_content_types')
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: DisableBucket :exec
 update storage.buckets
 set disabled = true
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: EnableBucket :exec
 update storage.buckets
 set disabled = false
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: MakeBucketPublic :exec
 update storage.buckets
 set public = true
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: MakeBucketPrivate :exec
 update storage.buckets
 set public = false
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: LockBucket :exec
 update storage.buckets
 set locked      = true,
     lock_reason = sqlc.arg('lock_reason')::text,
     locked_at   = now()
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: UnlockBucket :exec
 update storage.buckets
 set locked      = false,
     lock_reason = null,
     locked_at   = null
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: DeleteBucket :exec
 delete

@@ -7,40 +7,39 @@ values (sqlc.arg('id'),
         sqlc.arg('content_type'),
         sqlc.arg('size'),
         sqlc.arg('public'),
-        sqlc.arg('metadata'))
-returning *;
+        sqlc.arg('metadata'));
 
 -- name: UpdateObjectUploadStatus :exec
 update storage.objects
 set upload_status = sqlc.arg('upload_status')
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: UpdateObjectLastAccessedAt :exec
 update storage.objects
 set last_accessed_at = now()
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: UpdateObject :exec
 update storage.objects
 set size         = coalesce(sqlc.arg('size'), size),
     content_type = coalesce(sqlc.arg('content_type'), content_type),
     metadata     = coalesce(sqlc.arg('metadata'), metadata)
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: MakeObjectPublic :exec
 update storage.objects
 set public = true
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: MakeObjectPrivate :exec
 update storage.objects
 set public = false
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: MergeObjectMetadata :exec
 update storage.objects
 set metadata = metadata || sqlc.arg('metadata')
-where id = sqlc.arg('id') and version = sqlc.arg('version');
+where id = sqlc.arg('id');
 
 -- name: DeleteObject :exec
 delete
