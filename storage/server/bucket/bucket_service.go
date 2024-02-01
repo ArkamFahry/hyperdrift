@@ -111,10 +111,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities
 		}
 
 		if bucket.Disabled {
-			err := bs.query.WithTx(tx).EnableBucket(ctx, &database.EnableBucketParams{
-				ID:      bucket.ID,
-				Version: bucket.Version,
-			})
+			err := bs.query.WithTx(tx).EnableBucket(ctx, id)
 			if err != nil {
 				bs.logger.Error("failed to enable bucket", zap.Error(err), zapfield.Operation(op))
 				return err
@@ -165,10 +162,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 		}
 
 		if !bucket.Disabled {
-			err = bs.query.WithTx(tx).DisableBucket(ctx, &database.DisableBucketParams{
-				ID:      bucket.ID,
-				Version: bucket.Version,
-			})
+			err = bs.query.WithTx(tx).DisableBucket(ctx, id)
 			if err != nil {
 				bs.logger.Error("failed to disable bucket", zap.Error(err), zapfield.Operation(op))
 				return err
@@ -257,7 +251,6 @@ func (bs *BucketService) AddAllowedContentTypesToBucket(ctx context.Context, buc
 		err = bs.query.WithTx(tx).UpdateBucketAllowedContentTypes(ctx, &database.UpdateBucketAllowedContentTypesParams{
 			ID:                  bucket.ID,
 			AllowedContentTypes: bucket.AllowedContentTypes,
-			Version:             bucket.Version,
 		})
 		if err != nil {
 			bs.logger.Error("failed to add allowed content types to bucket", zap.Error(err), zapfield.Operation(op))
@@ -342,7 +335,6 @@ func (bs *BucketService) RemoveContentTypesFromBucket(ctx context.Context, bucke
 		err = bs.query.WithTx(tx).UpdateBucketAllowedContentTypes(ctx, &database.UpdateBucketAllowedContentTypesParams{
 			ID:                  bucket.ID,
 			AllowedContentTypes: bucket.AllowedContentTypes,
-			Version:             bucket.Version,
 		})
 		if err != nil {
 			bs.logger.Error("failed to remove allowed content types from bucket", zap.Error(err), zapfield.Operation(op))
@@ -421,7 +413,6 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, bucketUpdate *dto.Buc
 			ID:                   bucket.ID,
 			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
 			Public:               &bucket.Public,
-			Version:              bucket.Version,
 		})
 		if err != nil {
 			bs.logger.Error("failed to update bucket", zap.Error(err), zapfield.Operation(op))
