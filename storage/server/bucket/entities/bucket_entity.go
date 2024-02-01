@@ -22,35 +22,3 @@ type BucketSize struct {
 	Name string `json:"name"`
 	Size int64  `json:"size"`
 }
-
-type BucketCreate struct {
-	Id                   string   `json:"id"`
-	Name                 string   `json:"name"`
-	AllowedContentTypes  []string `json:"allowed_content_types"`
-	MaxAllowedObjectSize *int64   `json:"max_allowed_object_size"`
-	Public               bool     `json:"public"`
-	Disabled             bool     `json:"enabled"`
-}
-
-type BucketUpdate struct {
-	Id                   string `json:"id"`
-	MaxAllowedObjectSize *int64 `json:"max_allowed_object_size"`
-	Public               *bool  `json:"public"`
-	Version              int32  `json:"version"`
-}
-
-type BucketAllowedContentTypesUpdate struct {
-	Id                  string   `json:"id"`
-	AllowedContentTypes []string `json:"allowed_content_types"`
-	Version             int32    `json:"version"`
-}
-
-type BucketEnable struct {
-	Id      string `json:"id"`
-	Version int32  `json:"version"`
-}
-
-type BucketDisable struct {
-	Id      string `json:"id"`
-	Version int32  `json:"version"`
-}
