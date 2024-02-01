@@ -53,12 +53,14 @@ func (bc *BucketController) CreateBucket(ctx *fiber.Ctx) error {
 func (bc *BucketController) UpdateBucket(ctx *fiber.Ctx) error {
 	var bucketUpdate dto.BucketUpdate
 
+	id := ctx.Params("id")
+
 	err := ctx.BodyParser(&bucketUpdate)
 	if err != nil {
 		return err
 	}
 
-	updatedBucket, err := bc.bucketService.UpdateBucket(ctx.Context(), &bucketUpdate)
+	updatedBucket, err := bc.bucketService.UpdateBucket(ctx.Context(), id, &bucketUpdate)
 	if err != nil {
 		return err
 	}
@@ -69,12 +71,14 @@ func (bc *BucketController) UpdateBucket(ctx *fiber.Ctx) error {
 func (bc *BucketController) AddAllowedContentTypesToBucket(ctx *fiber.Ctx) error {
 	var bucketAddAllowedContentTypes dto.BucketAddAllowedContentTypes
 
+	id := ctx.Params("id")
+
 	err := ctx.BodyParser(&bucketAddAllowedContentTypes)
 	if err != nil {
 		return err
 	}
 
-	contentTypesAddedBucket, err := bc.bucketService.AddAllowedContentTypesToBucket(ctx.Context(), &bucketAddAllowedContentTypes)
+	contentTypesAddedBucket, err := bc.bucketService.AddAllowedContentTypesToBucket(ctx.Context(), id, &bucketAddAllowedContentTypes)
 	if err != nil {
 		return err
 	}
@@ -85,12 +89,14 @@ func (bc *BucketController) AddAllowedContentTypesToBucket(ctx *fiber.Ctx) error
 func (bc *BucketController) RemoveAllowedContentTypesFromBucket(ctx *fiber.Ctx) error {
 	var bucketRemoveAllowedContentTypes dto.BucketRemoveAllowedContentTypes
 
+	id := ctx.Params("id")
+
 	err := ctx.BodyParser(&bucketRemoveAllowedContentTypes)
 	if err != nil {
 		return err
 	}
 
-	contentTypesRemovedBucket, err := bc.bucketService.RemoveContentTypesFromBucket(ctx.Context(), &bucketRemoveAllowedContentTypes)
+	contentTypesRemovedBucket, err := bc.bucketService.RemoveContentTypesFromBucket(ctx.Context(), id, &bucketRemoveAllowedContentTypes)
 	if err != nil {
 		return err
 	}
