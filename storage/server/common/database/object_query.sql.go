@@ -20,7 +20,6 @@ values ($1,
         $5,
         $6,
         $7)
-returning id, version, bucket_id, name, path_tokens, content_type, size, public, metadata, upload_status, last_accessed_at, created_at, updated_at
 `
 
 type CreateObjectParams struct {
@@ -244,49 +243,38 @@ func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg *ListAl
 const makeObjectPrivate = `-- name: MakeObjectPrivate :exec
 update storage.objects
 set public = false
-where id = $1 and version = $2
+where id = $1
 `
 
-type MakeObjectPrivateParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) MakeObjectPrivate(ctx context.Context, arg *MakeObjectPrivateParams) error {
-	_, err := q.db.Exec(ctx, makeObjectPrivate, arg.ID, arg.Version)
+func (q *Queries) MakeObjectPrivate(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, makeObjectPrivate, id)
 	return err
 }
 
 const makeObjectPublic = `-- name: MakeObjectPublic :exec
 update storage.objects
 set public = true
-where id = $1 and version = $2
+where id = $1
 `
 
-type MakeObjectPublicParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) MakeObjectPublic(ctx context.Context, arg *MakeObjectPublicParams) error {
-	_, err := q.db.Exec(ctx, makeObjectPublic, arg.ID, arg.Version)
+func (q *Queries) MakeObjectPublic(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, makeObjectPublic, id)
 	return err
 }
 
 const mergeObjectMetadata = `-- name: MergeObjectMetadata :exec
 update storage.objects
 set metadata = metadata || $1
-where id = $2 and version = $3
+where id = $2
 `
 
 type MergeObjectMetadataParams struct {
 	Metadata []byte
 	ID       string
-	Version  int32
 }
 
 func (q *Queries) MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetadataParams) error {
-	_, err := q.db.Exec(ctx, mergeObjectMetadata, arg.Metadata, arg.ID, arg.Version)
+	_, err := q.db.Exec(ctx, mergeObjectMetadata, arg.Metadata, arg.ID)
 	return err
 }
 
@@ -371,7 +359,7 @@ update storage.objects
 set size         = coalesce($1, size),
     content_type = coalesce($2, content_type),
     metadata     = coalesce($3, metadata)
-where id = $4 and version = $5
+where id = $4
 `
 
 type UpdateObjectParams struct {
@@ -379,7 +367,6 @@ type UpdateObjectParams struct {
 	ContentType string
 	Metadata    []byte
 	ID          string
-	Version     int32
 }
 
 func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) error {
@@ -388,7 +375,6 @@ func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) err
 		arg.ContentType,
 		arg.Metadata,
 		arg.ID,
-		arg.Version,
 	)
 	return err
 }
@@ -396,32 +382,26 @@ func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) err
 const updateObjectLastAccessedAt = `-- name: UpdateObjectLastAccessedAt :exec
 update storage.objects
 set last_accessed_at = now()
-where id = $1 and version = $2
+where id = $1
 `
 
-type UpdateObjectLastAccessedAtParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) UpdateObjectLastAccessedAt(ctx context.Context, arg *UpdateObjectLastAccessedAtParams) error {
-	_, err := q.db.Exec(ctx, updateObjectLastAccessedAt, arg.ID, arg.Version)
+func (q *Queries) UpdateObjectLastAccessedAt(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, updateObjectLastAccessedAt, id)
 	return err
 }
 
 const updateObjectUploadStatus = `-- name: UpdateObjectUploadStatus :exec
 update storage.objects
 set upload_status = $1
-where id = $2 and version = $3
+where id = $2
 `
 
 type UpdateObjectUploadStatusParams struct {
 	UploadStatus string
 	ID           string
-	Version      int32
 }
 
 func (q *Queries) UpdateObjectUploadStatus(ctx context.Context, arg *UpdateObjectUploadStatusParams) error {
-	_, err := q.db.Exec(ctx, updateObjectUploadStatus, arg.UploadStatus, arg.ID, arg.Version)
+	_, err := q.db.Exec(ctx, updateObjectUploadStatus, arg.UploadStatus, arg.ID)
 	return err
 }

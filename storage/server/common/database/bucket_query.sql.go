@@ -31,7 +31,6 @@ values ($1,
         $4,
         $5,
         $6)
-returning id, version, name, allowed_content_types, max_allowed_object_size, public, disabled, locked, lock_reason, locked_at, created_at, updated_at
 `
 
 type CreateBucketParams struct {
@@ -69,32 +68,22 @@ func (q *Queries) DeleteBucket(ctx context.Context, id string) error {
 const disableBucket = `-- name: DisableBucket :exec
 update storage.buckets
 set disabled = true
-where id = $1 and version = $2
+where id = $1
 `
 
-type DisableBucketParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) DisableBucket(ctx context.Context, arg *DisableBucketParams) error {
-	_, err := q.db.Exec(ctx, disableBucket, arg.ID, arg.Version)
+func (q *Queries) DisableBucket(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, disableBucket, id)
 	return err
 }
 
 const enableBucket = `-- name: EnableBucket :exec
 update storage.buckets
 set disabled = false
-where id = $1 and version = $2
+where id = $1
 `
 
-type EnableBucketParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) EnableBucket(ctx context.Context, arg *EnableBucketParams) error {
-	_, err := q.db.Exec(ctx, enableBucket, arg.ID, arg.Version)
+func (q *Queries) EnableBucket(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, enableBucket, id)
 	return err
 }
 
@@ -328,49 +317,38 @@ update storage.buckets
 set locked      = true,
     lock_reason = $1::text,
     locked_at   = now()
-where id = $2 and version = $3
+where id = $2
 `
 
 type LockBucketParams struct {
 	LockReason string
 	ID         string
-	Version    int32
 }
 
 func (q *Queries) LockBucket(ctx context.Context, arg *LockBucketParams) error {
-	_, err := q.db.Exec(ctx, lockBucket, arg.LockReason, arg.ID, arg.Version)
+	_, err := q.db.Exec(ctx, lockBucket, arg.LockReason, arg.ID)
 	return err
 }
 
 const makeBucketPrivate = `-- name: MakeBucketPrivate :exec
 update storage.buckets
 set public = false
-where id = $1 and version = $2
+where id = $1
 `
 
-type MakeBucketPrivateParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) MakeBucketPrivate(ctx context.Context, arg *MakeBucketPrivateParams) error {
-	_, err := q.db.Exec(ctx, makeBucketPrivate, arg.ID, arg.Version)
+func (q *Queries) MakeBucketPrivate(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, makeBucketPrivate, id)
 	return err
 }
 
 const makeBucketPublic = `-- name: MakeBucketPublic :exec
 update storage.buckets
 set public = true
-where id = $1 and version = $2
+where id = $1
 `
 
-type MakeBucketPublicParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) MakeBucketPublic(ctx context.Context, arg *MakeBucketPublicParams) error {
-	_, err := q.db.Exec(ctx, makeBucketPublic, arg.ID, arg.Version)
+func (q *Queries) MakeBucketPublic(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, makeBucketPublic, id)
 	return err
 }
 
@@ -448,16 +426,11 @@ update storage.buckets
 set locked      = false,
     lock_reason = null,
     locked_at   = null
-where id = $1 and version = $2
+where id = $1
 `
 
-type UnlockBucketParams struct {
-	ID      string
-	Version int32
-}
-
-func (q *Queries) UnlockBucket(ctx context.Context, arg *UnlockBucketParams) error {
-	_, err := q.db.Exec(ctx, unlockBucket, arg.ID, arg.Version)
+func (q *Queries) UnlockBucket(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, unlockBucket, id)
 	return err
 }
 
@@ -465,39 +438,32 @@ const updateBucket = `-- name: UpdateBucket :exec
 update storage.buckets
 set max_allowed_object_size = coalesce($1, max_allowed_object_size),
     public                  = coalesce($2, public)
-where id = $3 and version = $4
+where id = $3
 `
 
 type UpdateBucketParams struct {
 	MaxAllowedObjectSize *int64
 	Public               *bool
 	ID                   string
-	Version              int32
 }
 
 func (q *Queries) UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error {
-	_, err := q.db.Exec(ctx, updateBucket,
-		arg.MaxAllowedObjectSize,
-		arg.Public,
-		arg.ID,
-		arg.Version,
-	)
+	_, err := q.db.Exec(ctx, updateBucket, arg.MaxAllowedObjectSize, arg.Public, arg.ID)
 	return err
 }
 
 const updateBucketAllowedContentTypes = `-- name: UpdateBucketAllowedContentTypes :exec
 update storage.buckets
 set allowed_content_types = $1
-where id = $2 and version = $3
+where id = $2
 `
 
 type UpdateBucketAllowedContentTypesParams struct {
 	AllowedContentTypes []string
 	ID                  string
-	Version             int32
 }
 
 func (q *Queries) UpdateBucketAllowedContentTypes(ctx context.Context, arg *UpdateBucketAllowedContentTypesParams) error {
-	_, err := q.db.Exec(ctx, updateBucketAllowedContentTypes, arg.AllowedContentTypes, arg.ID, arg.Version)
+	_, err := q.db.Exec(ctx, updateBucketAllowedContentTypes, arg.AllowedContentTypes, arg.ID)
 	return err
 }

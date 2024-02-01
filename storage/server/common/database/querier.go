@@ -15,8 +15,8 @@ type Querier interface {
 	CreateObject(ctx context.Context, arg *CreateObjectParams) error
 	DeleteBucket(ctx context.Context, id string) error
 	DeleteObject(ctx context.Context, id string) error
-	DisableBucket(ctx context.Context, arg *DisableBucketParams) error
-	EnableBucket(ctx context.Context, arg *EnableBucketParams) error
+	DisableBucket(ctx context.Context, id string) error
+	EnableBucket(ctx context.Context, id string) error
 	GetBucketById(ctx context.Context, id string) (*StorageBucket, error)
 	GetBucketByName(ctx context.Context, name string) (*StorageBucket, error)
 	GetBucketObjectCountById(ctx context.Context, id string) (int64, error)
@@ -27,18 +27,18 @@ type Querier interface {
 	ListAllObjectsByBucketIdPaged(ctx context.Context, arg *ListAllObjectsByBucketIdPagedParams) ([]*ListAllObjectsByBucketIdPagedRow, error)
 	ListBucketsPaginated(ctx context.Context, arg *ListBucketsPaginatedParams) ([]*ListBucketsPaginatedRow, error)
 	LockBucket(ctx context.Context, arg *LockBucketParams) error
-	MakeBucketPrivate(ctx context.Context, arg *MakeBucketPrivateParams) error
-	MakeBucketPublic(ctx context.Context, arg *MakeBucketPublicParams) error
-	MakeObjectPrivate(ctx context.Context, arg *MakeObjectPrivateParams) error
-	MakeObjectPublic(ctx context.Context, arg *MakeObjectPublicParams) error
+	MakeBucketPrivate(ctx context.Context, id string) error
+	MakeBucketPublic(ctx context.Context, id string) error
+	MakeObjectPrivate(ctx context.Context, id string) error
+	MakeObjectPublic(ctx context.Context, id string) error
 	MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetadataParams) error
 	SearchBucketsPaginated(ctx context.Context, arg *SearchBucketsPaginatedParams) ([]*SearchBucketsPaginatedRow, error)
 	SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByPathParams) ([]*SearchObjectsByPathRow, error)
-	UnlockBucket(ctx context.Context, arg *UnlockBucketParams) error
+	UnlockBucket(ctx context.Context, id string) error
 	UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error
 	UpdateBucketAllowedContentTypes(ctx context.Context, arg *UpdateBucketAllowedContentTypesParams) error
 	UpdateObject(ctx context.Context, arg *UpdateObjectParams) error
-	UpdateObjectLastAccessedAt(ctx context.Context, arg *UpdateObjectLastAccessedAtParams) error
+	UpdateObjectLastAccessedAt(ctx context.Context, id string) error
 	UpdateObjectUploadStatus(ctx context.Context, arg *UpdateObjectUploadStatusParams) error
 }
 
