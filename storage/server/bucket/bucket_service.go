@@ -99,13 +99,9 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
 		if err != nil {
-			if database.IsNotFoundError(err) {
-				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
-			}
-			bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, "", err)
+			return err
 		}
 
 		if bucket.Disabled {
@@ -140,12 +136,8 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
 		if err != nil {
-			if database.IsNotFoundError(err) {
-				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
-			}
-			bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
 			return err
 		}
 
@@ -181,13 +173,9 @@ func (bs *BucketService) AddAllowedContentTypesToBucket(ctx context.Context, id 
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
 		if err != nil {
-			if database.IsNotFoundError(err) {
-				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", nil)
-			}
-			bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, "", err)
+			return err
 		}
 
 		if bucket.Disabled {
@@ -247,12 +235,8 @@ func (bs *BucketService) RemoveContentTypesFromBucket(ctx context.Context, id st
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
 		if err != nil {
-			if database.IsNotFoundError(err) {
-				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", nil)
-			}
-			bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
 			return err
 		}
 
@@ -313,13 +297,9 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
 		if err != nil {
-			if database.IsNotFoundError(err) {
-				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
-			}
-			bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, "", err)
+			return err
 		}
 
 		if bucket.Disabled {
@@ -374,21 +354,17 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
 		if err != nil {
-			if database.IsNotFoundError(err) {
-				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
-			}
-			bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, "", err)
+			return err
 		}
 
 		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be deleted", id), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be deleted", bucket.ID), op, "", nil)
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked and cannot be deleted", id), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s'", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
 		err = bs.query.WithTx(tx).DeleteBucket(ctx, bucket.ID)
@@ -493,4 +469,16 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*entities.Bucket
 	}
 
 	return result, nil
+}
+
+func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id string, op string) (*database.StorageBucket, error) {
+	bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+	if err != nil {
+		if database.IsNotFoundError(err) {
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
+		}
+		bs.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, "", err)
+	}
+	return bucket, nil
 }
