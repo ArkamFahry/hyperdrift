@@ -15,14 +15,9 @@ set max_allowed_object_size = coalesce(sqlc.narg('max_allowed_object_size'), max
     public                  = coalesce(sqlc.narg('public'), public)
 where id = sqlc.arg('id') and version = sqlc.arg('version');
 
--- name: AddAllowedContentTypesToBucket :exec
+-- name: UpdateBucketAllowedContentTypes :exec
 update storage.buckets
-set allowed_content_types = array_append(allowed_content_types, sqlc.arg('allowed_content_types')::text[])
-where id = sqlc.arg('id') and version = sqlc.arg('version');
-
--- name: RemoveAllowedContentTypesFromBucket :exec
-update storage.buckets
-set allowed_content_types = array_remove(allowed_content_types, sqlc.arg('allowed_content_types')::text[])
+set allowed_content_types = sqlc.arg('allowed_content_types')
 where id = sqlc.arg('id') and version = sqlc.arg('version');
 
 -- name: DisableBucket :exec
@@ -127,7 +122,7 @@ select id,
        updated_at
 from storage.buckets
 where id >= sqlc.arg('cursor')
-limit sqlc.narg('limit');
+limit sqlc.arg('limit');
 
 -- name: SearchBucketsPaginated :many
 select id,
@@ -150,7 +145,7 @@ select count(1) as count
 from storage.buckets;
 
 -- name: GetBucketSizeById :one
-select sum(size) as size
+select id, name, sum(size) as size
 from storage.objects
 where bucket_id = sqlc.arg('id');
 
