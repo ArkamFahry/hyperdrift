@@ -25,8 +25,6 @@ func (bc *BucketController) RegisterBucketRoutes(app *fiber.App) {
 	routesV1.Post("/buckets/:id/rename", bc.RenameBucket)
 	routesV1.Delete("/buckets/:id/disable", bc.DisableBucket)
 	routesV1.Delete("/buckets/:id/enable", bc.EnableBucket)
-	routesV1.Post("/buckets/:id/add-allowed-content-types", bc.AddAllowedContentTypesToBucket)
-	routesV1.Patch("/buckets/:id/remove-allowed-content-types", bc.RemoveAllowedContentTypesFromBucket)
 	routesV1.Patch("/buckets/:id", bc.UpdateBucket)
 	routesV1.Delete("/buckets/:id", bc.DeleteBucket)
 	routesV1.Get("/buckets/:id", bc.GetBucket)
@@ -66,42 +64,6 @@ func (bc *BucketController) UpdateBucket(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(updatedBucket)
-}
-
-func (bc *BucketController) AddAllowedContentTypesToBucket(ctx *fiber.Ctx) error {
-	var bucketAddAllowedContentTypes dto.BucketAddAllowedContentTypes
-
-	id := ctx.Params("id")
-
-	err := ctx.BodyParser(&bucketAddAllowedContentTypes)
-	if err != nil {
-		return err
-	}
-
-	contentTypesAddedBucket, err := bc.bucketService.AddAllowedContentTypesToBucket(ctx.Context(), id, &bucketAddAllowedContentTypes)
-	if err != nil {
-		return err
-	}
-
-	return ctx.Status(fiber.StatusOK).JSON(contentTypesAddedBucket)
-}
-
-func (bc *BucketController) RemoveAllowedContentTypesFromBucket(ctx *fiber.Ctx) error {
-	var bucketRemoveAllowedContentTypes dto.BucketRemoveAllowedContentTypes
-
-	id := ctx.Params("id")
-
-	err := ctx.BodyParser(&bucketRemoveAllowedContentTypes)
-	if err != nil {
-		return err
-	}
-
-	contentTypesRemovedBucket, err := bc.bucketService.RemoveContentTypesFromBucket(ctx.Context(), id, &bucketRemoveAllowedContentTypes)
-	if err != nil {
-		return err
-	}
-
-	return ctx.Status(fiber.StatusOK).JSON(contentTypesRemovedBucket)
 }
 
 func (bc *BucketController) EmptyBucket(ctx *fiber.Ctx) error {
