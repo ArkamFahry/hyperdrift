@@ -437,18 +437,25 @@ func (q *Queries) UnlockBucket(ctx context.Context, id string) error {
 const updateBucket = `-- name: UpdateBucket :exec
 update storage.buckets
 set max_allowed_object_size = coalesce($1, max_allowed_object_size),
-    public                  = coalesce($2, public)
-where id = $3
+    public                  = coalesce($2, public),
+    allowed_content_types   = coalesce($3, allowed_content_types)
+where id = $4
 `
 
 type UpdateBucketParams struct {
 	MaxAllowedObjectSize *int64
 	Public               *bool
+	AllowedContentTypes  []string
 	ID                   string
 }
 
 func (q *Queries) UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error {
-	_, err := q.db.Exec(ctx, updateBucket, arg.MaxAllowedObjectSize, arg.Public, arg.ID)
+	_, err := q.db.Exec(ctx, updateBucket,
+		arg.MaxAllowedObjectSize,
+		arg.Public,
+		arg.AllowedContentTypes,
+		arg.ID,
+	)
 	return err
 }
 
