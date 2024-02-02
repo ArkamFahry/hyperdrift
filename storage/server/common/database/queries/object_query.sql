@@ -81,7 +81,7 @@ where bucket_id = sqlc.arg('bucket_id')
   and name = sqlc.arg('name')
 limit 1;
 
--- name: ListAllObjectsByBucketIdPaged :many
+-- name: ListObjectsByBucketIdPaged :many
 select id,
        bucket_id,
        name,
