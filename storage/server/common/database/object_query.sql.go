@@ -168,7 +168,7 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdR
 	return &i, err
 }
 
-const listAllObjectsByBucketIdPaged = `-- name: ListAllObjectsByBucketIdPaged :many
+const listObjectsByBucketIdPaged = `-- name: ListObjectsByBucketIdPaged :many
 select id,
        bucket_id,
        name,
@@ -186,13 +186,13 @@ where bucket_id = $1
 limit $3 offset $2
 `
 
-type ListAllObjectsByBucketIdPagedParams struct {
+type ListObjectsByBucketIdPagedParams struct {
 	BucketID string
 	Offset   int32
 	Limit    int32
 }
 
-type ListAllObjectsByBucketIdPagedRow struct {
+type ListObjectsByBucketIdPagedRow struct {
 	ID             string
 	BucketID       string
 	Name           string
@@ -207,15 +207,15 @@ type ListAllObjectsByBucketIdPagedRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) ListAllObjectsByBucketIdPaged(ctx context.Context, arg *ListAllObjectsByBucketIdPagedParams) ([]*ListAllObjectsByBucketIdPagedRow, error) {
-	rows, err := q.db.Query(ctx, listAllObjectsByBucketIdPaged, arg.BucketID, arg.Offset, arg.Limit)
+func (q *Queries) ListObjectsByBucketIdPaged(ctx context.Context, arg *ListObjectsByBucketIdPagedParams) ([]*ListObjectsByBucketIdPagedRow, error) {
+	rows, err := q.db.Query(ctx, listObjectsByBucketIdPaged, arg.BucketID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*ListAllObjectsByBucketIdPagedRow
+	var items []*ListObjectsByBucketIdPagedRow
 	for rows.Next() {
-		var i ListAllObjectsByBucketIdPagedRow
+		var i ListObjectsByBucketIdPagedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.BucketID,

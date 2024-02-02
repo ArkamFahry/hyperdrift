@@ -458,19 +458,3 @@ func (q *Queries) UpdateBucket(ctx context.Context, arg *UpdateBucketParams) err
 	)
 	return err
 }
-
-const updateBucketAllowedContentTypes = `-- name: UpdateBucketAllowedContentTypes :exec
-update storage.buckets
-set allowed_content_types = $1
-where id = $2
-`
-
-type UpdateBucketAllowedContentTypesParams struct {
-	AllowedContentTypes []string
-	ID                  string
-}
-
-func (q *Queries) UpdateBucketAllowedContentTypes(ctx context.Context, arg *UpdateBucketAllowedContentTypesParams) error {
-	_, err := q.db.Exec(ctx, updateBucketAllowedContentTypes, arg.AllowedContentTypes, arg.ID)
-	return err
-}

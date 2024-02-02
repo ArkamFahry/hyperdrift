@@ -24,8 +24,8 @@ type Querier interface {
 	GetObjectByBucketIdAndName(ctx context.Context, arg *GetObjectByBucketIdAndNameParams) (*GetObjectByBucketIdAndNameRow, error)
 	GetObjectById(ctx context.Context, id string) (*GetObjectByIdRow, error)
 	ListAllBuckets(ctx context.Context) ([]*StorageBucket, error)
-	ListAllObjectsByBucketIdPaged(ctx context.Context, arg *ListAllObjectsByBucketIdPagedParams) ([]*ListAllObjectsByBucketIdPagedRow, error)
 	ListBucketsPaginated(ctx context.Context, arg *ListBucketsPaginatedParams) ([]*ListBucketsPaginatedRow, error)
+	ListObjectsByBucketIdPaged(ctx context.Context, arg *ListObjectsByBucketIdPagedParams) ([]*ListObjectsByBucketIdPagedRow, error)
 	LockBucket(ctx context.Context, arg *LockBucketParams) error
 	MakeBucketPrivate(ctx context.Context, id string) error
 	MakeBucketPublic(ctx context.Context, id string) error
@@ -36,7 +36,6 @@ type Querier interface {
 	SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByPathParams) ([]*SearchObjectsByPathRow, error)
 	UnlockBucket(ctx context.Context, id string) error
 	UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error
-	UpdateBucketAllowedContentTypes(ctx context.Context, arg *UpdateBucketAllowedContentTypesParams) error
 	UpdateObject(ctx context.Context, arg *UpdateObjectParams) error
 	UpdateObjectLastAccessedAt(ctx context.Context, id string) error
 	UpdateObjectUploadStatus(ctx context.Context, arg *UpdateObjectUploadStatusParams) error
