@@ -35,7 +35,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDeleteArgs *river.J
 		offset := int32(0)
 
 		for {
-			objects, err := w.database.WithTx(tx).ListAllObjectsByBucketIdPaged(ctx, &database.ListAllObjectsByBucketIdPagedParams{
+			objects, err := w.database.WithTx(tx).ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
 				BucketID: bucketDeleteArgs.Args.Id,
 				Offset:   offset,
 				Limit:    limit,
