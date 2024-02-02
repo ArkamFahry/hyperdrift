@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/dto"
 	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/entities"
+	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/jobs"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/database"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/srverr"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/validators"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"regexp"
@@ -20,6 +22,7 @@ type BucketService struct {
 	query       *database.Queries
 	transaction *database.Transaction
 	logger      *zap.Logger
+	job         river.Client[pgx.Tx]
 }
 
 func NewBucketService(db *pgxpool.Pool, logger *zap.Logger) *BucketService {
@@ -44,8 +47,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 	if bucketCreate.AllowedContentTypes != nil {
 		err := validators.ValidateAllowedContentTypes(bucketCreate.AllowedContentTypes)
 		if err != nil {
-			bs.logger.Error("failed to validate mime types", zap.Error(err), zapfield.Operation(op))
-			return nil, err
+			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
 		}
 	} else {
 		bucketCreate.AllowedContentTypes = []string{"*/*"}
@@ -54,8 +56,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 	if bucketCreate.MaxAllowedObjectSize != nil {
 		err := validators.ValidateMaxAllowedObjectSize(*bucketCreate.MaxAllowedObjectSize)
 		if err != nil {
-			bs.logger.Error("failed to validate max allowed object size", zap.Error(err), zapfield.Operation(op))
-			return nil, err
+			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
 		}
 	}
 
@@ -75,25 +76,12 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to create bucket", op, "", err)
 	}
 
-	bucket, err := bs.query.GetBucketById(ctx, bucketCreate.Id)
+	bucket, err := bs.GetBucketById(ctx, bucketCreate.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &entities.Bucket{
-		Id:                   bucket.ID,
-		Version:              bucket.Version,
-		Name:                 bucket.Name,
-		AllowedContentTypes:  bucket.AllowedContentTypes,
-		MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
-		Public:               bucket.Public,
-		Disabled:             bucket.Disabled,
-		Locked:               bucket.Locked,
-		LockReason:           bucket.LockReason,
-		LockedAt:             bucket.LockedAt,
-		CreatedAt:            bucket.CreatedAt,
-		UpdatedAt:            bucket.UpdatedAt,
-	}, nil
+	return bucket, nil
 }
 
 func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities.Bucket, error) {
@@ -264,9 +252,20 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be deleted", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
-		err = bs.query.WithTx(tx).DeleteBucket(ctx, bucket.ID)
+		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
+			ID:         bucket.ID,
+			LockReason: "bucket.delete",
+		})
 		if err != nil {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to delete bucket", op, "", err)
+		}
+
+		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDeleteArgs{
+			Id:   bucket.ID,
+			Name: bucket.Name,
+		}, nil)
+		if err != nil {
+			return err
 		}
 
 		return nil
