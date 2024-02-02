@@ -11,12 +11,8 @@ values (sqlc.arg('id'),
 -- name: UpdateBucket :exec
 update storage.buckets
 set max_allowed_object_size = coalesce(sqlc.narg('max_allowed_object_size'), max_allowed_object_size),
-    public                  = coalesce(sqlc.narg('public'), public)
-where id = sqlc.arg('id');
-
--- name: UpdateBucketAllowedContentTypes :exec
-update storage.buckets
-set allowed_content_types = sqlc.arg('allowed_content_types')
+    public                  = coalesce(sqlc.narg('public'), public),
+    allowed_content_types   = coalesce(sqlc.narg('allowed_content_types'), allowed_content_types)
 where id = sqlc.arg('id');
 
 -- name: DisableBucket :exec
