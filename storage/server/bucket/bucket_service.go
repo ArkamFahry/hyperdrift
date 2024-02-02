@@ -34,11 +34,11 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 	const op = "BucketService.CreateBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(bucketCreate.Name) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to create bucket", op, "", nil)
 	}
 
 	if validateBucketName(bucketCreate.Name) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name is not valid. It must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters.", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters.", op, "", nil)
 	}
 
 	if bucketCreate.AllowedContentTypes != nil {
@@ -100,7 +100,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities
 	const op = "BucketService.EnableBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, errorEmptyBucketId(op, "")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to enable bucket", op, "", nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -137,7 +137,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 	const op = "BucketService.DisableBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, errorEmptyBucketId(op, "")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to disable bucket", op, "", nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -174,7 +174,7 @@ func (bs *BucketService) AddAllowedContentTypesToBucket(ctx context.Context, id 
 	const op = "BucketService.AddAllowedContentTypesToBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, errorEmptyBucketId(op, "")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to add allowed content types", op, "", nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -192,7 +192,7 @@ func (bs *BucketService) AddAllowedContentTypesToBucket(ctx context.Context, id 
 		}
 
 		if bucketAddAllowedContentTypes.AddContentTypes == nil {
-			return srverr.NewServiceError(srverr.InvalidInputError, "allowed content types cannot be empty", op, "", nil)
+			return srverr.NewServiceError(srverr.InvalidInputError, "add content types cannot be empty", op, "", nil)
 		} else {
 			if lo.Contains[string](bucketAddAllowedContentTypes.AddContentTypes, "*/*") {
 				return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' cannot be used as an allowed content type", op, "", nil)
@@ -236,7 +236,7 @@ func (bs *BucketService) RemoveContentTypesFromBucket(ctx context.Context, id st
 	const op = "BucketService.RemoveContentTypesFromBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, errorEmptyBucketId(op, "")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to remove allowed content types to bucket", op, "", nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -254,7 +254,7 @@ func (bs *BucketService) RemoveContentTypesFromBucket(ctx context.Context, id st
 		}
 
 		if bucketRemoveAllowedContentTypes.RemoveContentTypes == nil {
-			return srverr.NewServiceError(srverr.InvalidInputError, "allowed content types cannot be empty", op, "", nil)
+			return srverr.NewServiceError(srverr.InvalidInputError, "remove content types cannot be empty", op, "", nil)
 		} else {
 			err = validators.ValidateAllowedContentTypes(bucketRemoveAllowedContentTypes.RemoveContentTypes)
 			if err != nil {
@@ -298,7 +298,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 	const op = "BucketService.UpdateBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, errorEmptyBucketId(op, "")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to update bucket", op, "", nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -355,7 +355,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	const op = "BucketService.DeleteBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return errorEmptyBucketId(op, "")
+		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to delete bucket", op, "", nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -391,7 +391,7 @@ func (bs *BucketService) GetBucketById(ctx context.Context, id string) (*entitie
 	const op = "BucketService.GetBucketById"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, errorEmptyBucketId(op, "")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket", op, "", nil)
 	}
 
 	bucket, err := bs.query.GetBucketById(ctx, id)
@@ -423,7 +423,7 @@ func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*entitie
 	const op = "BucketService.GetBucketSize"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, errorEmptyBucketId(op, "")
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket size", op, "", nil)
 	}
 
 	bucketSize, err := bs.query.GetBucketSizeById(ctx, id)
@@ -488,14 +488,14 @@ func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id str
 	return bucket, nil
 }
 
-func errorEmptyBucketId(op string, requestId string) error {
-	return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty", op, requestId, nil)
-}
-
 func validateBucketName(name string) bool {
 	regexPattern := `^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`
 
 	regex := regexp.MustCompile(regexPattern)
+
+	if len(name) < 3 || len(name) > 63 {
+		return true
+	}
 
 	if regex.MatchString(name) {
 		return false
