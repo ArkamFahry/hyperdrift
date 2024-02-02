@@ -170,130 +170,6 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 	return bucket, nil
 }
 
-func (bs *BucketService) AddAllowedContentTypesToBucket(ctx context.Context, id string, bucketAddAllowedContentTypes *dto.BucketAddAllowedContentTypes) (*entities.Bucket, error) {
-	const op = "BucketService.AddAllowedContentTypesToBucket"
-
-	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to add allowed content types", op, "", nil)
-	}
-
-	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
-		if err != nil {
-			return err
-		}
-
-		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be modified", bucket.ID), op, "", nil)
-		}
-
-		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be modified", bucket.ID, *bucket.LockReason), op, "", nil)
-		}
-
-		if bucketAddAllowedContentTypes.AddContentTypes == nil {
-			return srverr.NewServiceError(srverr.InvalidInputError, "add content types cannot be empty", op, "", nil)
-		} else {
-			if lo.Contains[string](bucketAddAllowedContentTypes.AddContentTypes, "*/*") {
-				return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' cannot be used as an allowed content type", op, "", nil)
-			}
-			err = validators.ValidateAllowedContentTypes(bucketAddAllowedContentTypes.AddContentTypes)
-			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", nil)
-			}
-		}
-
-		if lo.Contains[string](bucket.AllowedContentTypes, "*/*") {
-			bucket.AllowedContentTypes = []string{}
-		}
-
-		bucket.AllowedContentTypes = lo.Uniq[string](append(bucket.AllowedContentTypes, bucketAddAllowedContentTypes.AddContentTypes...))
-
-		err = bs.query.WithTx(tx).UpdateBucketAllowedContentTypes(ctx, &database.UpdateBucketAllowedContentTypesParams{
-			ID:                  bucket.ID,
-			AllowedContentTypes: bucket.AllowedContentTypes,
-		})
-		if err != nil {
-			bs.logger.Error("failed to add allowed content types to bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to add allowed content types to bucket", op, "", err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	bucket, err := bs.GetBucketById(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return bucket, nil
-}
-
-func (bs *BucketService) RemoveContentTypesFromBucket(ctx context.Context, id string, bucketRemoveAllowedContentTypes *dto.BucketRemoveAllowedContentTypes) (*entities.Bucket, error) {
-	const op = "BucketService.RemoveContentTypesFromBucket"
-
-	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to remove allowed content types to bucket", op, "", nil)
-	}
-
-	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
-		if err != nil {
-			return err
-		}
-
-		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be modified", bucket.ID), op, "", nil)
-		}
-
-		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be modified", bucket.ID, *bucket.LockReason), op, "", nil)
-		}
-
-		if bucketRemoveAllowedContentTypes.RemoveContentTypes == nil {
-			return srverr.NewServiceError(srverr.InvalidInputError, "remove content types cannot be empty", op, "", nil)
-		} else {
-			err = validators.ValidateAllowedContentTypes(bucketRemoveAllowedContentTypes.RemoveContentTypes)
-			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
-			}
-		}
-
-		if lo.Contains[string](bucketRemoveAllowedContentTypes.RemoveContentTypes, "*/*") {
-			bucketRemoveAllowedContentTypes.RemoveContentTypes = []string{"*/*"}
-			bucket.AllowedContentTypes = []string{}
-		} else {
-			bucket.AllowedContentTypes = lo.Filter[string](bucket.AllowedContentTypes, func(contentType string, _ int) bool {
-				return !lo.Contains[string](bucketRemoveAllowedContentTypes.RemoveContentTypes, contentType)
-			})
-		}
-
-		err = bs.query.WithTx(tx).UpdateBucketAllowedContentTypes(ctx, &database.UpdateBucketAllowedContentTypesParams{
-			ID:                  bucket.ID,
-			AllowedContentTypes: bucket.AllowedContentTypes,
-		})
-		if err != nil {
-			bs.logger.Error("failed to remove allowed content types from bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to remove allowed content types from bucket", op, "", err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	bucket, err := bs.GetBucketById(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return bucket, nil
-}
-
 func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpdate *dto.BucketUpdate) (*entities.Bucket, error) {
 	const op = "BucketService.UpdateBucket"
 
@@ -315,6 +191,21 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
+		if bucketUpdate.AllowedContentTypes != nil {
+			if len(bucketUpdate.AllowedContentTypes) > 1 {
+				if lo.Contains[string](bucketUpdate.AllowedContentTypes, "*/*") {
+					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types use  '*/*'", op, "", nil)
+				}
+			}
+
+			err = validators.ValidateAllowedContentTypes(bucketUpdate.AllowedContentTypes)
+			if err != nil {
+				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			}
+
+			bucket.AllowedContentTypes = bucketUpdate.AllowedContentTypes
+		}
+
 		if bucketUpdate.MaxAllowedObjectSize != nil {
 			err = validators.ValidateMaxAllowedObjectSize(*bucketUpdate.MaxAllowedObjectSize)
 			if err != nil {
@@ -329,6 +220,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 
 		err = bs.query.WithTx(tx).UpdateBucket(ctx, &database.UpdateBucketParams{
 			ID:                   bucket.ID,
+			AllowedContentTypes:  bucket.AllowedContentTypes,
 			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
 			Public:               &bucket.Public,
 		})
