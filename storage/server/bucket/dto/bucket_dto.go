@@ -10,14 +10,7 @@ type BucketCreate struct {
 }
 
 type BucketUpdate struct {
-	MaxAllowedObjectSize *int64 `json:"max_allowed_object_size"`
-	Public               *bool  `json:"public"`
-}
-
-type BucketAddAllowedContentTypes struct {
-	AddContentTypes []string `json:"add_content_types"`
-}
-
-type BucketRemoveAllowedContentTypes struct {
-	RemoveContentTypes []string `json:"remove_content_types"`
+	AllowedContentTypes  []string `json:"allowed_content_types"`
+	MaxAllowedObjectSize *int64   `json:"max_allowed_object_size"`
+	Public               *bool    `json:"public"`
 }
