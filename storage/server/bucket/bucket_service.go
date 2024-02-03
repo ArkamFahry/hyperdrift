@@ -22,14 +22,15 @@ type BucketService struct {
 	query       *database.Queries
 	transaction *database.Transaction
 	logger      *zap.Logger
-	job         river.Client[pgx.Tx]
+	job         *river.Client[pgx.Tx]
 }
 
-func NewBucketService(db *pgxpool.Pool, logger *zap.Logger) *BucketService {
+func NewBucketService(db *pgxpool.Pool, logger *zap.Logger, job *river.Client[pgx.Tx]) *BucketService {
 	return &BucketService{
 		query:       database.New(db),
 		transaction: database.NewTransaction(db),
 		logger:      logger,
+		job:         job,
 	}
 }
 
@@ -256,6 +257,9 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			ID:         bucket.ID,
 			LockReason: "bucket.empty",
 		})
+		if err != nil {
+			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for emptying", op, "", err)
+		}
 
 		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmpty{
 			Id:   bucket.ID,
@@ -297,7 +301,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			LockReason: "bucket.delete",
 		})
 		if err != nil {
-			return srverr.NewServiceError(srverr.UnknownError, "failed to delete bucket", op, "", err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for deletion", op, "", err)
 		}
 
 		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDelete{
@@ -311,7 +315,6 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 		return nil
 	})
 	if err != nil {
-		bs.logger.Error("failed to delete bucket", zap.Error(err), zapfield.Operation(op))
 		return err
 	}
 
