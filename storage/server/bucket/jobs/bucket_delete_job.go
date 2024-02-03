@@ -10,12 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type BucketDeleteArgs struct {
+type BucketDelete struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
-func (BucketDeleteArgs) Kind() string {
+func (BucketDelete) Kind() string {
 	return "bucket.delete"
 }
 
@@ -24,10 +24,10 @@ type BucketDeleteWorker struct {
 	transaction *database.Transaction
 	storage     *storage.S3Storage
 	logger      *zap.Logger
-	river.WorkerDefaults[BucketDeleteArgs]
+	river.WorkerDefaults[BucketDelete]
 }
 
-func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDeleteArgs *river.Job[BucketDeleteArgs]) error {
+func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[BucketDelete]) error {
 	const op = "BucketDeleteWorker.Work"
 
 	err := w.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -36,7 +36,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDeleteArgs *river.J
 
 		for {
 			objects, err := w.database.WithTx(tx).ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
-				BucketID: bucketDeleteArgs.Args.Id,
+				BucketID: bucketDelete.Args.Id,
 				Offset:   offset,
 				Limit:    limit,
 			})
@@ -46,7 +46,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDeleteArgs *river.J
 				}
 				w.logger.Error(
 					"failed to list objects from database",
-					zap.String("bucket", bucketDeleteArgs.Args.Name),
+					zap.String("bucket", bucketDelete.Args.Name),
 					zapfield.Operation(op),
 					zap.Error(err),
 				)
@@ -55,13 +55,13 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDeleteArgs *river.J
 
 			for _, object := range objects {
 				err = w.storage.DeleteObject(ctx, &storage.ObjectDelete{
-					Bucket: bucketDeleteArgs.Args.Name,
+					Bucket: bucketDelete.Args.Name,
 					Name:   object.Name,
 				})
 				if err != nil {
 					w.logger.Error(
 						"failed to delete object from storage",
-						zap.String("bucket", bucketDeleteArgs.Args.Name),
+						zap.String("bucket", bucketDelete.Args.Name),
 						zap.String("name", object.Name),
 						zapfield.Operation(op),
 						zap.Error(err),
@@ -72,7 +72,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDeleteArgs *river.J
 				if err != nil {
 					w.logger.Error(
 						"failed to delete object from database",
-						zap.String("bucket", bucketDeleteArgs.Args.Name),
+						zap.String("bucket", bucketDelete.Args.Name),
 						zap.String("name", object.Name),
 						zapfield.Operation(op),
 						zap.Error(err),
@@ -84,11 +84,11 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDeleteArgs *river.J
 			offset += limit
 		}
 
-		err := w.database.WithTx(tx).DeleteBucket(ctx, bucketDeleteArgs.Args.Id)
+		err := w.database.WithTx(tx).DeleteBucket(ctx, bucketDelete.Args.Id)
 		if err != nil {
 			w.logger.Error(
 				"failed to delete bucket from database",
-				zap.String("bucket", bucketDeleteArgs.Args.Name),
+				zap.String("bucket", bucketDelete.Args.Name),
 				zapfield.Operation(op),
 				zap.Error(err),
 			)
