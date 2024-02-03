@@ -1,5 +1,14 @@
 package storage
 
+import "io"
+
+type ObjectUpload struct {
+	Bucket      string    `json:"bucket"`
+	Name        string    `json:"name"`
+	ContentType string    `json:"content_type"`
+	Content     io.Reader `json:"content"`
+}
+
 type ObjectRename struct {
 	OldName string `json:"old_name"`
 	NewName string `json:"new_name"`
