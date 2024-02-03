@@ -252,6 +252,11 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be emptied", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
+		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
+			ID:         bucket.ID,
+			LockReason: "bucket.empty",
+		})
+
 		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmpty{
 			Id:   bucket.ID,
 			Name: bucket.Name,
