@@ -6,6 +6,7 @@ import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"
 )
@@ -104,10 +105,10 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 	return nil
 }
 
-func NewBucketDeleteJob(database *database.Queries, transaction *database.Transaction, storage *storage.S3Storage, logger *zap.Logger) *BucketDeleteWorker {
+func NewBucketDeleteJob(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketDeleteWorker {
 	return &BucketDeleteWorker{
-		database:    database,
-		transaction: transaction,
+		database:    database.New(db),
+		transaction: database.NewTransaction(db),
 		storage:     storage,
 		logger:      logger,
 	}
