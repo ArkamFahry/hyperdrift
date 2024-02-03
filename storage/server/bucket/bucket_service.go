@@ -231,6 +231,41 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 	return bucket, nil
 }
 
+func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
+	const op = "BucketService.EmptyBucket"
+
+	if validators.ValidateNotEmptyTrimmedString(id) {
+		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to empty bucket", op, "", nil)
+	}
+
+	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
+		if err != nil {
+			return err
+		}
+
+		if bucket.Disabled {
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be emptied", bucket.ID), op, "", nil)
+		}
+
+		if bucket.Locked {
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be emptied", bucket.ID, *bucket.LockReason), op, "", nil)
+		}
+
+		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmpty{
+			Id:   bucket.ID,
+			Name: bucket.Name,
+		}, nil)
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	const op = "BucketService.DeleteBucket"
 
@@ -260,7 +295,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to delete bucket", op, "", err)
 		}
 
-		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDeleteArgs{
+		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDelete{
 			Id:   bucket.ID,
 			Name: bucket.Name,
 		}, nil)
