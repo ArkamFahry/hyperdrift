@@ -67,7 +67,14 @@ func (bc *BucketController) UpdateBucket(ctx *fiber.Ctx) error {
 }
 
 func (bc *BucketController) EmptyBucket(ctx *fiber.Ctx) error {
-	return nil
+	id := ctx.Params("id")
+
+	err := bc.bucketService.EmptyBucket(ctx.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return ctx.SendStatus(fiber.StatusAccepted)
 }
 
 func (bc *BucketController) RenameBucket(ctx *fiber.Ctx) error {
