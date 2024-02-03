@@ -6,6 +6,7 @@ import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"
 )
@@ -90,4 +91,13 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 	}
 
 	return nil
+}
+
+func NewBucketEmptyJob(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketEmptyWorker {
+	return &BucketEmptyWorker{
+		database:    database.New(db),
+		transaction: database.NewTransaction(db),
+		storage:     storage,
+		logger:      logger,
+	}
 }
