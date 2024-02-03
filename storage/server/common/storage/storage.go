@@ -143,30 +143,3 @@ func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *ObjectDelete
 func createS3Key(bucket string, name string) string {
 	return fmt.Sprintf(`%s/%s`, bucket, name)
 }
-
-func (s *S3Storage) EmptyBucket(ctx context.Context, bucketEmpty *BucketEmpty) error {
-	const op = "BucketStorage.EmptyBucket"
-
-	key := createS3BucketPathKey(bucketEmpty.Bucket)
-
-	_, err := s.s3Client.ListObjects(ctx, &s3.ListObjectsInput{
-		Bucket: aws.String(s.bucketName),
-		Prefix: aws.String(key),
-	})
-	if err != nil {
-		s.logger.Error(
-			"failed to list objects",
-			zap.Error(err),
-			zap.String("bucket", s.bucketName),
-			zap.String("key", key),
-			zapfield.Operation(op),
-		)
-		return err
-	}
-
-	return nil
-}
-
-func createS3BucketPathKey(bucket string) string {
-	return fmt.Sprintf(`%s/`, bucket)
-}
