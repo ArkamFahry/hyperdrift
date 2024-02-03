@@ -33,6 +33,23 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 	}
 }
 
+func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload) error {
+
+	key := createS3Key(objectUpload.Bucket, objectUpload.Name)
+
+	_, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucketName),
+		Key:         aws.String(key),
+		ContentType: aws.String(objectUpload.ContentType),
+		Body:        objectUpload.Content,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *PreSignedUploadObjectCreate) (*dto.PreSignedObject, error) {
 	const op = "S3Storage.PreSignedUploadObjectCreate"
 
