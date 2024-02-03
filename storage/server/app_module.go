@@ -39,8 +39,6 @@ func NewAppModule() {
 		Logger: appLogger,
 	}))
 
-	port := appConfig.ServerPort
-
 	pgxPool, err := pgxpool.New(context.Background(), appConfig.PostgresUrl)
 	if err != nil {
 		appLogger.Fatal("error connecting to postgres",
@@ -99,11 +97,11 @@ func NewAppModule() {
 
 	bucket.NewBucketModule(appServer, pgxPool, appLogger, riverClient)
 
-	err = appServer.Listen(":" + port)
+	err = appServer.Listen(":" + appConfig.ServerPort)
 	if err != nil {
 		appLogger.Fatal("error starting fiber server",
 			zap.Error(err),
-			zap.String("port", port),
+			zap.String("port", appConfig.ServerPort),
 			zapfield.Operation(op),
 		)
 	}
