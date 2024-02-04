@@ -3,19 +3,12 @@
 
 create table if not exists storage.events
 (
-    id         text                          not null check ( storage.text_non_empty_trimmed_text(id) ),
-    version    int         default 0         not null check ( version >= 0 ),
-    name       text                          not null check ( storage.text_non_empty_trimmed_text(name) ),
-    content    jsonb                         not null,
-    status     text        default 'pending' not null check (
-        status in ('pending', 'processing', 'completed', 'failed')
-        ),
-    retries    int         default 0         not null check ( retries >= 0 ),
-    expires_at timestamptz,
-    created_at timestamptz default now()     not null,
-    updated_at timestamptz                   null,
-    constraint events_id_pk primary key (id),
-    constraint events_id_version_uq unique (id, version)
+    id             text  not null check ( storage.text_non_empty_trimmed_text(id) ),
+    aggregate_type text  not null check ( storage.text_non_empty_trimmed_text(aggregate_type) ),
+    aggregate_id   text  not null check ( storage.text_non_empty_trimmed_text(aggregate_id) ),
+    type           text  not null check ( storage.text_non_empty_trimmed_text(type) ),
+    payload        jsonb null,
+    constraint events_id_pk primary key (id)
 );
 
 create or replace trigger events_set_updated_at
