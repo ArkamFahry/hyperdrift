@@ -20,6 +20,9 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"go.uber.org/zap"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func NewAppModule() {
@@ -96,6 +99,38 @@ func NewAppModule() {
 	}
 
 	bucket.NewBucketModule(appServer, pgxPool, appLogger, riverClient)
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-stop
+
+		appLogger.Info("received interrupt signal. shutting down...", zapfield.Operation(op))
+
+		if err = riverClient.Stop(context.Background()); err != nil {
+			appLogger.Error("error stopping river client", zap.Error(err), zapfield.Operation(op))
+		}
+
+		pgxPool.Close()
+
+		if err = appServer.Shutdown(); err != nil {
+			appLogger.Error("error shutting down Fiber server", zap.Error(err), zapfield.Operation(op))
+		}
+
+		appLogger.Info("shutdown completed...")
+		os.Exit(0)
+	}()
+
+	go func() {
+		err = riverClient.Start(context.Background())
+		if err != nil {
+			appLogger.Fatal("error starting river client",
+				zap.Error(err),
+				zapfield.Operation(op),
+			)
+		}
+	}()
 
 	err = appServer.Listen(":" + appConfig.ServerPort)
 	if err != nil {
