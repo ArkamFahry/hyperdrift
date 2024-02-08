@@ -65,25 +65,24 @@ $$ language plpgsql;
 
 
 
-create or replace function storage.set_updated_at()
+create or replace function storage.on_create()
     returns trigger as
 $$
 begin
-    if new is distinct from old then
-        new.updated_at = now();
-    end if;
+    new.id = tg_table_name || '_' || gen_random_uuid();
+    new.version = 0;
+    new.created_at = now();
 
     return new;
 end;
 $$ language plpgsql;
 
-create or replace function storage.increment_version()
+create or replace function util.on_update()
     returns trigger as
 $$
 begin
-    if new is distinct from old then
-        new.version = new.version + 1;
-    end if;
+    new.version = new.version + 1;
+    new.updated_at = now();
 
     return new;
 end;

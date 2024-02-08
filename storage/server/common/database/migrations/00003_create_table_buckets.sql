@@ -26,17 +26,17 @@ create table if not exists storage.buckets
 
 create index if not exists buckets_name_idx on storage.buckets using btree (name);
 
-create or replace trigger buckets_set_updated_at
-    before update
+create or replace trigger buckets_on_create
+    before insert
     on storage.buckets
     for each row
-execute function storage.set_updated_at();
+execute function storage.on_create();
 
-create or replace trigger buckets_increment_version
+create or replace trigger buckets_on_update
     before update
     on storage.buckets
     for each row
-execute function storage.increment_version();
+execute function storage.on_update();
 
 
 -- +goose StatementEnd

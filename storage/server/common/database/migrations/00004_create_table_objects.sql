@@ -26,17 +26,19 @@ create table if not exists storage.objects
 
 create index if not exists objects_bucket_id_name_idx on storage.objects using btree (bucket_id, name);
 
-create or replace trigger objects_set_updated_at
-    before update
+create or replace trigger objects_on_create
+    before insert
     on storage.objects
     for each row
-execute function storage.set_updated_at();
+execute function storage.on_create();
 
-create or replace trigger objects_increment_version
+create or replace trigger objects_on_update
     before update
     on storage.objects
     for each row
-execute function storage.increment_version();
+execute function storage.on_update();
+
+
 
 -- +goose StatementEnd
 
