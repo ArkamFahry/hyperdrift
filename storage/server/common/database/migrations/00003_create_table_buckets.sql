@@ -19,12 +19,12 @@ create table if not exists storage.buckets
     locked_at               timestamptz               null,
     created_at              timestamptz default now() not null,
     updated_at              timestamptz               null,
-    constraint buckets_id_pk primary key (id),
-    constraint buckets_id_version_uq unique (id, version),
-    constraint buckets_name_uq unique (name)
+    constraint buckets_id_primary_key primary key (id),
+    constraint buckets_id_version_unique unique (id, version),
+    constraint buckets_name_unique unique (name)
 );
 
-create index if not exists buckets_name_idx on storage.buckets using btree (name);
+create index if not exists buckets_name_index on storage.buckets using btree (name);
 
 create or replace trigger buckets_on_create
     before insert

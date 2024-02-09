@@ -8,7 +8,7 @@ create table if not exists storage.events
     aggregate_id   text  not null check ( storage.text_non_empty_trimmed_text(aggregate_id) ),
     type           text  not null check ( storage.text_non_empty_trimmed_text(type) ),
     payload        jsonb null,
-    constraint events_id_pk primary key (id)
+    constraint events_id_primary_key primary key (id)
 );
 
 -- +goose StatementEnd
