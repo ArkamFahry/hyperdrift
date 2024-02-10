@@ -22,19 +22,17 @@ func (q *Queries) CountBuckets(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const createBucket = `-- name: CreateBucket :exec
+const createBucket = `-- name: CreateBucket :one
 insert into storage.buckets
-(id, name, allowed_content_types, max_allowed_object_size, public, disabled)
+(name, allowed_content_types, max_allowed_object_size, public, disabled)
 values ($1,
         $2,
         $3,
         $4,
-        $5,
-        $6)
+        $5) returning id
 `
 
 type CreateBucketParams struct {
-	ID                   string
 	Name                 string
 	AllowedContentTypes  []string
 	MaxAllowedObjectSize *int64
@@ -42,16 +40,17 @@ type CreateBucketParams struct {
 	Disabled             bool
 }
 
-func (q *Queries) CreateBucket(ctx context.Context, arg *CreateBucketParams) error {
-	_, err := q.db.Exec(ctx, createBucket,
-		arg.ID,
+func (q *Queries) CreateBucket(ctx context.Context, arg *CreateBucketParams) (string, error) {
+	row := q.db.QueryRow(ctx, createBucket,
 		arg.Name,
 		arg.AllowedContentTypes,
 		arg.MaxAllowedObjectSize,
 		arg.Public,
 		arg.Disabled,
 	)
-	return err
+	var id string
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteBucket = `-- name: DeleteBucket :exec

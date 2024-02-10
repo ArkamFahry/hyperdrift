@@ -10,9 +10,9 @@ import (
 
 type Querier interface {
 	CountBuckets(ctx context.Context) (int64, error)
-	CreateBucket(ctx context.Context, arg *CreateBucketParams) error
-	CreateEvent(ctx context.Context, arg *CreateEventParams) error
-	CreateObject(ctx context.Context, arg *CreateObjectParams) error
+	CreateBucket(ctx context.Context, arg *CreateBucketParams) (string, error)
+	CreateEvent(ctx context.Context, arg *CreateEventParams) (string, error)
+	CreateObject(ctx context.Context, arg *CreateObjectParams) (string, error)
 	DeleteBucket(ctx context.Context, id string) error
 	DeleteObject(ctx context.Context, id string) error
 	DisableBucket(ctx context.Context, id string) error

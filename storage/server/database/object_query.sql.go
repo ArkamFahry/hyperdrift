@@ -10,39 +10,41 @@ import (
 	"time"
 )
 
-const createObject = `-- name: CreateObject :exec
+const createObject = `-- name: CreateObject :one
 insert into storage.objects
-    (id, bucket_id, name, content_type, size, public, metadata)
+    (bucket_id, name, content_type, size, public, metadata, upload_status)
 values ($1,
         $2,
         $3,
         $4,
         $5,
         $6,
-        $7)
+        $7) returning id
 `
 
 type CreateObjectParams struct {
-	ID          string
-	BucketID    string
-	Name        string
-	ContentType string
-	Size        int64
-	Public      bool
-	Metadata    []byte
+	BucketID     string
+	Name         string
+	ContentType  *string
+	Size         int64
+	Public       bool
+	Metadata     []byte
+	UploadStatus string
 }
 
-func (q *Queries) CreateObject(ctx context.Context, arg *CreateObjectParams) error {
-	_, err := q.db.Exec(ctx, createObject,
-		arg.ID,
+func (q *Queries) CreateObject(ctx context.Context, arg *CreateObjectParams) (string, error) {
+	row := q.db.QueryRow(ctx, createObject,
 		arg.BucketID,
 		arg.Name,
 		arg.ContentType,
 		arg.Size,
 		arg.Public,
 		arg.Metadata,
+		arg.UploadStatus,
 	)
-	return err
+	var id string
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteObject = `-- name: DeleteObject :exec

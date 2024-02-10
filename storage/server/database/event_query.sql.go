@@ -7,40 +7,32 @@ package database
 
 import (
 	"context"
-	"time"
 )
 
-const createEvent = `-- name: CreateEvent :exec
+const createEvent = `-- name: CreateEvent :one
 insert into storage.events
-    (id, name, content, status, retries, expires_at, created_at)
+    (aggregate_type, aggregate_id, type, payload)
 values ($1,
         $2,
         $3,
-        $4,
-        $5,
-        $6,
-        $7)
+        $4) returning id
 `
 
 type CreateEventParams struct {
-	ID        string
-	Name      string
-	Content   []byte
-	Status    string
-	Retries   int32
-	ExpiresAt *time.Time
-	CreatedAt time.Time
+	AggregateType string
+	AggregateID   string
+	Type          string
+	Payload       []byte
 }
 
-func (q *Queries) CreateEvent(ctx context.Context, arg *CreateEventParams) error {
-	_, err := q.db.Exec(ctx, createEvent,
-		arg.ID,
-		arg.Name,
-		arg.Content,
-		arg.Status,
-		arg.Retries,
-		arg.ExpiresAt,
-		arg.CreatedAt,
+func (q *Queries) CreateEvent(ctx context.Context, arg *CreateEventParams) (string, error) {
+	row := q.db.QueryRow(ctx, createEvent,
+		arg.AggregateType,
+		arg.AggregateID,
+		arg.Type,
+		arg.Payload,
 	)
-	return err
+	var id string
+	err := row.Scan(&id)
+	return id, err
 }
