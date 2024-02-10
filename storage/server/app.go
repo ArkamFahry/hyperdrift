@@ -7,6 +7,7 @@ import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/database/migrations"
 	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
 	"github.com/ArkamFahry/hyperdrift/storage/server/logger"
+	"github.com/ArkamFahry/hyperdrift/storage/server/middleware"
 	"github.com/ArkamFahry/hyperdrift/storage/server/services"
 	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
@@ -36,7 +37,9 @@ func NewAppModule() {
 	migrations.NewMigrations(appConfig, appLogger)
 
 	appServer := fiber.New(fiber.Config{
-		Immutable: true,
+		ErrorHandler:      middleware.ErrorHandler,
+		Immutable:         true,
+		EnablePrintRoutes: true,
 	})
 
 	appServer.Use(fiberzap.New(fiberzap.Config{
