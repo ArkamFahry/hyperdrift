@@ -102,7 +102,7 @@ func NewApp() {
 		)
 	}
 
-	bucketService := services.NewBucketService(pgxPool, appLogger, riverClient)
+	bucketService := services.NewBucketService(pgxPool, riverClient, appLogger)
 	controllers.NewBucketController(bucketService).RegisterBucketRoutes(appServer)
 
 	stop := make(chan os.Signal, 1)
