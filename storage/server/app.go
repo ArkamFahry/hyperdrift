@@ -19,7 +19,6 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -43,9 +42,9 @@ func NewApp() {
 		EnablePrintRoutes: true,
 	})
 
-	appServer.Use(fiberzap.New(fiberzap.Config{
-		Logger: appLogger,
-	}))
+	appServer.Use(middleware.Logger(appLogger))
+
+	appServer.Use(middleware.RequestId())
 
 	pgxPool, err := pgxpool.New(context.Background(), appConfig.PostgresUrl)
 	if err != nil {
