@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"github.com/ArkamFahry/hyperdrift/storage/server/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/controllers"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database/migrations"
 	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
 	"github.com/ArkamFahry/hyperdrift/storage/server/logger"
+	"github.com/ArkamFahry/hyperdrift/storage/server/services"
 	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -96,6 +98,9 @@ func NewAppModule() {
 			zapfield.Operation(op),
 		)
 	}
+
+	bucketService := services.NewBucketService(pgxPool, appLogger, riverClient)
+	controllers.NewBucketController(bucketService).RegisterBucketRoutes(appServer)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
