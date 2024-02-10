@@ -23,7 +23,6 @@ func (bc *BucketController) RegisterBucketRoutes(app *fiber.App) {
 
 	routesV1.Post("/buckets", bc.CreateBucket)
 	routesV1.Post("/buckets/:id/empty", bc.EmptyBucket)
-	routesV1.Post("/buckets/:id/rename", bc.RenameBucket)
 	routesV1.Delete("/buckets/:id/disable", bc.DisableBucket)
 	routesV1.Delete("/buckets/:id/enable", bc.EnableBucket)
 	routesV1.Patch("/buckets/:id", bc.UpdateBucket)
@@ -76,10 +75,6 @@ func (bc *BucketController) EmptyBucket(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.SendStatus(fiber.StatusAccepted)
-}
-
-func (bc *BucketController) RenameBucket(ctx *fiber.Ctx) error {
-	return nil
 }
 
 func (bc *BucketController) DisableBucket(ctx *fiber.Ctx) error {
