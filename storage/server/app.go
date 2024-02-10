@@ -61,6 +61,12 @@ func NewApp() {
 			credentials.NewStaticCredentialsProvider(appConfig.S3AccessKeyId, appConfig.S3SecretAccessKey, ""),
 		),
 	)
+	if err != nil {
+		appLogger.Fatal("error loading aws config",
+			zap.Error(err),
+			zapfield.Operation(op),
+		)
+	}
 
 	s3Client := s3.NewFromConfig(
 		s3Config,
