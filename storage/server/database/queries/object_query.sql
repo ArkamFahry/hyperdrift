@@ -1,13 +1,13 @@
--- name: CreateObject :exec
+-- name: CreateObject :one
 insert into storage.objects
-    (id, bucket_id, name, content_type, size, public, metadata)
-values (sqlc.arg('id'),
-        sqlc.arg('bucket_id'),
+    (bucket_id, name, content_type, size, public, metadata, upload_status)
+values (sqlc.arg('bucket_id'),
         sqlc.arg('name'),
-        sqlc.arg('content_type'),
+        sqlc.narg('content_type'),
         sqlc.arg('size'),
         sqlc.arg('public'),
-        sqlc.arg('metadata'));
+        sqlc.arg('metadata'),
+        sqlc.arg('upload_status')) returning id;
 
 -- name: UpdateObjectUploadStatus :exec
 update storage.objects
