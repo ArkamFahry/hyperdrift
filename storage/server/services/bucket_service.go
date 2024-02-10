@@ -67,8 +67,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 		}
 	}
 
-	err := bs.query.CreateBucket(ctx, &database.CreateBucketParams{
-		ID:                   bucketCreate.Id,
+	id, err := bs.query.CreateBucket(ctx, &database.CreateBucketParams{
 		Name:                 bucketCreate.Name,
 		AllowedContentTypes:  bucketCreate.AllowedContentTypes,
 		MaxAllowedObjectSize: bucketCreate.MaxAllowedObjectSize,
@@ -83,7 +82,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to create bucket", op, "", err)
 	}
 
-	bucket, err := bs.GetBucketById(ctx, bucketCreate.Id)
+	bucket, err := bs.GetBucketById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -271,6 +270,9 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			Id:   bucket.ID,
 			Name: bucket.Name,
 		}, nil)
+		if err != nil {
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket empty job", op, "", err)
+		}
 
 		return nil
 	})
@@ -315,7 +317,8 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			Name: bucket.Name,
 		}, nil)
 		if err != nil {
-			return err
+			bs.logger.Error("failed to create bucket delete job", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket delete job", op, "", err)
 		}
 
 		return nil
