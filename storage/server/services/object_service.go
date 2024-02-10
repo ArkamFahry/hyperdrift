@@ -8,16 +8,19 @@ import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/database"
 	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
 	"github.com/ArkamFahry/hyperdrift/storage/server/entities"
+	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
 	"github.com/ArkamFahry/hyperdrift/storage/server/srverr"
 	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/validators"
 	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"
+	"time"
 )
+
+const DefaultContentType = "application/octet-stream"
 
 type ObjectService struct {
 	query       *database.Queries
@@ -41,10 +44,10 @@ func NewObjectService(db *pgxpool.Pool, job *river.Client[pgx.Tx], config *confi
 func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *dto.PreSignedUploadObjectCreate) (*dto.PreSignedObject, error) {
 	const op = "ObjectService.CreatePreSignedUploadUrl"
 
-	var presignedUploadUrl *dto.PreSignedObject
+	var preSignedObject *dto.PreSignedObject
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByName(ctx, tx, preSignedUploadObjectCreate.Bucket, op)
+		bucket, err := os.getBucketByNameTxn(ctx, tx, preSignedUploadObjectCreate.Bucket, op)
 		if err != nil {
 			return err
 		}
@@ -58,9 +61,14 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 			}
 		}
 
-		err = validateContentType(preSignedUploadObjectCreate.ContentType)
-		if err != nil {
-			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+		if preSignedUploadObjectCreate.ContentType == nil {
+			contentType := DefaultContentType
+			preSignedUploadObjectCreate.ContentType = &contentType
+		} else {
+			err = validateContentType(*preSignedUploadObjectCreate.ContentType)
+			if err != nil {
+				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			}
 		}
 
 		err = validateContentSize(preSignedUploadObjectCreate.Size)
@@ -68,11 +76,11 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
 		}
 
-		presignedUploadUrl, err = os.storage.CreatePreSignedUploadObject(ctx, &storage.PreSignedUploadObjectCreate{
+		preSignedObject, err = os.storage.CreatePreSignedUploadObject(ctx, &storage.PreSignedUploadObjectCreate{
 			Bucket:      bucket.Name,
 			Name:        preSignedUploadObjectCreate.Name,
 			ExpiresIn:   preSignedUploadObjectCreate.ExpiresIn,
-			ContentType: preSignedUploadObjectCreate.ContentType,
+			ContentType: *preSignedUploadObjectCreate.ContentType,
 			Size:        preSignedUploadObjectCreate.Size,
 		})
 		if err != nil {
@@ -84,17 +92,33 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 			return srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata to bytes", op, "", err)
 		}
 
-		err = os.query.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
-			ID:          newObjectId(),
-			BucketID:    bucket.Id,
-			Name:        preSignedUploadObjectCreate.Name,
-			ContentType: preSignedUploadObjectCreate.ContentType,
-			Size:        preSignedUploadObjectCreate.Size,
-			Public:      preSignedUploadObjectCreate.Public,
-			Metadata:    metadataBytes,
+		id, err := os.query.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
+			BucketID:     bucket.Id,
+			Name:         preSignedUploadObjectCreate.Name,
+			ContentType:  preSignedUploadObjectCreate.ContentType,
+			Size:         preSignedUploadObjectCreate.Size,
+			Public:       preSignedUploadObjectCreate.Public,
+			Metadata:     metadataBytes,
+			UploadStatus: dto.ObjectUploadStatusPending,
 		})
-		if database.IsConflictError(err) {
-			return srverr.NewServiceError(srverr.ConflictError, fmt.Sprintf("object with name '%s' already exists", preSignedUploadObjectCreate.Name), op, "", err)
+		if err != nil {
+			if database.IsConflictError(err) {
+				return srverr.NewServiceError(srverr.ConflictError, fmt.Sprintf("object with name '%s' already exists", preSignedUploadObjectCreate.Name), op, "", err)
+			}
+			os.logger.Error("failed to create object in database", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create object in database", op, "", err)
+		}
+
+		_, err = os.job.InsertTx(ctx, tx, jobs.PreSignedObjectUploadCompletion{
+			BucketName: bucket.Name,
+			ObjectName: preSignedUploadObjectCreate.Name,
+			ObjectId:   id,
+		}, &river.InsertOpts{
+			ScheduledAt: time.Unix(preSignedObject.ExpiresAt, 0),
+		})
+		if err != nil {
+			os.logger.Error("failed to insert pre-signed object upload completion job", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed object upload completion job", op, "", err)
 		}
 
 		return nil
@@ -104,13 +128,13 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 	}
 
 	return &dto.PreSignedObject{
-		Url:       presignedUploadUrl.Url,
-		Method:    presignedUploadUrl.Method,
-		ExpiresAt: presignedUploadUrl.ExpiresAt,
+		Url:       preSignedObject.Url,
+		Method:    preSignedObject.Method,
+		ExpiresAt: preSignedObject.ExpiresAt,
 	}, nil
 }
 
-func (os *ObjectService) getBucketByName(ctx context.Context, tx pgx.Tx, bucketName string, op string) (*entities.Bucket, error) {
+func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, bucketName string, op string) (*entities.Bucket, error) {
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required", op, "", nil)
 	}
@@ -182,8 +206,4 @@ func metadataToBytes(metadata map[string]any) ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal metadata to bytes: %w", err)
 	}
 	return metadataBytes, nil
-}
-
-func newObjectId() string {
-	return fmt.Sprintf("objects_%s", uuid.New().String())
 }
