@@ -46,6 +46,12 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 	}
 
 	if bucketCreate.AllowedContentTypes != nil {
+		if len(bucketCreate.AllowedContentTypes) > 1 {
+			if lo.Contains[string](bucketCreate.AllowedContentTypes, "*/*") {
+				return nil, srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types use  '*/*'", op, "", nil)
+			}
+		}
+
 		err := validators.ValidateAllowedContentTypes(bucketCreate.AllowedContentTypes)
 		if err != nil {
 			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
