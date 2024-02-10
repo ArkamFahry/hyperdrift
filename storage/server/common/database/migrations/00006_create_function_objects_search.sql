@@ -6,6 +6,7 @@ create or replace function storage.objects_search(bucket_name text, path_prefix 
     returns table
             (
                 id               text,
+                version          int,
                 name             text,
                 bucket           text,
                 content_type     text,
@@ -29,6 +30,7 @@ begin
                                group by folder
                                limit limits offset offsets)
         select objects.id               as id,
+               objects.version          as version,
                files_folders.folder     as name,
                bucket_name              as bucket,
                objects.content_type     as content_type,
