@@ -2,6 +2,15 @@ package dto
 
 import "time"
 
+const (
+	ObjectUploadStatusPending    = "pending"
+	ObjectUploadStatusProcessing = "processing"
+	ObjectUploadStatusCompleted  = "completed"
+	ObjectUploadStatusFailed     = "failed"
+
+	ObjectDefaultObjectContentType = "application/octet-stream"
+)
+
 type ObjectCreate struct {
 	Id             string     `json:"id"`
 	Name           string     `json:"name"`
@@ -40,7 +49,7 @@ type PreSignedUploadObjectCreate struct {
 	Bucket      string         `json:"bucket"`
 	Name        string         `json:"name"`
 	ExpiresIn   *int64         `json:"expires_in"`
-	ContentType string         `json:"content_type"`
+	ContentType *string        `json:"content_type"`
 	Size        int64          `json:"size"`
 	Public      bool           `json:"public"`
 	Metadata    map[string]any `json:"metadata"`
