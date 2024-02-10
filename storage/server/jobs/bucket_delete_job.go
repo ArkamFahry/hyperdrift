@@ -2,9 +2,9 @@ package jobs
 
 import (
 	"context"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/database"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/storage"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
+	"github.com/ArkamFahry/hyperdrift/storage/server/database"
+	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
+	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"

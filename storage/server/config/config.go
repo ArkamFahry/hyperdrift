@@ -2,7 +2,7 @@ package config
 
 import (
 	"errors"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
+	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

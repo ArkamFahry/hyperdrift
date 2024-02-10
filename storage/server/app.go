@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/database/migrations"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/logger"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/storage"
-	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
+	"github.com/ArkamFahry/hyperdrift/storage/server/config"
+	"github.com/ArkamFahry/hyperdrift/storage/server/database/migrations"
 	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
+	"github.com/ArkamFahry/hyperdrift/storage/server/logger"
+	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
+	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
