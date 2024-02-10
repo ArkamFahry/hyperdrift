@@ -21,7 +21,7 @@ func (BucketEmpty) Kind() string {
 }
 
 type BucketEmptyWorker struct {
-	database    *database.Queries
+	queries     *database.Queries
 	transaction *database.Transaction
 	storage     *storage.S3Storage
 	logger      *zap.Logger
@@ -36,7 +36,7 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 		offset := int32(0)
 
 		for {
-			objects, err := w.database.WithTx(tx).ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
+			objects, err := w.queries.WithTx(tx).ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
 				BucketID: bucketEmpty.Args.Id,
 				Offset:   offset,
 				Limit:    limit,
@@ -46,7 +46,7 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 					break
 				}
 				w.logger.Error(
-					"failed to list objects from database",
+					"failed to list objects from queries",
 					zap.String("bucket", bucketEmpty.Args.Name),
 					zapfield.Operation(op),
 					zap.Error(err),
@@ -69,7 +69,7 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 					)
 					return err
 				}
-				err = w.database.WithTx(tx).DeleteObject(ctx, object.ID)
+				err = w.queries.WithTx(tx).DeleteObject(ctx, object.ID)
 				if err != nil {
 					w.logger.Error(
 						"failed to delete object from database",
@@ -84,6 +84,18 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 
 			offset += limit
 		}
+
+		err := w.queries.WithTx(tx).UnlockBucket(ctx, bucketEmpty.Args.Id)
+		if err != nil {
+			w.logger.Error(
+				"failed to unlock bucket from database",
+				zap.String("bucket", bucketEmpty.Args.Name),
+				zapfield.Operation(op),
+				zap.Error(err),
+			)
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -95,7 +107,7 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 
 func NewBucketEmptyJob(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketEmptyWorker {
 	return &BucketEmptyWorker{
-		database:    database.New(db),
+		queries:     database.New(db),
 		transaction: database.NewTransaction(db),
 		storage:     storage,
 		logger:      logger,
