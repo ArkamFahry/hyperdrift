@@ -21,7 +21,7 @@ func (BucketDelete) Kind() string {
 }
 
 type BucketDeleteWorker struct {
-	database    *database.Queries
+	queries     *database.Queries
 	transaction *database.Transaction
 	storage     *storage.S3Storage
 	logger      *zap.Logger
@@ -36,7 +36,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 		offset := int32(0)
 
 		for {
-			objects, err := w.database.WithTx(tx).ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
+			objects, err := w.queries.WithTx(tx).ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
 				BucketID: bucketDelete.Args.Id,
 				Offset:   offset,
 				Limit:    limit,
@@ -46,7 +46,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 					break
 				}
 				w.logger.Error(
-					"failed to list objects from database",
+					"failed to list objects from queries",
 					zap.String("bucket", bucketDelete.Args.Name),
 					zapfield.Operation(op),
 					zap.Error(err),
@@ -69,7 +69,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 					)
 					return err
 				}
-				err = w.database.WithTx(tx).DeleteObject(ctx, object.ID)
+				err = w.queries.WithTx(tx).DeleteObject(ctx, object.ID)
 				if err != nil {
 					w.logger.Error(
 						"failed to delete object from database",
@@ -85,7 +85,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 			offset += limit
 		}
 
-		err := w.database.WithTx(tx).DeleteBucket(ctx, bucketDelete.Args.Id)
+		err := w.queries.WithTx(tx).DeleteBucket(ctx, bucketDelete.Args.Id)
 		if err != nil {
 			w.logger.Error(
 				"failed to delete bucket from database",
@@ -107,7 +107,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 
 func NewBucketDeleteJob(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketDeleteWorker {
 	return &BucketDeleteWorker{
-		database:    database.New(db),
+		queries:     database.New(db),
 		transaction: database.NewTransaction(db),
 		storage:     storage,
 		logger:      logger,
