@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "./common/database/queries"
-    schema: "./common/database/migrations"
+    queries: "./database/queries"
+    schema: "./database/migrations"
     gen:
       go:
         package: "database"
-        out: "./common/database"
+        out: "./database"
         sql_package: "pgx/v5"
         emit_pointers_for_null_types: true
         emit_result_struct_pointers: true
