@@ -21,16 +21,16 @@ import (
 type BucketService struct {
 	query       *database.Queries
 	transaction *database.Transaction
-	logger      *zap.Logger
 	job         *river.Client[pgx.Tx]
+	logger      *zap.Logger
 }
 
-func NewBucketService(db *pgxpool.Pool, logger *zap.Logger, job *river.Client[pgx.Tx]) *BucketService {
+func NewBucketService(db *pgxpool.Pool, job *river.Client[pgx.Tx], logger *zap.Logger) *BucketService {
 	return &BucketService{
 		query:       database.New(db),
 		transaction: database.NewTransaction(db),
-		logger:      logger,
 		job:         job,
+		logger:      logger,
 	}
 }
 
