@@ -3,18 +3,28 @@
 
 create table if not exists storage.events
 (
-    id             text default 'events_' || storage.gen_random_ulid() not null check ( storage.text_non_empty_trimmed_text(id) ),
-    aggregate_type text  not null check ( storage.text_non_empty_trimmed_text(aggregate_type) ),
-    aggregate_id   text  not null check ( storage.text_non_empty_trimmed_text(aggregate_id) ),
-    type           text  not null check ( storage.text_non_empty_trimmed_text(type) ),
-    payload        jsonb null,
+    id             text          not null check ( storage.text_non_empty_trimmed_text(id) ),
+    version        int default 0 not null check ( version >= 0 ),
+    aggregate_type text          not null check ( storage.text_non_empty_trimmed_text(aggregate_type) ),
+    aggregate_id   text          not null check ( storage.text_non_empty_trimmed_text(aggregate_id) ),
+    type           text          not null check ( storage.text_non_empty_trimmed_text(type) ),
+    payload        jsonb         null,
+    created_at     timestamptz   not null,
     constraint events_id_primary_key primary key (id)
 );
+
+create or replace trigger events_on_create
+    before insert
+    on storage.events
+    for each row
+execute function storage.on_create();
 
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+
+drop trigger if exists events_on_create on storage.events;
 
 drop table if exists storage.events;
 
