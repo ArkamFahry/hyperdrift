@@ -1,15 +1,16 @@
-package bucket
+package controllers
 
 import (
-	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/services"
 	"github.com/gofiber/fiber/v2"
 )
 
 type BucketController struct {
-	bucketService *BucketService
+	bucketService *services.BucketService
 }
 
-func NewBucketController(bucketService *BucketService) *BucketController {
+func NewBucketController(bucketService *services.BucketService) *BucketController {
 	return &BucketController{
 		bucketService: bucketService,
 	}

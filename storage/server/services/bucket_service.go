@@ -1,15 +1,15 @@
-package bucket
+package services
 
 import (
 	"context"
 	"fmt"
-	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/dto"
-	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/entities"
-	"github.com/ArkamFahry/hyperdrift/storage/server/bucket/jobs"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/database"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/srverr"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/validators"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
+	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/entities"
+	jobs2 "github.com/ArkamFahry/hyperdrift/storage/server/jobs"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
@@ -261,7 +261,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for emptying", op, "", err)
 		}
 
-		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmpty{
+		_, err = bs.job.InsertTx(ctx, tx, &jobs2.BucketEmpty{
 			Id:   bucket.ID,
 			Name: bucket.Name,
 		}, nil)
@@ -304,7 +304,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for deletion", op, "", err)
 		}
 
-		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDelete{
+		_, err = bs.job.InsertTx(ctx, tx, jobs2.BucketDelete{
 			Id:   bucket.ID,
 			Name: bucket.Name,
 		}, nil)

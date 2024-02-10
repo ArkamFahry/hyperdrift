@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/ArkamFahry/hyperdrift/storage/server/bucket"
-	bucketJobs "github.com/ArkamFahry/hyperdrift/storage/server/bucket/jobs"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/database/migrations"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/logger"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
+	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -71,14 +70,14 @@ func NewAppModule() {
 
 	workers := river.NewWorkers()
 
-	if err = river.AddWorkerSafely[bucketJobs.BucketDelete](workers, bucketJobs.NewBucketDeleteJob(pgxPool, appStorage, appLogger)); err != nil {
+	if err = river.AddWorkerSafely[jobs.BucketDelete](workers, jobs.NewBucketDeleteJob(pgxPool, appStorage, appLogger)); err != nil {
 		appLogger.Fatal("error adding bucket delete worker",
 			zap.Error(err),
 			zapfield.Operation(op),
 		)
 	}
 
-	if err = river.AddWorkerSafely[bucketJobs.BucketEmpty](workers, bucketJobs.NewBucketEmptyJob(pgxPool, appStorage, appLogger)); err != nil {
+	if err = river.AddWorkerSafely[jobs.BucketEmpty](workers, jobs.NewBucketEmptyJob(pgxPool, appStorage, appLogger)); err != nil {
 		appLogger.Fatal("error adding bucket empty worker",
 			zap.Error(err),
 			zapfield.Operation(op),
@@ -97,8 +96,6 @@ func NewAppModule() {
 			zapfield.Operation(op),
 		)
 	}
-
-	bucket.NewBucketModule(appServer, pgxPool, appLogger, riverClient)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)

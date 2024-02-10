@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/common/zapfield"
-	"github.com/ArkamFahry/hyperdrift/storage/server/object/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
