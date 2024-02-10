@@ -33,5 +33,5 @@ func NewServiceError(errorCode ErrorCode, message string, operation string, requ
 }
 
 func (e ServiceError) Error() string {
-	return fmt.Sprintf("error_code: %s, message: %s, operation: %s, request_id: %s, internal_error: %s", e.ErrorCode.Error(), e.Message, e.Operation, e.RequestId, e.InternalError.Error())
+	return fmt.Sprintf("error_code: %s, message: %s, operation: %s, request_id: %s, internal_error: %s", e.ErrorCode, e.Message, e.Operation, e.RequestId, e.InternalError)
 }
