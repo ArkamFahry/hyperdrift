@@ -34,8 +34,8 @@ type Config struct {
 		Disabled             bool     `json:"disabled" mapstructure:"disabled"`
 	} `json:"default_buckets" mapstructure:"default_buckets"`
 
-	DefaultPreSignedUploadUrlExpiresIn   int `json:"default_pre_signed_upload_url_expires_in" mapstructure:"default_pre_signed_upload_url_expires_in"`
-	DefaultPreSignedDownloadUrlExpiresIn int `json:"default_pre_signed_download_url_expires_in" mapstructure:"default_pre_signed_download_url_expires_in"`
+	DefaultPreSignedUploadUrlExpiresIn   int64 `json:"default_pre_signed_upload_url_expires_in" mapstructure:"default_pre_signed_upload_url_expires_in"`
+	DefaultPreSignedDownloadUrlExpiresIn int64 `json:"default_pre_signed_download_url_expires_in" mapstructure:"default_pre_signed_download_url_expires_in"`
 }
 
 func NewConfig() *Config {
