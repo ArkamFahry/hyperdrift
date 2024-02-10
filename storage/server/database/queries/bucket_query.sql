@@ -1,12 +1,11 @@
--- name: CreateBucket :exec
+-- name: CreateBucket :one
 insert into storage.buckets
-(id, name, allowed_content_types, max_allowed_object_size, public, disabled)
-values (sqlc.arg('id'),
-        sqlc.arg('name'),
+(name, allowed_content_types, max_allowed_object_size, public, disabled)
+values (sqlc.arg('name'),
         sqlc.narg('allowed_content_types'),
         sqlc.narg('max_allowed_object_size'),
         sqlc.arg('public'),
-        sqlc.arg('disabled'));
+        sqlc.arg('disabled')) returning id;
 
 -- name: UpdateBucket :exec
 update storage.buckets
