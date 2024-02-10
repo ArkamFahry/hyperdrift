@@ -37,11 +37,13 @@ type PreSignedObject struct {
 }
 
 type PreSignedUploadObjectCreate struct {
-	Bucket      string `json:"bucket"`
-	Name        string `json:"name"`
-	ExpiresIn   *int64 `json:"expires_in"`
-	ContentType string `json:"content_type"`
-	Size        int64  `json:"size"`
+	Bucket      string         `json:"bucket"`
+	Name        string         `json:"name"`
+	ExpiresIn   *int64         `json:"expires_in"`
+	ContentType string         `json:"content_type"`
+	Size        int64          `json:"size"`
+	Public      bool           `json:"public"`
+	Metadata    map[string]any `json:"metadata"`
 }
 
 type PreSignedDownloadObjectCreate struct {
