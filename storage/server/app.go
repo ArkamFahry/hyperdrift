@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/ArkamFahry/hyperdrift/storage/server/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/controllers"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database/migrations"
@@ -22,12 +26,9 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"go.uber.org/zap"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
-func NewAppModule() {
+func NewApp() {
 	const op = "AppModule.NewAppModule"
 
 	appConfig := config.NewConfig()
