@@ -29,7 +29,7 @@ func (bc *BucketController) RegisterBucketRoutes(app *fiber.App) {
 	routesV1.Delete("/buckets/:id", bc.DeleteBucket)
 	routesV1.Get("/buckets/:id", bc.GetBucket)
 	routesV1.Get("/buckets/:id/size", bc.GetBucketSize)
-	routesV1.Get("/all-buckets", bc.ListAllBuckets)
+	routesV1.Get("/buckets", bc.ListAllBuckets)
 }
 
 func (bc *BucketController) CreateBucket(ctx *fiber.Ctx) error {
