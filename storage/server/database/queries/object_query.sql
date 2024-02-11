@@ -148,5 +148,5 @@ select id::text,
        last_accessed_at::timestamptz,
        created_at::timestamptz,
        updated_at::timestamptz
-from storage.objects_search(sqlc.arg('bucket_name')::text, sqlc.arg('path_prefix')::text, sqlc.narg('levels')::int,
+from storage.objects_search(sqlc.arg('bucket_name')::text, sqlc.arg('object_path')::text, sqlc.narg('level')::int,
                             sqlc.narg('limit')::int, sqlc.narg('offset')::int);
