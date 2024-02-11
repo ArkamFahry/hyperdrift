@@ -395,7 +395,7 @@ select id::text,
        version::int,
        name::text,
        bucket_id::text,
-       bucket_name::text,
+       bucket::text,
        content_type::text,
        size::bigint,
        public::boolean,
@@ -421,7 +421,7 @@ type SearchObjectsByPathRow struct {
 	Version        int32
 	Name           string
 	BucketID       string
-	BucketName     string
+	Bucket         string
 	ContentType    string
 	Size           int64
 	Public         bool
@@ -452,7 +452,7 @@ func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByP
 			&i.Version,
 			&i.Name,
 			&i.BucketID,
-			&i.BucketName,
+			&i.Bucket,
 			&i.ContentType,
 			&i.Size,
 			&i.Public,
