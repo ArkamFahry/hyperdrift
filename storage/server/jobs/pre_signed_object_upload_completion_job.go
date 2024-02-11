@@ -40,15 +40,29 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 	if err != nil {
 		w.logger.Error(
 			"failed to check if object exists",
-			zap.String("bucket", preSignedObjectUploadCompletion.Args.BucketName),
+			zap.String("bucket_name", preSignedObjectUploadCompletion.Args.BucketName),
+			zap.String("object_name", preSignedObjectUploadCompletion.Args.ObjectName),
 			zapfield.Operation(op),
 			zap.Error(err),
 		)
 		return err
 	}
 
-	err = w.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		if objectExists {
+	if objectExists {
+		err = w.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
+			object, err := w.queries.WithTx(tx).GetObjectById(ctx, preSignedObjectUploadCompletion.Args.ObjectId)
+			if err != nil {
+				w.logger.Error(
+					"failed to get object",
+					zap.String("object_id", preSignedObjectUploadCompletion.Args.ObjectId),
+					zapfield.Operation(op),
+				)
+			}
+
+			if object.UploadStatus == dto.ObjectUploadStatusCompleted {
+				return nil
+			}
+
 			err = w.queries.WithTx(tx).UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
 				ID:           preSignedObjectUploadCompletion.Args.ObjectId,
 				UploadStatus: dto.ObjectUploadStatusCompleted,
@@ -56,29 +70,29 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 			if err != nil {
 				w.logger.Error(
 					"failed to update object upload status to completed",
-					zap.String("bucket", preSignedObjectUploadCompletion.Args.BucketName),
+					zap.String("object_id", preSignedObjectUploadCompletion.Args.ObjectId),
 					zapfield.Operation(op),
 					zap.Error(err),
 				)
 				return err
 			}
-		} else {
-			err = w.queries.WithTx(tx).DeleteObject(ctx, preSignedObjectUploadCompletion.Args.ObjectId)
-			if err != nil {
-				w.logger.Error(
-					"failed to delete object",
-					zap.String("bucket", preSignedObjectUploadCompletion.Args.BucketName),
-					zapfield.Operation(op),
-					zap.Error(err),
-				)
-				return err
-			}
-		}
 
-		return nil
-	})
-	if err != nil {
-		return err
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		err = w.queries.DeleteObject(ctx, preSignedObjectUploadCompletion.Args.ObjectId)
+		if err != nil {
+			w.logger.Error(
+				"failed to delete object",
+				zap.String("object_id", preSignedObjectUploadCompletion.Args.ObjectId),
+				zapfield.Operation(op),
+				zap.Error(err),
+			)
+			return err
+		}
 	}
 
 	return nil
@@ -86,9 +100,8 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 
 func NewPreSignedObjectUploadCompletionWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *PreSignedObjectUploadCompletionWorker {
 	return &PreSignedObjectUploadCompletionWorker{
-		queries:     database.New(db),
-		transaction: database.NewTransaction(db),
-		storage:     storage,
-		logger:      logger,
+		queries: database.New(db),
+		storage: storage,
+		logger:  logger,
 	}
 }
