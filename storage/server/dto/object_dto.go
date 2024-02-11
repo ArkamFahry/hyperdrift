@@ -39,7 +39,14 @@ type ObjectMove struct {
 	NewPath string `json:"new_path"`
 }
 
-type PreSignedObject struct {
+type PreSignedUploadObject struct {
+	Id        string `json:"id"`
+	Url       string `json:"url"`
+	Method    string `json:"method"`
+	ExpiresAt int64  `json:"expires_at"`
+}
+
+type PreSignedDownloadObject struct {
 	Url       string `json:"url"`
 	Method    string `json:"method"`
 	ExpiresAt int64  `json:"expires_at"`
