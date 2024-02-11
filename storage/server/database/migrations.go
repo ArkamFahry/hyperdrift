@@ -1,4 +1,4 @@
-package migrations
+package database
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-//go:embed *.sql
+//go:embed migrations/*.sql
 var embedMigrations embed.FS
 
 func NewMigrations(config *config.Config, logger *zap.Logger) {
@@ -33,16 +33,18 @@ func NewMigrations(config *config.Config, logger *zap.Logger) {
 		}
 	}(db)
 
+	goose.SetTableName("storage.goose_db_version")
+
 	goose.SetBaseFS(embedMigrations)
 
-	if err := goose.SetDialect("postgres"); err != nil {
+	if err = goose.SetDialect("postgres"); err != nil {
 		logger.Fatal("failed to set migration dialect",
 			zap.Error(err),
 			zap.String("operation", op),
 		)
 	}
 
-	if err := goose.Up(db, ""); err != nil {
+	if err = goose.Up(db, "migrations"); err != nil {
 		logger.Fatal("failed to to run up migration",
 			zap.Error(err),
 			zap.String("operation", op),
