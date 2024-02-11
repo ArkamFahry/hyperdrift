@@ -141,6 +141,9 @@ func NewApp() {
 	bucketService := services.NewBucketService(pgxPool, riverClient, appLogger)
 	controllers.NewBucketController(bucketService).RegisterBucketRoutes(appServer)
 
+	objectService := services.NewObjectService(pgxPool, appStorage, riverClient, appConfig, appLogger)
+	controllers.NewObjectController(objectService).RegisterObjectRoutes(appServer)
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
