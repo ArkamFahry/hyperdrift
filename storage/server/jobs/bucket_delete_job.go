@@ -42,9 +42,6 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 				Limit:    limit,
 			})
 			if err != nil {
-				if len(objects) == 0 {
-					break
-				}
 				w.logger.Error(
 					"failed to list objects from queries",
 					zap.String("bucket", bucketDelete.Args.Name),
@@ -52,6 +49,9 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 					zap.Error(err),
 				)
 				return err
+			}
+			if len(objects) == 0 {
+				break
 			}
 
 			for _, object := range objects {
