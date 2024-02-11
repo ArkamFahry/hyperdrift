@@ -410,8 +410,8 @@ from storage.objects_search($1::text, $2::text, $3::int,
 
 type SearchObjectsByPathParams struct {
 	BucketName string
-	PathPrefix string
-	Levels     *int32
+	ObjectPath string
+	Level      *int32
 	Limit      *int32
 	Offset     *int32
 }
@@ -435,8 +435,8 @@ type SearchObjectsByPathRow struct {
 func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByPathParams) ([]*SearchObjectsByPathRow, error) {
 	rows, err := q.db.Query(ctx, searchObjectsByPath,
 		arg.BucketName,
-		arg.PathPrefix,
-		arg.Levels,
+		arg.ObjectPath,
+		arg.Level,
 		arg.Limit,
 		arg.Offset,
 	)
