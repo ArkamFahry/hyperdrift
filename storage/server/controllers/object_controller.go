@@ -23,6 +23,8 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 
 	routesV1.Post("/pre-signed-upload-object", oc.CreatePreSignedUploadObject)
 	routesV1.Post("/pre-signed-upload-object/:id/complete", oc.CompletePreSignedObjectUpload)
+	routesV1.Get("/objects/:id", oc.GetObjectById)
+	routesV1.Delete("/objects/:bucket_name/:object_path", oc.SearchObjectsByBucketNameAndObjectPath)
 }
 
 func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
@@ -50,4 +52,31 @@ func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error 
 	}
 
 	return ctx.SendStatus(fiber.StatusAccepted)
+}
+
+func (oc *ObjectController) GetObjectById(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+
+	object, err := oc.objectService.GetObjectById(ctx.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(object)
+}
+
+func (oc *ObjectController) SearchObjectsByBucketNameAndObjectPath(ctx *fiber.Ctx) error {
+	bucketName := ctx.Params("bucket_name")
+	objectPath := ctx.Params("object_path")
+
+	levels := ctx.QueryInt("levels")
+	limit := ctx.QueryInt("limit")
+	offset := ctx.QueryInt("offset")
+
+	objects, err := oc.objectService.SearchObjectsByBucketNameAndObjectPath(ctx.Context(), bucketName, objectPath, int32(levels), int32(limit), int32(offset))
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(objects)
 }
