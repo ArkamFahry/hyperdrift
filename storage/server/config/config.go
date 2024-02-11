@@ -20,8 +20,8 @@ type Config struct {
 	S3Endpoint        string `json:"s3_endpoint" mapstructure:"s3_endpoint"`
 	S3AccessKeyId     string `json:"s3_access_key_id" mapstructure:"s3_access_key_id"`
 	S3SecretAccessKey string `json:"s3_secret_access_key" mapstructure:"s3_secret_access_key"`
-	S3Region          string `json:"s3_region" mapstructure:"s3_region"`
 	S3BucketName      string `json:"s3_bucket_name" mapstructure:"s3_bucket_name"`
+	S3Region          string `json:"s3_region" mapstructure:"s3_region"`
 	S3ForcePathStyle  bool   `json:"s3_force_path_style" mapstructure:"s3_force_path_style"`
 	S3DisableSSL      bool   `json:"s3_disable_ssl" mapstructure:"s3_disable_ssl"`
 
