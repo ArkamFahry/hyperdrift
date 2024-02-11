@@ -1,5 +1,7 @@
 package main
 
+import "github.com/ArkamFahry/hyperdrift/storage/server/app"
+
 func main() {
-	NewApp()
+	app.NewApp()
 }
