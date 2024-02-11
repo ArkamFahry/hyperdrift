@@ -27,7 +27,7 @@ begin
         with files_folders as (select path_tokens[levels] as folder
                                from storage.objects
                                where objects.name ilike path_prefix || '%'
-                                 and objects.bucket_id = bucket_name
+                                 and objects.bucket_id = (select id from storage.buckets where name = bucket_name)
                                group by folder
                                limit limits offset offsets)
         select objects.id               as id,
@@ -45,7 +45,8 @@ begin
                objects.updated_at       as updated_at
         from files_folders
                  left join storage.objects
-                           on path_prefix || files_folders.folder = objects.name and objects.bucket_id = bucket_name;
+                           on path_prefix || files_folders.folder = objects.name and
+                              objects.bucket_id = (select id from storage.buckets where name = bucket_name);
 end
 $$;
 
