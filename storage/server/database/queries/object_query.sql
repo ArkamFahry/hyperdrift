@@ -63,6 +63,42 @@ from storage.objects
 where id = sqlc.arg('id')
 limit 1;
 
+-- name: GetObjectByIdWithBucketName :one
+select o.id,
+       o.bucket_id,
+       b.name as bucket_name,
+       o.name,
+       o.path_tokens,
+       o.content_type,
+       o.size,
+       o.public,
+       o.metadata,
+       o.upload_status,
+       o.last_accessed_at,
+       o.created_at,
+       o.updated_at
+from storage.objects as o
+inner join storage.buckets as b on o.bucket_id = b.id
+where o.id = sqlc.arg('id')
+limit 1;
+
+-- name: GetObjectByName :one
+select id,
+       bucket_id,
+       name,
+       path_tokens,
+       content_type,
+       size,
+       public,
+       metadata,
+       upload_status,
+       last_accessed_at,
+       created_at,
+       updated_at
+from storage.objects
+where name = sqlc.arg('name')
+limit 1;
+
 -- name: GetObjectByBucketIdAndName :one
 select id,
        bucket_id,
