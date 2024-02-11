@@ -46,7 +46,17 @@ func NewApp() {
 
 	appServer.Use(middleware.RequestId())
 
-	pgxPool, err := pgxpool.New(context.Background(), appConfig.PostgresUrl)
+	pgxPoolConfig, err := pgxpool.ParseConfig(appConfig.PostgresUrl)
+	if err != nil {
+		appLogger.Fatal("error parsing postgres url",
+			zap.Error(err),
+			zapfield.Operation(op),
+		)
+	}
+
+	pgxPoolConfig.ConnConfig.RuntimeParams["search_path"] = "storage"
+
+	pgxPool, err := pgxpool.NewWithConfig(context.Background(), pgxPoolConfig)
 	if err != nil {
 		appLogger.Fatal("error connecting to postgres",
 			zap.Error(err),
