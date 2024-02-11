@@ -150,15 +150,13 @@ func NewApp() {
 		os.Exit(0)
 	}()
 
-	go func() {
-		err = riverClient.Start(context.Background())
-		if err != nil {
-			appLogger.Fatal("error starting river client",
-				zap.Error(err),
-				zapfield.Operation(op),
-			)
-		}
-	}()
+	err = riverClient.Start(context.Background())
+	if err != nil {
+		appLogger.Fatal("error starting river client",
+			zap.Error(err),
+			zapfield.Operation(op),
+		)
+	}
 
 	err = appServer.Listen(":" + appConfig.ServerPort)
 	if err != nil {
