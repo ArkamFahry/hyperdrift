@@ -15,7 +15,7 @@ func IsNotFoundError(err error) bool {
 
 func IsConflictError(err error) bool {
 	var pgErr *pgconn.PgError
-	if errors.Is(err, pgErr) {
+	if errors.As(err, &pgErr) {
 		if pgErr.Code == "23505" {
 			return true
 		}
