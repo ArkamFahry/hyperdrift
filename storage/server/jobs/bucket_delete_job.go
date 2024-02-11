@@ -105,7 +105,7 @@ func (w *BucketDeleteWorker) Work(ctx context.Context, bucketDelete *river.Job[B
 	return nil
 }
 
-func NewBucketDeleteJob(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketDeleteWorker {
+func NewBucketDeleteWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketDeleteWorker {
 	return &BucketDeleteWorker{
 		queries:     database.New(db),
 		transaction: database.NewTransaction(db),

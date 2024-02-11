@@ -105,7 +105,7 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 	return nil
 }
 
-func NewBucketEmptyJob(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketEmptyWorker {
+func NewBucketEmptyWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketEmptyWorker {
 	return &BucketEmptyWorker{
 		queries:     database.New(db),
 		transaction: database.NewTransaction(db),
