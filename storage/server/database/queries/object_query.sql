@@ -136,8 +136,10 @@ limit sqlc.arg('limit') offset sqlc.arg('offset');
 
 -- name: SearchObjectsByPath :many
 select id::text,
-       bucket::text,
+       version::int,
        name::text,
+       bucket_id::text,
+       bucket_name::text,
        content_type::text,
        size::bigint,
        public::boolean,
