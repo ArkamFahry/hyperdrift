@@ -1,4 +1,4 @@
-package pagiantor
+package dto
 
 type PaginationInput struct {
 	Cursor string `json:"cursor"`
