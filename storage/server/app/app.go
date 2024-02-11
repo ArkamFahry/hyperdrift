@@ -1,14 +1,15 @@
-package main
+package app
 
 import (
 	"context"
+	"github.com/ArkamFahry/hyperdrift/storage/server/database"
+	"github.com/riverqueue/river/rivermigrate"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/ArkamFahry/hyperdrift/storage/server/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/controllers"
-	"github.com/ArkamFahry/hyperdrift/storage/server/database/migrations"
 	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
 	"github.com/ArkamFahry/hyperdrift/storage/server/logger"
 	"github.com/ArkamFahry/hyperdrift/storage/server/middleware"
@@ -28,13 +29,13 @@ import (
 )
 
 func NewApp() {
-	const op = "AppModule.NewAppModule"
+	const op = "app.NewApp"
 
 	appConfig := config.NewConfig()
 
 	appLogger := logger.NewLogger(appConfig)
 
-	migrations.NewMigrations(appConfig, appLogger)
+	database.NewMigrations(appConfig, appLogger)
 
 	appServer := fiber.New(fiber.Config{
 		ErrorHandler:      middleware.ErrorHandler,
@@ -89,6 +90,18 @@ func NewApp() {
 
 	appStorage := storage.NewS3Storage(s3Client, appConfig, appLogger)
 
+	riverPgx := riverpgxv5.New(pgxPool)
+
+	riverMigrator := rivermigrate.New[pgx.Tx](riverPgx, nil)
+
+	_, err = riverMigrator.Migrate(context.Background(), rivermigrate.DirectionUp, nil)
+	if err != nil {
+		appLogger.Fatal("error migrating river jobs schema",
+			zap.Error(err),
+			zapfield.Operation(op),
+		)
+	}
+
 	workers := river.NewWorkers()
 
 	if err = river.AddWorkerSafely[jobs.BucketDelete](workers, jobs.NewBucketDeleteWorker(pgxPool, appStorage, appLogger)); err != nil {
@@ -112,7 +125,7 @@ func NewApp() {
 		)
 	}
 
-	riverClient, err := river.NewClient[pgx.Tx](riverpgxv5.New(pgxPool), &river.Config{
+	riverClient, err := river.NewClient[pgx.Tx](riverPgx, &river.Config{
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 100},
 		},
