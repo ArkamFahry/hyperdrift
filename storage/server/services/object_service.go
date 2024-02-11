@@ -31,10 +31,11 @@ type ObjectService struct {
 	logger      *zap.Logger
 }
 
-func NewObjectService(db *pgxpool.Pool, job *river.Client[pgx.Tx], config *config.Config, logger *zap.Logger) *ObjectService {
+func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.Client[pgx.Tx], config *config.Config, logger *zap.Logger) *ObjectService {
 	return &ObjectService{
 		query:       database.New(db),
 		transaction: database.NewTransaction(db),
+		storage:     storage,
 		job:         job,
 		config:      config,
 		logger:      logger,
