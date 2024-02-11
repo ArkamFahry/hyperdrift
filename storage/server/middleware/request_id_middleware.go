@@ -8,7 +8,9 @@ import (
 
 func RequestId() fiber.Handler {
 	return requestid.New(requestid.Config{
-		Generator:  ulid.Make().String,
+		Generator: func() string {
+			return ulid.Make().String()
+		},
 		ContextKey: "request_id",
 	})
 }
