@@ -24,7 +24,7 @@ BEGIN
     timestamp = set_byte(timestamp, 5, unix_time::bit(8)::integer);
 
     -- 10 entropy bytes
-    ulid = timestamp || gen_random_bytes(10);
+    ulid = timestamp || public.gen_random_bytes(10);
 
     -- Encode the timestamp
     output = output || chr(get_byte(encoding, (get_byte(ulid, 0) & 224) >> 5));
