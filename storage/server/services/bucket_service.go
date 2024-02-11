@@ -103,6 +103,10 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities
 			return err
 		}
 
+		if bucket.Locked {
+			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be enabled", bucket.ID, *bucket.LockReason), op, "", nil)
+		}
+
 		if bucket.Disabled {
 			err = bs.query.WithTx(tx).EnableBucket(ctx, id)
 			if err != nil {
@@ -138,6 +142,10 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
 		if err != nil {
 			return err
+		}
+
+		if bucket.Locked {
+			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be disabled", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
 		if !bucket.Disabled {
@@ -178,17 +186,17 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 		}
 
 		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be updated", bucket.ID), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be updated", bucket.ID), op, "", nil)
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
 		if bucketUpdate.AllowedContentTypes != nil {
 			if len(bucketUpdate.AllowedContentTypes) > 1 {
 				if lo.Contains[string](bucketUpdate.AllowedContentTypes, "*/*") {
-					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types use  '*/*'", op, "", nil)
+					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, "", nil)
 				}
 			}
 
@@ -251,11 +259,11 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 		}
 
 		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be emptied", bucket.ID), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be emptied", bucket.ID), op, "", nil)
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be emptied", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be emptied", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
 		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
@@ -297,11 +305,11 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 		}
 
 		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is disabled and cannot be deleted", bucket.ID), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be deleted", bucket.ID), op, "", nil)
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket with id '%s' is locked for '%s' and cannot be deleted", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be deleted", bucket.ID, *bucket.LockReason), op, "", nil)
 		}
 
 		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
@@ -340,7 +348,7 @@ func (bs *BucketService) GetBucketById(ctx context.Context, id string) (*entitie
 	bucket, err := bs.query.GetBucketById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, "", err)
 		}
 		bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, "", err)
@@ -372,7 +380,7 @@ func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*entitie
 	bucketSize, err := bs.query.GetBucketSizeById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, "", err)
 		}
 		bs.logger.Error("failed to get bucket size", zap.Error(err), zapfield.Operation(op))
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket size", op, "", err)
@@ -423,7 +431,7 @@ func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id str
 	bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket with id '%s' not found", id), op, "", err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, "", err)
 		}
 		bs.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op))
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, "", err)
