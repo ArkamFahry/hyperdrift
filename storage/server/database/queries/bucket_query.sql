@@ -139,11 +139,14 @@ select count(1) as count
 from storage.buckets;
 
 -- name: GetBucketSizeById :one
-select id, name, sum(size) as size
-from storage.objects
-where bucket_id = sqlc.arg('id');
+select o.bucket_id as id, b.name as name, SUM(o.size) as size
+from storage.objects as o
+         join storage.buckets as b on o.bucket_id = b.id
+where o.bucket_id = sqlc.arg('id')
+group by o.bucket_id, b.name;
 
 -- name: GetBucketObjectCountById :one
-select count(1) as count
-from storage.objects
-where bucket_id = sqlc.arg('id');
+select o.bucket_id as id, count(1) as count
+from storage.objects as o
+where o.bucket_id = sqlc.arg('id')
+group by o.bucket_id;
