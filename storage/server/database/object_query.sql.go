@@ -170,6 +170,116 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdR
 	return &i, err
 }
 
+const getObjectByIdWithBucketName = `-- name: GetObjectByIdWithBucketName :one
+select o.id,
+       o.bucket_id,
+       b.name as bucket_name,
+       o.name,
+       o.path_tokens,
+       o.content_type,
+       o.size,
+       o.public,
+       o.metadata,
+       o.upload_status,
+       o.last_accessed_at,
+       o.created_at,
+       o.updated_at
+from storage.objects as o
+inner join storage.buckets as b on o.bucket_id = b.id
+where o.id = $1
+limit 1
+`
+
+type GetObjectByIdWithBucketNameRow struct {
+	ID             string
+	BucketID       string
+	BucketName     string
+	Name           string
+	PathTokens     []string
+	ContentType    string
+	Size           int64
+	Public         bool
+	Metadata       []byte
+	UploadStatus   string
+	LastAccessedAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
+}
+
+func (q *Queries) GetObjectByIdWithBucketName(ctx context.Context, id string) (*GetObjectByIdWithBucketNameRow, error) {
+	row := q.db.QueryRow(ctx, getObjectByIdWithBucketName, id)
+	var i GetObjectByIdWithBucketNameRow
+	err := row.Scan(
+		&i.ID,
+		&i.BucketID,
+		&i.BucketName,
+		&i.Name,
+		&i.PathTokens,
+		&i.ContentType,
+		&i.Size,
+		&i.Public,
+		&i.Metadata,
+		&i.UploadStatus,
+		&i.LastAccessedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
+const getObjectByName = `-- name: GetObjectByName :one
+select id,
+       bucket_id,
+       name,
+       path_tokens,
+       content_type,
+       size,
+       public,
+       metadata,
+       upload_status,
+       last_accessed_at,
+       created_at,
+       updated_at
+from storage.objects
+where name = $1
+limit 1
+`
+
+type GetObjectByNameRow struct {
+	ID             string
+	BucketID       string
+	Name           string
+	PathTokens     []string
+	ContentType    string
+	Size           int64
+	Public         bool
+	Metadata       []byte
+	UploadStatus   string
+	LastAccessedAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
+}
+
+func (q *Queries) GetObjectByName(ctx context.Context, name string) (*GetObjectByNameRow, error) {
+	row := q.db.QueryRow(ctx, getObjectByName, name)
+	var i GetObjectByNameRow
+	err := row.Scan(
+		&i.ID,
+		&i.BucketID,
+		&i.Name,
+		&i.PathTokens,
+		&i.ContentType,
+		&i.Size,
+		&i.Public,
+		&i.Metadata,
+		&i.UploadStatus,
+		&i.LastAccessedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
 const listObjectsByBucketIdPaged = `-- name: ListObjectsByBucketIdPaged :many
 select id,
        bucket_id,

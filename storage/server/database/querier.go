@@ -23,6 +23,8 @@ type Querier interface {
 	GetBucketSizeById(ctx context.Context, id string) (*GetBucketSizeByIdRow, error)
 	GetObjectByBucketIdAndName(ctx context.Context, arg *GetObjectByBucketIdAndNameParams) (*GetObjectByBucketIdAndNameRow, error)
 	GetObjectById(ctx context.Context, id string) (*GetObjectByIdRow, error)
+	GetObjectByIdWithBucketName(ctx context.Context, id string) (*GetObjectByIdWithBucketNameRow, error)
+	GetObjectByName(ctx context.Context, name string) (*GetObjectByNameRow, error)
 	ListAllBuckets(ctx context.Context) ([]*StorageBucket, error)
 	ListBucketsPaginated(ctx context.Context, arg *ListBucketsPaginatedParams) ([]*ListBucketsPaginatedRow, error)
 	ListObjectsByBucketIdPaged(ctx context.Context, arg *ListObjectsByBucketIdPagedParams) ([]*ListObjectsByBucketIdPagedRow, error)

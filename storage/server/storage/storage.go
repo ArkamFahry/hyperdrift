@@ -50,7 +50,7 @@ func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload
 	return nil
 }
 
-func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *PreSignedUploadObjectCreate) (*dto.PreSignedObject, error) {
+func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *PreSignedUploadObjectCreate) (*dto.PreSignedUploadObject, error) {
 	const op = "S3Storage.PreSignedUploadObjectCreate"
 
 	var expiresIn time.Duration
@@ -79,14 +79,14 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 		return nil, err
 	}
 
-	return &dto.PreSignedObject{
+	return &dto.PreSignedUploadObject{
 		Url:       preSignedPutObject.URL,
 		Method:    "PUT",
 		ExpiresAt: time.Now().Add(expiresIn).Unix(),
 	}, nil
 }
 
-func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *PreSignedDownloadObjectCreate) (*dto.PreSignedObject, error) {
+func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *PreSignedDownloadObjectCreate) (*dto.PreSignedUploadObject, error) {
 	const op = "S3Storage.PreSignedDownloadObjectCreate"
 
 	var expiresIn time.Duration
@@ -112,7 +112,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 		return nil, err
 	}
 
-	return &dto.PreSignedObject{
+	return &dto.PreSignedUploadObject{
 		Url:       preSignedGetObject.URL,
 		Method:    "GET",
 		ExpiresAt: time.Now().Add(expiresIn).Unix(),
