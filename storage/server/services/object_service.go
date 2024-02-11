@@ -23,7 +23,7 @@ import (
 const DefaultContentType = "application/octet-stream"
 
 type ObjectService struct {
-	query       *database.Queries
+	queries     *database.Queries
 	transaction *database.Transaction
 	storage     *storage.S3Storage
 	job         *river.Client[pgx.Tx]
@@ -33,7 +33,7 @@ type ObjectService struct {
 
 func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.Client[pgx.Tx], config *config.Config, logger *zap.Logger) *ObjectService {
 	return &ObjectService{
-		query:       database.New(db),
+		queries:     database.New(db),
 		transaction: database.NewTransaction(db),
 		storage:     storage,
 		job:         job,
@@ -42,10 +42,11 @@ func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.C
 	}
 }
 
-func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *dto.PreSignedUploadObjectCreate) (*dto.PreSignedObject, error) {
+func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *dto.PreSignedUploadObjectCreate) (*dto.PreSignedUploadObject, error) {
 	const op = "ObjectService.CreatePreSignedUploadUrl"
 
-	var preSignedObject *dto.PreSignedObject
+	var preSignedObject *dto.PreSignedUploadObject
+	var id string
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
 		bucket, err := os.getBucketByNameTxn(ctx, tx, preSignedUploadObjectCreate.Bucket, op)
@@ -93,7 +94,7 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 			return srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata to bytes", op, "", err)
 		}
 
-		id, err := os.query.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
+		id, err = os.queries.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
 			BucketID:     bucket.Id,
 			Name:         preSignedUploadObjectCreate.Name,
 			ContentType:  preSignedUploadObjectCreate.ContentType,
@@ -128,11 +129,60 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 		return nil, err
 	}
 
-	return &dto.PreSignedObject{
+	return &dto.PreSignedUploadObject{
+		Id:        id,
 		Url:       preSignedObject.Url,
 		Method:    preSignedObject.Method,
 		ExpiresAt: preSignedObject.ExpiresAt,
 	}, nil
+}
+
+func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id string) error {
+	const op = "ObjectService.CompletePreSignedObjectUpload"
+
+	if validators.ValidateNotEmptyTrimmedString(id) {
+		return srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to complete pre-signed upload", op, "", nil)
+	}
+
+	object, err := os.queries.GetObjectByIdWithBucketName(ctx, id)
+	if err != nil {
+		if database.IsNotFoundError(err) {
+			return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", id), op, "", err)
+		}
+		os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op))
+		return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, "", err)
+	}
+
+	switch object.UploadStatus {
+	case dto.ObjectUploadStatusCompleted:
+		return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has already been completed for object '%s'", object.Name), op, "", nil)
+	case dto.ObjectUploadStatusFailed:
+		return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has failed for object '%s'", object.Name), op, "", nil)
+	}
+
+	objectExists, err := os.storage.CheckIfObjectExists(ctx, &storage.ObjectExistsCheck{
+		Bucket: object.BucketName,
+		Name:   object.Name,
+	})
+	if err != nil {
+		os.logger.Error("failed to check if object exists in storage", zap.Error(err), zapfield.Operation(op))
+		return srverr.NewServiceError(srverr.UnknownError, "failed to check if object exists in storage", op, "", err)
+	}
+
+	if objectExists {
+		err = os.queries.UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+			ID:           object.ID,
+			UploadStatus: dto.ObjectUploadStatusCompleted,
+		})
+		if err != nil {
+			os.logger.Error("failed to update object upload status in database to completed", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to update object upload status in database to completed", op, "", err)
+		}
+	} else {
+		return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' has not yet been uploaded to storage", object.Name), op, "", nil)
+	}
+
+	return nil
 }
 
 func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, bucketName string, op string) (*entities.Bucket, error) {
@@ -144,7 +194,7 @@ func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, buck
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters", op, "", nil)
 	}
 
-	bucket, err := os.query.WithTx(tx).GetBucketByName(ctx, bucketName)
+	bucket, err := os.queries.WithTx(tx).GetBucketByName(ctx, bucketName)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketName), op, "", err)
