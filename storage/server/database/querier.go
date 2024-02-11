@@ -19,7 +19,7 @@ type Querier interface {
 	EnableBucket(ctx context.Context, id string) error
 	GetBucketById(ctx context.Context, id string) (*StorageBucket, error)
 	GetBucketByName(ctx context.Context, name string) (*StorageBucket, error)
-	GetBucketObjectCountById(ctx context.Context, id string) (int64, error)
+	GetBucketObjectCountById(ctx context.Context, id string) (*GetBucketObjectCountByIdRow, error)
 	GetBucketSizeById(ctx context.Context, id string) (*GetBucketSizeByIdRow, error)
 	GetObjectByBucketIdAndName(ctx context.Context, arg *GetObjectByBucketIdAndNameParams) (*GetObjectByBucketIdAndNameRow, error)
 	GetObjectById(ctx context.Context, id string) (*GetObjectByIdRow, error)

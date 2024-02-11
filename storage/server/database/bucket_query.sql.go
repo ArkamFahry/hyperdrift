@@ -163,22 +163,30 @@ func (q *Queries) GetBucketByName(ctx context.Context, name string) (*StorageBuc
 }
 
 const getBucketObjectCountById = `-- name: GetBucketObjectCountById :one
-select count(1) as count
-from storage.objects
-where bucket_id = $1
+select o.bucket_id as id, count(1) as count
+from storage.objects as o
+where o.bucket_id = $1
+group by o.bucket_id
 `
 
-func (q *Queries) GetBucketObjectCountById(ctx context.Context, id string) (int64, error) {
+type GetBucketObjectCountByIdRow struct {
+	ID    string
+	Count int64
+}
+
+func (q *Queries) GetBucketObjectCountById(ctx context.Context, id string) (*GetBucketObjectCountByIdRow, error) {
 	row := q.db.QueryRow(ctx, getBucketObjectCountById, id)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+	var i GetBucketObjectCountByIdRow
+	err := row.Scan(&i.ID, &i.Count)
+	return &i, err
 }
 
 const getBucketSizeById = `-- name: GetBucketSizeById :one
-select id, name, sum(size) as size
-from storage.objects
-where bucket_id = $1
+select o.bucket_id as id, b.name as name, SUM(o.size) as size
+from storage.objects as o
+         join storage.buckets as b on o.bucket_id = b.id
+where o.bucket_id = $1
+group by o.bucket_id, b.name
 `
 
 type GetBucketSizeByIdRow struct {
