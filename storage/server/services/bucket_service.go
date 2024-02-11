@@ -390,11 +390,11 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*entities.Bucket
 
 	buckets, err := bs.query.ListAllBuckets(ctx)
 	if err != nil {
-		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, "no buckets found", op, "", err)
-		}
 		bs.logger.Error("failed to list all buckets", zap.Error(err), zapfield.Operation(op))
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to list all buckets", op, "", err)
+	}
+	if len(buckets) == 0 {
+		return nil, srverr.NewServiceError(srverr.NotFoundError, "no buckets found", op, "", nil)
 	}
 
 	var result []*entities.Bucket

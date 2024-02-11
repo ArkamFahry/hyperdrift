@@ -42,7 +42,7 @@ func (w *BucketEmptyWorker) Work(ctx context.Context, bucketEmpty *river.Job[Buc
 				Limit:    limit,
 			})
 			if err != nil {
-				if database.IsNotFoundError(err) {
+				if len(objects) == 0 {
 					break
 				}
 				w.logger.Error(
