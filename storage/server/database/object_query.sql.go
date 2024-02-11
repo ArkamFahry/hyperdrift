@@ -392,8 +392,10 @@ func (q *Queries) MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetad
 
 const searchObjectsByPath = `-- name: SearchObjectsByPath :many
 select id::text,
-       bucket::text,
+       version::int,
        name::text,
+       bucket_id::text,
+       bucket_name::text,
        content_type::text,
        size::bigint,
        public::boolean,
@@ -416,8 +418,10 @@ type SearchObjectsByPathParams struct {
 
 type SearchObjectsByPathRow struct {
 	ID             string
-	Bucket         string
+	Version        int32
 	Name           string
+	BucketID       string
+	BucketName     string
 	ContentType    string
 	Size           int64
 	Public         bool
@@ -445,8 +449,10 @@ func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByP
 		var i SearchObjectsByPathRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.Bucket,
+			&i.Version,
 			&i.Name,
+			&i.BucketID,
+			&i.BucketName,
 			&i.ContentType,
 			&i.Size,
 			&i.Public,
