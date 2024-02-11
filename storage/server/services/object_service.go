@@ -91,6 +91,7 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 
 		metadataBytes, err := metadataToBytes(preSignedUploadObjectCreate.Metadata)
 		if err != nil {
+			os.logger.Error("failed to convert metadata to bytes", zap.Error(err), zapfield.Operation(op))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata to bytes", op, "", err)
 		}
 
@@ -185,6 +186,88 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id s
 	return nil
 }
 
+func (os *ObjectService) GetObjectById(ctx context.Context, id string, op string) (*entities.Object, error) {
+	if validators.ValidateNotEmptyTrimmedString(id) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to get object", op, "", nil)
+	}
+
+	object, err := os.queries.GetObjectById(ctx, id)
+	if err != nil {
+		if database.IsNotFoundError(err) {
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", id), op, "", err)
+		}
+		os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, "", err)
+	}
+
+	metadataMap, err := bytesToMetadata(object.Metadata)
+	if err != nil {
+		os.logger.Error("failed to convert metadata from bytes", zap.Error(err), zapfield.Operation(op))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata from bytes", op, "", err)
+	}
+
+	return &entities.Object{
+		Id:           object.ID,
+		BucketId:     object.BucketID,
+		Name:         object.Name,
+		ContentType:  object.ContentType,
+		Size:         object.Size,
+		Public:       object.Public,
+		Metadata:     metadataMap,
+		UploadStatus: object.UploadStatus,
+		CreatedAt:    object.CreatedAt,
+		UpdatedAt:    object.UpdatedAt,
+	}, nil
+}
+
+func (os *ObjectService) SearchObjectsByBucketNameAndObjectPathPrefix(ctx context.Context, bucketName string, objectPathPrefix string, levels int32, limit int32, offset int32) ([]*entities.Object, error) {
+	const op = "ObjectService.SearchObjectsByBucketNameAndObjectName"
+
+	if validators.ValidateNotEmptyTrimmedString(bucketName) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to search objects", op, "", nil)
+	}
+
+	if validators.ValidateNotEmptyTrimmedString(objectPathPrefix) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object name cannot be empty. object name is required to search objects", op, "", nil)
+	}
+
+	objects, err := os.queries.SearchObjectsByPath(ctx, &database.SearchObjectsByPathParams{
+		BucketName: bucketName,
+		PathPrefix: objectPathPrefix,
+		Levels:     &levels,
+		Limit:      &limit,
+		Offset:     &offset,
+	})
+	if err != nil {
+		os.logger.Error("failed to search objects from database", zap.Error(err), zapfield.Operation(op))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to search objects from database", op, "", err)
+	}
+	if len(objects) == 0 {
+		return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("no objects found for bucket '%s' with path '%s'", bucketName, objectPathPrefix), op, "", nil)
+	}
+
+	var result []*entities.Object
+
+	for _, object := range objects {
+		metadataMap, _ := bytesToMetadata(object.Metadata)
+		result = append(result, &entities.Object{
+			Id:           object.ID,
+			Version:      object.Version,
+			BucketId:     object.BucketID,
+			Name:         object.Name,
+			ContentType:  object.ContentType,
+			Size:         object.Size,
+			Public:       object.Public,
+			Metadata:     metadataMap,
+			UploadStatus: object.UploadStatus,
+			CreatedAt:    object.CreatedAt,
+			UpdatedAt:    &object.UpdatedAt,
+		})
+	}
+
+	return result, nil
+}
+
 func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, bucketName string, op string) (*entities.Bucket, error) {
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required", op, "", nil)
@@ -257,4 +340,13 @@ func metadataToBytes(metadata map[string]any) ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal metadata to bytes: %w", err)
 	}
 	return metadataBytes, nil
+}
+
+func bytesToMetadata(metadataBytes []byte) (map[string]any, error) {
+	var metadata map[string]any
+	err := json.Unmarshal(metadataBytes, &metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal metadata from bytes: %w", err)
+	}
+	return metadata, nil
 }
