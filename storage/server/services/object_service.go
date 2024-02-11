@@ -186,7 +186,9 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id s
 	return nil
 }
 
-func (os *ObjectService) GetObjectById(ctx context.Context, id string, op string) (*entities.Object, error) {
+func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*entities.Object, error) {
+	const op = "ObjectService.GetObjectById"
+
 	if validators.ValidateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to get object", op, "", nil)
 	}
@@ -220,21 +222,37 @@ func (os *ObjectService) GetObjectById(ctx context.Context, id string, op string
 	}, nil
 }
 
-func (os *ObjectService) SearchObjectsByBucketNameAndObjectPathPrefix(ctx context.Context, bucketName string, objectPathPrefix string, levels int32, limit int32, offset int32) ([]*entities.Object, error) {
+func (os *ObjectService) SearchObjectsByBucketNameAndObjectPathPrefix(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*entities.Object, error) {
 	const op = "ObjectService.SearchObjectsByBucketNameAndObjectName"
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to search objects", op, "", nil)
 	}
 
-	if validators.ValidateNotEmptyTrimmedString(objectPathPrefix) {
+	if validators.ValidateNotEmptyTrimmedString(objectPath) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object name cannot be empty. object name is required to search objects", op, "", nil)
+	}
+
+	if level < 0 {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "levels cannot be less than 0", op, "", nil)
+	}
+
+	if limit < 0 {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "limit cannot be less than 0", op, "", nil)
+	}
+
+	if offset < 0 {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "offset cannot be less than 0", op, "", nil)
+	}
+
+	if limit == 0 {
+		limit = 100
 	}
 
 	objects, err := os.queries.SearchObjectsByPath(ctx, &database.SearchObjectsByPathParams{
 		BucketName: bucketName,
-		PathPrefix: objectPathPrefix,
-		Levels:     &levels,
+		ObjectPath: objectPath,
+		Level:      &level,
 		Limit:      &limit,
 		Offset:     &offset,
 	})
@@ -243,7 +261,7 @@ func (os *ObjectService) SearchObjectsByBucketNameAndObjectPathPrefix(ctx contex
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to search objects from database", op, "", err)
 	}
 	if len(objects) == 0 {
-		return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("no objects found for bucket '%s' with path '%s'", bucketName, objectPathPrefix), op, "", nil)
+		return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("no objects found for bucket '%s' with path '%s'", bucketName, objectPath), op, "", nil)
 	}
 
 	var result []*entities.Object
