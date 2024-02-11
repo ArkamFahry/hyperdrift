@@ -22,6 +22,7 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 	routesV1 := routes.Group("/v1")
 
 	routesV1.Post("/pre-signed-upload-object", oc.CreatePreSignedUploadObject)
+	routesV1.Post("/pre-signed-upload-object/:id/complete", oc.CompletePreSignedObjectUpload)
 }
 
 func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
@@ -38,4 +39,15 @@ func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(preSignedObject)
+}
+
+func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+
+	err := oc.objectService.CompletePreSignedObjectUpload(ctx.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return ctx.SendStatus(fiber.StatusAccepted)
 }
