@@ -21,7 +21,7 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 		RequestId:  ctx.Get("X-Request-Id"),
 	}
 
-	var srvError *srverr.ServiceError
+	var srvError srverr.ServiceError
 	var fiberError *fiber.Error
 
 	if err != nil {
@@ -49,7 +49,7 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 			httpError.StatusCode = fiberError.Code
 			httpError.Message = fiberError.Message
 			httpError.Path = ctx.Path()
-			httpError.RequestId = ctx.Get("X-Request-Id")
+			httpError.RequestId = ctx.Context().Value("request_id").(string)
 		}
 
 		return ctx.Status(httpError.StatusCode).JSON(httpError)
