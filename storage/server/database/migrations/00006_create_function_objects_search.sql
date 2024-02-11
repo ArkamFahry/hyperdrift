@@ -34,7 +34,7 @@ begin
                objects.version          as version,
                files_folders.folder     as name,
                objects.bucket_id        as bucket_id,
-               bucket_name              as bucket,
+               bucket_name              as bucket_name,
                objects.content_type     as content_type,
                objects.size             as size,
                objects.public           as public,
