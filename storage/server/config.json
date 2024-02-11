@@ -1,7 +1,7 @@
 {
   "server_id": "",
   "server_name": "",
-  "server_environment": "",
+  "server_environment": "dev",
   "server_host": "",
   "server_port": "",
 
