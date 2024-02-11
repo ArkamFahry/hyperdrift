@@ -7,6 +7,7 @@ import (
 	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"
 )
@@ -81,4 +82,13 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 	}
 
 	return nil
+}
+
+func NewPreSignedObjectUploadCompletionWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *PreSignedObjectUploadCompletionWorker {
+	return &PreSignedObjectUploadCompletionWorker{
+		queries:     database.New(db),
+		transaction: database.NewTransaction(db),
+		storage:     storage,
+		logger:      logger,
+	}
 }
