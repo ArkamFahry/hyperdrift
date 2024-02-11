@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/ArkamFahry/hyperdrift/storage/server/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database"
 	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
@@ -17,7 +19,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"
-	"time"
 )
 
 const DefaultContentType = "application/octet-stream"
@@ -222,8 +223,8 @@ func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*entitie
 	}, nil
 }
 
-func (os *ObjectService) SearchObjectsByBucketNameAndObjectPathPrefix(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*entities.Object, error) {
-	const op = "ObjectService.SearchObjectsByBucketNameAndObjectName"
+func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*entities.Object, error) {
+	const op = "ObjectService.SearchObjectsByBucketNameAndObjectPath"
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to search objects", op, "", nil)
