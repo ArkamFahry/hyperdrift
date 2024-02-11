@@ -5,15 +5,15 @@
   "server_host": "",
   "server_port": "",
 
-  "postgres_url": "",
+  "postgres_url": "postgresql://arkam:Arkam2004@localhost:5432/postgres",
 
-  "s3_endpoint": "",
-  "s3_access_key_id": "",
-  "s3_secret_access_key": "",
+  "s3_endpoint": "http://localhost:9000",
+  "s3_access_key_id": "arkam",
+  "s3_secret_access_key": "Arkam2004",
+  "s3_bucket_name": "test-bucket",
   "s3_region": "",
-  "s3_bucket_name": "",
-  "s3_force_path_style": false,
-  "s3_disable_ssl": false,
+  "s3_force_path_style": true,
+  "s3_disable_ssl": true,
 
   "default_buckets": [
     {
