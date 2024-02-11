@@ -81,15 +81,22 @@ func NewApp() {
 
 	workers := river.NewWorkers()
 
-	if err = river.AddWorkerSafely[jobs.BucketDelete](workers, jobs.NewBucketDeleteJob(pgxPool, appStorage, appLogger)); err != nil {
+	if err = river.AddWorkerSafely[jobs.BucketDelete](workers, jobs.NewBucketDeleteWorker(pgxPool, appStorage, appLogger)); err != nil {
 		appLogger.Fatal("error adding bucket delete worker",
 			zap.Error(err),
 			zapfield.Operation(op),
 		)
 	}
 
-	if err = river.AddWorkerSafely[jobs.BucketEmpty](workers, jobs.NewBucketEmptyJob(pgxPool, appStorage, appLogger)); err != nil {
+	if err = river.AddWorkerSafely[jobs.BucketEmpty](workers, jobs.NewBucketEmptyWorker(pgxPool, appStorage, appLogger)); err != nil {
 		appLogger.Fatal("error adding bucket empty worker",
+			zap.Error(err),
+			zapfield.Operation(op),
+		)
+	}
+
+	if err = river.AddWorkerSafely[jobs.PreSignedObjectUploadCompletion](workers, jobs.NewPreSignedObjectUploadCompletionWorker(pgxPool, appStorage, appLogger)); err != nil {
+		appLogger.Fatal("error adding pre signed object upload completion worker",
 			zap.Error(err),
 			zapfield.Operation(op),
 		)
