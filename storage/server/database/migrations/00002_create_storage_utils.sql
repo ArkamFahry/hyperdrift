@@ -130,7 +130,7 @@ create or replace function storage.on_create()
     returns trigger as
 $$
 begin
-    new.id = tg_table_name || '_' || storage.gen_random_ulid();
+    new.id = storage.gen_random_ulid();
     new.version = 0;
     new.created_at = now();
 
