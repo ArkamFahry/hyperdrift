@@ -21,10 +21,12 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 
 	routesV1 := routes.Group("/v1")
 
-	routesV1.Post("/pre-signed-upload-object", oc.CreatePreSignedUploadObject)
-	routesV1.Post("/pre-signed-upload-object/:id/complete", oc.CompletePreSignedObjectUpload)
+	routesV1.Post("/objects/pre-signed/upload", oc.CreatePreSignedUploadObject)
+	routesV1.Post("/objects/pre-signed/upload/:id/complete", oc.CompletePreSignedObjectUpload)
+	routesV1.Get("/objects/pre-signed/download/:id", oc.CreatePreSignedDownloadObject)
+	routesV1.Delete("/objects/:id", oc.DeleteObject)
 	routesV1.Get("/objects/:id", oc.GetObjectById)
-	routesV1.Delete("/objects/:bucket_name/:object_path", oc.SearchObjectsByBucketNameAndObjectPath)
+	routesV1.Get("/objects/:bucket_name/:object_path", oc.SearchObjectsByBucketNameAndObjectPath)
 }
 
 func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
@@ -35,12 +37,12 @@ func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	preSignedObject, err := oc.objectService.CreatePreSignedUploadObject(ctx.Context(), &preSignedUploadObjectCreate)
+	preSignedUploadObject, err := oc.objectService.CreatePreSignedUploadObject(ctx.Context(), &preSignedUploadObjectCreate)
 	if err != nil {
 		return err
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(preSignedObject)
+	return ctx.Status(fiber.StatusCreated).JSON(preSignedUploadObject)
 }
 
 func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error {
@@ -52,6 +54,28 @@ func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error 
 	}
 
 	return ctx.SendStatus(fiber.StatusAccepted)
+}
+
+func (oc *ObjectController) CreatePreSignedDownloadObject(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+
+	preSignedDownloadObject, err := oc.objectService.CreatePreSignedDownloadObject(ctx.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(preSignedDownloadObject)
+}
+
+func (oc *ObjectController) DeleteObject(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+
+	err := oc.objectService.DeleteObject(ctx.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
 func (oc *ObjectController) GetObjectById(ctx *fiber.Ctx) error {
