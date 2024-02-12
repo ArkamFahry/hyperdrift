@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database"
-	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
-	"github.com/ArkamFahry/hyperdrift/storage/server/entities"
 	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
+	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 	"github.com/ArkamFahry/hyperdrift/storage/server/srverr"
 	"github.com/ArkamFahry/hyperdrift/storage/server/validators"
 	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
@@ -34,7 +33,7 @@ func NewBucketService(db *pgxpool.Pool, job *river.Client[pgx.Tx], logger *zap.L
 	}
 }
 
-func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.BucketCreate) (*entities.Bucket, error) {
+func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.BucketCreate) (*models.Bucket, error) {
 	const op = "BucketService.CreateBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(bucketCreate.Name) {
@@ -89,7 +88,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 	return bucket, nil
 }
 
-func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpdate *dto.BucketUpdate) (*entities.Bucket, error) {
+func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpdate *models.BucketUpdate) (*models.Bucket, error) {
 	const op = "BucketService.UpdateBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
@@ -162,7 +161,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 	return bucket, nil
 }
 
-func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities.Bucket, error) {
+func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.Bucket, error) {
 	const op = "BucketService.EnableBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
@@ -203,7 +202,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*entities
 	return bucket, nil
 }
 
-func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entities.Bucket, error) {
+func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.Bucket, error) {
 	const op = "BucketService.DisableBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
@@ -337,7 +336,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	return nil
 }
 
-func (bs *BucketService) GetBucketById(ctx context.Context, id string) (*entities.Bucket, error) {
+func (bs *BucketService) GetBucketById(ctx context.Context, id string) (*models.Bucket, error) {
 	const op = "BucketService.GetBucketById"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
@@ -353,7 +352,7 @@ func (bs *BucketService) GetBucketById(ctx context.Context, id string) (*entitie
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, "", err)
 	}
 
-	return &entities.Bucket{
+	return &models.Bucket{
 		Id:                   bucket.ID,
 		Version:              bucket.Version,
 		Name:                 bucket.Name,
@@ -369,7 +368,7 @@ func (bs *BucketService) GetBucketById(ctx context.Context, id string) (*entitie
 	}, nil
 }
 
-func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*entities.BucketSize, error) {
+func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*models.BucketSize, error) {
 	const op = "BucketService.GetBucketSize"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
@@ -385,14 +384,14 @@ func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*entitie
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket size", op, "", err)
 	}
 
-	return &entities.BucketSize{
+	return &models.BucketSize{
 		Id:   bucketSize.ID,
 		Name: bucketSize.Name,
 		Size: bucketSize.Size,
 	}, nil
 }
 
-func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*entities.Bucket, error) {
+func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*models.Bucket, error) {
 	const op = "BucketService.ListAllBuckets"
 
 	buckets, err := bs.query.ListAllBuckets(ctx)
@@ -404,10 +403,10 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*entities.Bucket
 		return nil, srverr.NewServiceError(srverr.NotFoundError, "no buckets found", op, "", nil)
 	}
 
-	var result []*entities.Bucket
+	var result []*models.Bucket
 
 	for _, bucket := range buckets {
-		result = append(result, &entities.Bucket{
+		result = append(result, &models.Bucket{
 			Id:                   bucket.ID,
 			Version:              bucket.Version,
 			Name:                 bucket.Name,

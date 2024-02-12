@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 	"github.com/ArkamFahry/hyperdrift/storage/server/services"
 	"github.com/gofiber/fiber/v2"
 )
@@ -30,7 +30,7 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 }
 
 func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
-	var preSignedUploadObjectCreate dto.PreSignedUploadObjectCreate
+	var preSignedUploadObjectCreate models.PreSignedUploadObjectCreate
 
 	err := ctx.BodyParser(&preSignedUploadObjectCreate)
 	if err != nil {

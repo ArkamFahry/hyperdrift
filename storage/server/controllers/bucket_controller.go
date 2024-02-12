@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 	"github.com/ArkamFahry/hyperdrift/storage/server/services"
 	"github.com/gofiber/fiber/v2"
 )
@@ -38,13 +38,13 @@ func (bc *BucketController) RegisterBucketRoutes(app *fiber.App) {
 // @Tags buckets
 // @Accept json
 // @Produce json
-// @Param bucket body dto.BucketCreate true "Bucket Create"
+// @Param bucket body models.BucketCreate true "Bucket Create"
 // @Success 201 {object} entities.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets [post]
 func (bc *BucketController) CreateBucket(ctx *fiber.Ctx) error {
-	var bucketCreate dto.BucketCreate
+	var bucketCreate models.BucketCreate
 
 	err := ctx.BodyParser(&bucketCreate)
 	if err != nil {
@@ -66,13 +66,13 @@ func (bc *BucketController) CreateBucket(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Bucket ID"
-// @Param bucket body dto.BucketUpdate true "Bucket Update"
+// @Param bucket body models.BucketUpdate true "Bucket Update"
 // @Success 200 {object} entities.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets/{id} [patch]
 func (bc *BucketController) UpdateBucket(ctx *fiber.Ctx) error {
-	var bucketUpdate dto.BucketUpdate
+	var bucketUpdate models.BucketUpdate
 
 	id := ctx.Params("id")
 
@@ -118,7 +118,7 @@ func (bc *BucketController) EmptyBucket(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Bucket ID"
-// @Success 200 {object} entities.Bucket
+// @Success 200 {object} models.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets/{id}/disable [post]
@@ -140,7 +140,7 @@ func (bc *BucketController) DisableBucket(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Bucket ID"
-// @Success 200 {object} entities.Bucket
+// @Success 200 {object} models.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets/{id}/enable [post]
@@ -184,7 +184,7 @@ func (bc *BucketController) DeleteBucket(ctx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Bucket ID"
-// @Success 200 {object} entities.Bucket
+// @Success 200 {object} models.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets/{id} [get]
@@ -216,7 +216,7 @@ func (bc *BucketController) GetBucketSize(ctx *fiber.Ctx) error {
 // @Tags buckets
 // @Accept json
 // @Produce json
-// @Success 200 {array} entities.Bucket
+// @Success 200 {array} models.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets [get]

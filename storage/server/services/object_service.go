@@ -8,9 +8,8 @@ import (
 
 	"github.com/ArkamFahry/hyperdrift/storage/server/config"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database"
-	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
-	"github.com/ArkamFahry/hyperdrift/storage/server/entities"
 	"github.com/ArkamFahry/hyperdrift/storage/server/jobs"
+	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 	"github.com/ArkamFahry/hyperdrift/storage/server/srverr"
 	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/validators"
@@ -43,10 +42,10 @@ func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.C
 	}
 }
 
-func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *dto.PreSignedUploadObjectCreate) (*dto.PreSignedUploadObject, error) {
+func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *models.PreSignedUploadObjectCreate) (*models.PreSignedUploadObject, error) {
 	const op = "ObjectService.CreatePreSignedUploadUrl"
 
-	var preSignedObject *dto.PreSignedUploadObject
+	var preSignedObject *models.PreSignedUploadObject
 	var id string
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -103,7 +102,7 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 			Size:         preSignedUploadObjectCreate.Size,
 			Public:       preSignedUploadObjectCreate.Public,
 			Metadata:     metadataBytes,
-			UploadStatus: dto.ObjectUploadStatusPending,
+			UploadStatus: models.ObjectUploadStatusPending,
 		})
 		if err != nil {
 			if database.IsConflictError(err) {
@@ -131,7 +130,7 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 		return nil, err
 	}
 
-	return &dto.PreSignedUploadObject{
+	return &models.PreSignedUploadObject{
 		Id:        id,
 		Url:       preSignedObject.Url,
 		Method:    preSignedObject.Method,
@@ -156,9 +155,9 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id s
 	}
 
 	switch object.UploadStatus {
-	case dto.ObjectUploadStatusCompleted:
+	case models.ObjectUploadStatusCompleted:
 		return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has already been completed for object '%s'", object.Name), op, "", nil)
-	case dto.ObjectUploadStatusFailed:
+	case models.ObjectUploadStatusFailed:
 		return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has failed for object '%s'", object.Name), op, "", nil)
 	}
 
@@ -174,7 +173,7 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id s
 	if objectExists {
 		err = os.queries.UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
 			ID:           object.ID,
-			UploadStatus: dto.ObjectUploadStatusCompleted,
+			UploadStatus: models.ObjectUploadStatusCompleted,
 		})
 		if err != nil {
 			os.logger.Error("failed to update object upload status in database to completed", zap.Error(err), zapfield.Operation(op))
@@ -187,10 +186,10 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id s
 	return nil
 }
 
-func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id string, expiresIn int64) (*dto.PreSignedDownloadObject, error) {
+func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id string, expiresIn int64) (*models.PreSignedDownloadObject, error) {
 	const op = "ObjectService.CreatePreSignedDownloadObject"
 
-	var preSignedDownloadObject dto.PreSignedDownloadObject
+	var preSignedDownloadObject models.PreSignedDownloadObject
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to create pre-signed download object", op, "", nil)
@@ -206,7 +205,7 @@ func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id s
 			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, "", err)
 		}
 
-		if object.UploadStatus != dto.ObjectUploadStatusCompleted {
+		if object.UploadStatus != models.ObjectUploadStatusCompleted {
 			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'", object.ID), op, "", nil)
 		}
 
@@ -234,7 +233,7 @@ func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id s
 			return srverr.NewServiceError(srverr.UnknownError, "failed to update object last accessed at", op, "", err)
 		}
 
-		preSignedDownloadObject = dto.PreSignedDownloadObject{
+		preSignedDownloadObject = models.PreSignedDownloadObject{
 			Url:       preSignedObject.Url,
 			Method:    preSignedObject.Method,
 			ExpiresAt: preSignedObject.ExpiresAt,
@@ -266,7 +265,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, "", err)
 		}
 
-		if object.UploadStatus != dto.ObjectUploadStatusCompleted {
+		if object.UploadStatus != models.ObjectUploadStatusCompleted {
 			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'. delete operation can only be performed on objects that have been uploaded", object.ID), op, "", nil)
 		}
 
@@ -294,7 +293,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, id string) error {
 	return nil
 }
 
-func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*entities.Object, error) {
+func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*models.Object, error) {
 	const op = "ObjectService.GetObjectById"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
@@ -316,7 +315,7 @@ func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*entitie
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata from bytes", op, "", err)
 	}
 
-	return &entities.Object{
+	return &models.Object{
 		Id:           object.ID,
 		BucketId:     object.BucketID,
 		Name:         object.Name,
@@ -330,7 +329,7 @@ func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*entitie
 	}, nil
 }
 
-func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*entities.Object, error) {
+func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*models.Object, error) {
 	const op = "ObjectService.SearchObjectsByBucketNameAndObjectPath"
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
@@ -376,11 +375,11 @@ func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Cont
 		return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("no objects found for bucket '%s' with path '%s'", bucketName, objectPath), op, "", nil)
 	}
 
-	var result []*entities.Object
+	var result []*models.Object
 
 	for _, object := range objects {
 		metadataMap, _ := bytesToMetadata(object.Metadata)
-		result = append(result, &entities.Object{
+		result = append(result, &models.Object{
 			Id:           object.ID,
 			Version:      object.Version,
 			BucketId:     object.BucketID,
@@ -398,7 +397,7 @@ func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Cont
 	return result, nil
 }
 
-func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, bucketName string, op string) (*entities.Bucket, error) {
+func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, bucketName string, op string) (*models.Bucket, error) {
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required", op, "", nil)
 	}
@@ -424,7 +423,7 @@ func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, buck
 		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s'", bucket.Name, *bucket.LockReason), op, "", err)
 	}
 
-	return &entities.Bucket{
+	return &models.Bucket{
 		Id:                   bucket.ID,
 		Version:              bucket.Version,
 		Name:                 bucket.Name,

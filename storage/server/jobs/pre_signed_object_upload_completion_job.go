@@ -3,7 +3,7 @@ package jobs
 import (
 	"context"
 	"github.com/ArkamFahry/hyperdrift/storage/server/database"
-	"github.com/ArkamFahry/hyperdrift/storage/server/dto"
+	"github.com/ArkamFahry/hyperdrift/storage/server/models"
 	"github.com/ArkamFahry/hyperdrift/storage/server/storage"
 	"github.com/ArkamFahry/hyperdrift/storage/server/zapfield"
 	"github.com/jackc/pgx/v5"
@@ -59,13 +59,13 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 				)
 			}
 
-			if object.UploadStatus == dto.ObjectUploadStatusCompleted {
+			if object.UploadStatus == models.ObjectUploadStatusCompleted {
 				return nil
 			}
 
 			err = w.queries.WithTx(tx).UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
 				ID:           preSignedObjectUploadCompletion.Args.ObjectId,
-				UploadStatus: dto.ObjectUploadStatusCompleted,
+				UploadStatus: models.ObjectUploadStatusCompleted,
 			})
 			if err != nil {
 				w.logger.Error(
