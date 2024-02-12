@@ -59,7 +59,9 @@ func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error 
 func (oc *ObjectController) CreatePreSignedDownloadObject(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
-	preSignedDownloadObject, err := oc.objectService.CreatePreSignedDownloadObject(ctx.Context(), id)
+	expiresIn := ctx.QueryInt("expires_in")
+
+	preSignedDownloadObject, err := oc.objectService.CreatePreSignedDownloadObject(ctx.Context(), id, int64(expiresIn))
 	if err != nil {
 		return err
 	}
