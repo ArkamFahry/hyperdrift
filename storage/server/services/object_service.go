@@ -246,6 +246,10 @@ func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Cont
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "offset cannot be less than 0", op, "", nil)
 	}
 
+	if level == 0 {
+		level = 1
+	}
+
 	if limit == 0 {
 		limit = 100
 	}
