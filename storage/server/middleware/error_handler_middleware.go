@@ -7,10 +7,20 @@ import (
 )
 
 type HttpError struct {
-	StatusCode int    `json:"status_code"`
-	Message    string `json:"message"`
-	Path       string `json:"path"`
-	RequestId  string `json:"request_id"`
+	// status_code return a http status code depending on the error
+	StatusCode int `json:"status_code"`
+	/*
+		message is a human-readable displayable safe to use error
+		message on what the error is reason for the error and how to resolve the error
+	*/
+	Message string `json:"message"`
+	//	path the error happened on means the http endpoint where the error happened
+	Path string `json:"path"`
+	/*
+			request_id is an id used to track the request from start to response return.
+		 	this can be used for finding out the starting point of the error how it happened in the system
+	*/
+	RequestId string `json:"request_id"`
 }
 
 func ErrorHandler(ctx *fiber.Ctx, err error) error {
