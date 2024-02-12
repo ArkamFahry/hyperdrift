@@ -187,6 +187,104 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id s
 	return nil
 }
 
+func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id string) (*dto.PreSignedDownloadObject, error) {
+	const op = "ObjectService.CreatePreSignedDownloadObject"
+
+	var preSignedDownloadObject dto.PreSignedDownloadObject
+
+	if validators.ValidateNotEmptyTrimmedString(id) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to create pre-signed download object", op, "", nil)
+	}
+
+	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
+		object, err := os.queries.WithTx(tx).GetObjectByIdWithBucketName(ctx, id)
+		if err != nil {
+			if database.IsNotFoundError(err) {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", id), op, "", err)
+			}
+			os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, "", err)
+		}
+
+		if object.UploadStatus != dto.ObjectUploadStatusCompleted {
+			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'", object.ID), op, "", nil)
+		}
+
+		preSignedObject, err := os.storage.CreatePreSignedDownloadObject(ctx, &storage.PreSignedDownloadObjectCreate{
+			Bucket: object.BucketName,
+			Name:   object.Name,
+		})
+		if err != nil {
+			os.logger.Error("failed to create pre-signed download url", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download url", op, "", err)
+		}
+
+		err = os.queries.WithTx(tx).UpdateObjectLastAccessedAt(ctx, object.ID)
+		if err != nil {
+			os.logger.Error("failed to update object last accessed at in database", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to update object last accessed at", op, "", err)
+		}
+
+		preSignedDownloadObject = dto.PreSignedDownloadObject{
+			Url:       preSignedObject.Url,
+			Method:    preSignedObject.Method,
+			ExpiresAt: preSignedObject.ExpiresAt,
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &preSignedDownloadObject, nil
+}
+
+func (os *ObjectService) DeleteObject(ctx context.Context, id string) error {
+	const op = "ObjectService.DeleteObject"
+
+	if validators.ValidateNotEmptyTrimmedString(id) {
+		return srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to delete object", op, "", nil)
+	}
+
+	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
+		object, err := os.queries.WithTx(tx).GetObjectByIdWithBucketName(ctx, id)
+		if err != nil {
+			if database.IsNotFoundError(err) {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", id), op, "", err)
+			}
+			os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, "", err)
+		}
+
+		if object.UploadStatus != dto.ObjectUploadStatusCompleted {
+			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'. delete operation can only be performed on objects that have been uploaded", object.ID), op, "", nil)
+		}
+
+		err = os.storage.DeleteObject(ctx, &storage.ObjectDelete{
+			Bucket: object.BucketName,
+			Name:   object.Name,
+		})
+		if err != nil {
+			os.logger.Error("failed to delete object from storage", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from storage", op, "", err)
+		}
+
+		err = os.queries.WithTx(tx).DeleteObject(ctx, object.ID)
+		if err != nil {
+			os.logger.Error("failed to delete object from database", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from database", op, "", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*entities.Object, error) {
 	const op = "ObjectService.GetObjectById"
 
