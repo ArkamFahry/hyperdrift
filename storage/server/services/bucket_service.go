@@ -72,7 +72,6 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 		AllowedContentTypes:  bucketCreate.AllowedContentTypes,
 		MaxAllowedObjectSize: bucketCreate.MaxAllowedObjectSize,
 		Public:               bucketCreate.Public,
-		Disabled:             bucketCreate.Disabled,
 	})
 	if err != nil {
 		if database.IsConflictError(err) {
@@ -80,6 +79,79 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *dto.Buc
 		}
 		bs.logger.Error("failed to create bucket", zap.Error(err), zapfield.Operation(op))
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to create bucket", op, "", err)
+	}
+
+	bucket, err := bs.GetBucketById(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return bucket, nil
+}
+
+func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpdate *dto.BucketUpdate) (*entities.Bucket, error) {
+	const op = "BucketService.UpdateBucket"
+
+	if validators.ValidateNotEmptyTrimmedString(id) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to update bucket", op, "", nil)
+	}
+
+	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
+		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
+		if err != nil {
+			return err
+		}
+
+		if bucket.Disabled {
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be updated", bucket.ID), op, "", nil)
+		}
+
+		if bucket.Locked {
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, "", nil)
+		}
+
+		if bucketUpdate.AllowedContentTypes != nil {
+			if len(bucketUpdate.AllowedContentTypes) > 1 {
+				if lo.Contains[string](bucketUpdate.AllowedContentTypes, "*/*") {
+					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, "", nil)
+				}
+			}
+
+			err = validators.ValidateAllowedContentTypes(bucketUpdate.AllowedContentTypes)
+			if err != nil {
+				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			}
+
+			bucket.AllowedContentTypes = bucketUpdate.AllowedContentTypes
+		}
+
+		if bucketUpdate.MaxAllowedObjectSize != nil {
+			err = validators.ValidateMaxAllowedObjectSize(*bucketUpdate.MaxAllowedObjectSize)
+			if err != nil {
+				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			}
+			bucket.MaxAllowedObjectSize = bucketUpdate.MaxAllowedObjectSize
+		}
+
+		if bucketUpdate.Public != nil {
+			bucket.Public = *bucketUpdate.Public
+		}
+
+		err = bs.query.WithTx(tx).UpdateBucket(ctx, &database.UpdateBucketParams{
+			ID:                   bucket.ID,
+			AllowedContentTypes:  bucket.AllowedContentTypes,
+			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
+			Public:               &bucket.Public,
+		})
+		if err != nil {
+			bs.logger.Error("failed to update bucket", zap.Error(err), zapfield.Operation(op))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to update bucket", op, "", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	bucket, err := bs.GetBucketById(ctx, id)
@@ -156,79 +228,6 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*entitie
 			}
 		} else {
 			return srverr.NewServiceError(srverr.BadRequestError, "bucket is already disabled", op, "", nil)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	bucket, err := bs.GetBucketById(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return bucket, nil
-}
-
-func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpdate *dto.BucketUpdate) (*entities.Bucket, error) {
-	const op = "BucketService.UpdateBucket"
-
-	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to update bucket", op, "", nil)
-	}
-
-	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
-		if err != nil {
-			return err
-		}
-
-		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be updated", bucket.ID), op, "", nil)
-		}
-
-		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, "", nil)
-		}
-
-		if bucketUpdate.AllowedContentTypes != nil {
-			if len(bucketUpdate.AllowedContentTypes) > 1 {
-				if lo.Contains[string](bucketUpdate.AllowedContentTypes, "*/*") {
-					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, "", nil)
-				}
-			}
-
-			err = validators.ValidateAllowedContentTypes(bucketUpdate.AllowedContentTypes)
-			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
-			}
-
-			bucket.AllowedContentTypes = bucketUpdate.AllowedContentTypes
-		}
-
-		if bucketUpdate.MaxAllowedObjectSize != nil {
-			err = validators.ValidateMaxAllowedObjectSize(*bucketUpdate.MaxAllowedObjectSize)
-			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
-			}
-			bucket.MaxAllowedObjectSize = bucketUpdate.MaxAllowedObjectSize
-		}
-
-		if bucketUpdate.Public != nil {
-			bucket.Public = *bucketUpdate.Public
-		}
-
-		err = bs.query.WithTx(tx).UpdateBucket(ctx, &database.UpdateBucketParams{
-			ID:                   bucket.ID,
-			AllowedContentTypes:  bucket.AllowedContentTypes,
-			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
-			Public:               &bucket.Public,
-		})
-		if err != nil {
-			bs.logger.Error("failed to update bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to update bucket", op, "", err)
 		}
 
 		return nil
