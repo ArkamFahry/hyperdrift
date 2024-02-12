@@ -73,7 +73,7 @@ func NewApp() {
 		),
 	)
 	if err != nil {
-		appLogger.Fatal("error loading aws config",
+		appLogger.Fatal("error loading aws s3 config",
 			zap.Error(err),
 			zapfield.Operation(op),
 		)
