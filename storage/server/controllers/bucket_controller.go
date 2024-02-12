@@ -23,8 +23,8 @@ func (bc *BucketController) RegisterBucketRoutes(app *fiber.App) {
 
 	routesV1.Post("/buckets", bc.CreateBucket)
 	routesV1.Post("/buckets/:id/empty", bc.EmptyBucket)
-	routesV1.Delete("/buckets/:id/disable", bc.DisableBucket)
-	routesV1.Delete("/buckets/:id/enable", bc.EnableBucket)
+	routesV1.Post("/buckets/:id/disable", bc.DisableBucket)
+	routesV1.Post("/buckets/:id/enable", bc.EnableBucket)
 	routesV1.Patch("/buckets/:id", bc.UpdateBucket)
 	routesV1.Delete("/buckets/:id", bc.DeleteBucket)
 	routesV1.Get("/buckets/:id", bc.GetBucket)
