@@ -24,12 +24,11 @@ func (q *Queries) CountBuckets(ctx context.Context) (int64, error) {
 
 const createBucket = `-- name: CreateBucket :one
 insert into storage.buckets
-(name, allowed_content_types, max_allowed_object_size, public, disabled)
+(name, allowed_content_types, max_allowed_object_size, public)
 values ($1,
         $2,
         $3,
-        $4,
-        $5) returning id
+        $4) returning id
 `
 
 type CreateBucketParams struct {
@@ -37,7 +36,6 @@ type CreateBucketParams struct {
 	AllowedContentTypes  []string
 	MaxAllowedObjectSize *int64
 	Public               bool
-	Disabled             bool
 }
 
 func (q *Queries) CreateBucket(ctx context.Context, arg *CreateBucketParams) (string, error) {
@@ -46,7 +44,6 @@ func (q *Queries) CreateBucket(ctx context.Context, arg *CreateBucketParams) (st
 		arg.AllowedContentTypes,
 		arg.MaxAllowedObjectSize,
 		arg.Public,
-		arg.Disabled,
 	)
 	var id string
 	err := row.Scan(&id)
