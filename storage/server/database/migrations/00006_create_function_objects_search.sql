@@ -1,15 +1,16 @@
 -- +goose Up
 -- +goose StatementBegin
 
-create or replace function storage.objects_search(bucket_name text, path_prefix text,
-                                                  levels int default 1, limits int default 100, offsets int default 0)
+create or replace function storage.objects_search(p_bucket_name text, p_object_path text,
+                                                  p_level int default 1, p_limit int default 100,
+                                                  p_offset int default 0)
     returns table
             (
                 id               text,
                 version          int,
                 name             text,
                 bucket_id        text,
-                bucket           text,
+                bucket_name      text,
                 content_type     text,
                 size             bigint,
                 public           boolean,
@@ -24,17 +25,17 @@ as
 $$
 begin
     return query
-        with files_folders as (select path_tokens[levels] as folder
+        with files_folders as (select path_tokens[p_level] as folder
                                from storage.objects
-                               where objects.name ilike path_prefix || '%'
-                                 and objects.bucket_id = (select id from storage.buckets where name = bucket_name)
+                               where objects.name ilike p_object_path || '%'
+                                 and objects.bucket_id = (select id from storage.buckets where name = p_bucket_name)
                                group by folder
-                               limit limits offset offsets)
+                               limit p_limit offset p_offset)
         select objects.id               as id,
                objects.version          as version,
                files_folders.folder     as name,
                objects.bucket_id        as bucket_id,
-               bucket_name              as bucket,
+               p_bucket_name            as bucket_name,
                objects.content_type     as content_type,
                objects.size             as size,
                objects.public           as public,
@@ -45,8 +46,8 @@ begin
                objects.updated_at       as updated_at
         from files_folders
                  left join storage.objects
-                           on path_prefix || files_folders.folder = objects.name and
-                              objects.bucket_id = (select id from storage.buckets where name = bucket_name);
+                           on p_object_path || files_folders.folder = objects.name and
+                              objects.bucket_id = (select id from storage.buckets where name = p_bucket_name);
 end
 $$;
 
