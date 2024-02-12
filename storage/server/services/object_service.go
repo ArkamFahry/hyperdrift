@@ -187,7 +187,7 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, id s
 	return nil
 }
 
-func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id string) (*dto.PreSignedDownloadObject, error) {
+func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id string, expiresIn int64) (*dto.PreSignedDownloadObject, error) {
 	const op = "ObjectService.CreatePreSignedDownloadObject"
 
 	var preSignedDownloadObject dto.PreSignedDownloadObject
@@ -208,6 +208,15 @@ func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id s
 
 		if object.UploadStatus != dto.ObjectUploadStatusCompleted {
 			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'", object.ID), op, "", nil)
+		}
+
+		if expiresIn == 0 {
+			expiresIn = os.config.DefaultPreSignedUploadUrlExpiresIn
+		} else {
+			err = validateExpiration(expiresIn)
+			if err != nil {
+				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			}
 		}
 
 		preSignedObject, err := os.storage.CreatePreSignedDownloadObject(ctx, &storage.PreSignedDownloadObjectCreate{
