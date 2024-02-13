@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/samber/lo"
+	"strings"
 	"time"
 
 	"github.com/ArkamFahry/hyperdrift/storage/server/config"
@@ -19,8 +21,6 @@ import (
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"
 )
-
-const DefaultContentType = "application/octet-stream"
 
 type ObjectService struct {
 	queries     *database.Queries
@@ -67,19 +67,39 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, bucket
 			}
 		}
 
-		if preSignedUploadObjectCreate.ContentType == nil {
-			contentType := DefaultContentType
-			preSignedUploadObjectCreate.ContentType = &contentType
+		if lo.Contains[string](bucket.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
+			if preSignedUploadObjectCreate.ContentType == nil {
+				contentType := models.ObjectDefaultObjectContentType
+				preSignedUploadObjectCreate.ContentType = &contentType
+			} else {
+				err = validateContentType(*preSignedUploadObjectCreate.ContentType)
+				if err != nil {
+					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+				}
+			}
 		} else {
-			err = validateContentType(*preSignedUploadObjectCreate.ContentType)
-			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			if preSignedUploadObjectCreate.ContentType == nil {
+				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("content_type cannot be empty. bucket only allows [%s] content types. please specify a allowed content type", strings.Join(bucket.AllowedContentTypes, ", ")), op, "", nil)
+			} else {
+				err = validateContentType(*preSignedUploadObjectCreate.ContentType)
+				if err != nil {
+					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+				}
+				if !lo.Contains[string](bucket.AllowedContentTypes, *preSignedUploadObjectCreate.ContentType) {
+					return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("content_type '%s' is not allowed. bucket only allows [%s] content types. please specify a allowed content type", *preSignedUploadObjectCreate.ContentType, strings.Join(bucket.AllowedContentTypes, ", ")), op, "", nil)
+				}
 			}
 		}
 
 		err = validateContentSize(preSignedUploadObjectCreate.Size)
 		if err != nil {
 			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+		}
+
+		if bucket.MaxAllowedObjectSize != nil {
+			if preSignedUploadObjectCreate.Size > *bucket.MaxAllowedObjectSize {
+				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("object size is too large. max allowed object size is %d bytes", *bucket.MaxAllowedObjectSize), op, "", nil)
+			}
 		}
 
 		preSignedObject, err = os.storage.CreatePreSignedUploadObject(ctx, &storage.PreSignedUploadObjectCreate{
@@ -211,6 +231,15 @@ func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, buck
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to create pre-signed download object", op, "", nil)
 	}
 
+	if expiresIn == 0 {
+		expiresIn = os.config.DefaultPreSignedUploadUrlExpiresIn
+	} else {
+		err := validateExpiration(expiresIn)
+		if err != nil {
+			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+		}
+	}
+
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
 		bucket, err := os.getBucketByNameTxn(ctx, tx, bucketName, op)
 		if err != nil {
@@ -247,15 +276,6 @@ func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, buck
 				}
 			} else {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' upload has not been completed", object.ID), op, "", nil)
-			}
-		}
-
-		if expiresIn == 0 {
-			expiresIn = os.config.DefaultPreSignedUploadUrlExpiresIn
-		} else {
-			err = validateExpiration(expiresIn)
-			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
 			}
 		}
 
@@ -542,7 +562,7 @@ func (os *ObjectService) getBucketByName(ctx context.Context, bucketName string,
 }
 
 func validateExpiration(expiresIn int64) error {
-	if expiresIn <= 0 {
+	if expiresIn < 0 {
 		return fmt.Errorf("expires in must be greater than 0")
 	}
 
@@ -558,7 +578,7 @@ func validateContentType(contentType string) error {
 }
 
 func validateContentSize(size int64) error {
-	if size <= 0 {
+	if size < 0 {
 		return fmt.Errorf("content size must be greater than 0")
 	}
 
