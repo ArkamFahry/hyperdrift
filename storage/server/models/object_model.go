@@ -66,7 +66,6 @@ type PreSignedDownloadObject struct {
 }
 
 type PreSignedUploadObjectCreate struct {
-	Bucket      string         `json:"bucket"`
 	Name        string         `json:"name"`
 	ExpiresIn   *int64         `json:"expires_in"`
 	ContentType *string        `json:"content_type"`
