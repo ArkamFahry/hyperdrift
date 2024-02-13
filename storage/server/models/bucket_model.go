@@ -5,6 +5,8 @@ import "time"
 const (
 	BucketLockedReasonBucketDeletion = "bucket.deletion"
 	BucketLockedReasonBucketEmptying = "bucket.emptying"
+
+	BucketAllowedWildcardContentTypes = "*/*"
 )
 
 type Bucket struct {
