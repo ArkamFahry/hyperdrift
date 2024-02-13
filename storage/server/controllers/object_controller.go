@@ -21,23 +21,25 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 
 	routesV1 := routes.Group("/v1")
 
-	routesV1.Post("/objects/pre-signed/upload", oc.CreatePreSignedUploadObject)
-	routesV1.Post("/objects/pre-signed/upload/:id/complete", oc.CompletePreSignedObjectUpload)
-	routesV1.Get("/objects/pre-signed/download/:id", oc.CreatePreSignedDownloadObject)
-	routesV1.Delete("/objects/:id", oc.DeleteObject)
-	routesV1.Get("/objects/:id", oc.GetObjectById)
+	routesV1.Post("/objects/:bucket_name/pre-signed/upload", oc.CreatePreSignedUploadObject)
+	routesV1.Post("/objects/:bucket_name/pre-signed/upload/:object_id/complete", oc.CompletePreSignedObjectUpload)
+	routesV1.Get("/objects/:bucket_name/pre-signed/download/:object_id", oc.CreatePreSignedDownloadObject)
+	routesV1.Delete("/objects/:bucket_name/:object_id", oc.DeleteObject)
+	routesV1.Get("/objects/:bucket_name/:object_id", oc.GetObjectById)
 	routesV1.Get("/objects/:bucket_name/:object_path", oc.SearchObjectsByBucketNameAndObjectPath)
 }
 
 func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
 	var preSignedUploadObjectCreate models.PreSignedUploadObjectCreate
 
+	bucketName := ctx.Params("bucket_name")
+
 	err := ctx.BodyParser(&preSignedUploadObjectCreate)
 	if err != nil {
 		return err
 	}
 
-	preSignedUploadObject, err := oc.objectService.CreatePreSignedUploadObject(ctx.Context(), &preSignedUploadObjectCreate)
+	preSignedUploadObject, err := oc.objectService.CreatePreSignedUploadObject(ctx.Context(), bucketName, &preSignedUploadObjectCreate)
 	if err != nil {
 		return err
 	}
@@ -46,9 +48,10 @@ func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
 }
 
 func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
+	bucketName := ctx.Params("bucket_name")
+	objectId := ctx.Params("object_id")
 
-	err := oc.objectService.CompletePreSignedObjectUpload(ctx.Context(), id)
+	err := oc.objectService.CompletePreSignedObjectUpload(ctx.Context(), bucketName, objectId)
 	if err != nil {
 		return err
 	}
@@ -57,11 +60,12 @@ func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error 
 }
 
 func (oc *ObjectController) CreatePreSignedDownloadObject(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
+	bucketName := ctx.Params("bucket_name")
+	objectId := ctx.Params("object_id")
 
 	expiresIn := ctx.QueryInt("expires_in")
 
-	preSignedDownloadObject, err := oc.objectService.CreatePreSignedDownloadObject(ctx.Context(), id, int64(expiresIn))
+	preSignedDownloadObject, err := oc.objectService.CreatePreSignedDownloadObject(ctx.Context(), bucketName, objectId, int64(expiresIn))
 	if err != nil {
 		return err
 	}
@@ -70,9 +74,10 @@ func (oc *ObjectController) CreatePreSignedDownloadObject(ctx *fiber.Ctx) error 
 }
 
 func (oc *ObjectController) DeleteObject(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
+	bucketName := ctx.Params("bucket_name")
+	objectId := ctx.Params("object_id")
 
-	err := oc.objectService.DeleteObject(ctx.Context(), id)
+	err := oc.objectService.DeleteObject(ctx.Context(), bucketName, objectId)
 	if err != nil {
 		return err
 	}
@@ -81,9 +86,10 @@ func (oc *ObjectController) DeleteObject(ctx *fiber.Ctx) error {
 }
 
 func (oc *ObjectController) GetObjectById(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
+	bucketName := ctx.Params("bucket_name")
+	objectId := ctx.Params("object_id")
 
-	object, err := oc.objectService.GetObjectById(ctx.Context(), id)
+	object, err := oc.objectService.GetObjectById(ctx.Context(), bucketName, objectId)
 	if err != nil {
 		return err
 	}
