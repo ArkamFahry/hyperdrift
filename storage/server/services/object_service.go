@@ -206,7 +206,27 @@ func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, id s
 		}
 
 		if object.UploadStatus != models.ObjectUploadStatusCompleted {
-			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'", object.ID), op, "", nil)
+			objectExists, err := os.storage.CheckIfObjectExists(ctx, &storage.ObjectExistsCheck{
+				Bucket: object.BucketName,
+				Name:   object.Name,
+			})
+			if err != nil {
+				os.logger.Error("failed to check if object exists in storage", zap.Error(err), zapfield.Operation(op))
+				return srverr.NewServiceError(srverr.UnknownError, "failed to check if object exists in storage", op, "", err)
+			}
+
+			if objectExists {
+				err = os.queries.WithTx(tx).UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+					ID:           object.ID,
+					UploadStatus: models.ObjectUploadStatusCompleted,
+				})
+				if err != nil {
+					os.logger.Error("failed to update object upload status in database to completed", zap.Error(err), zapfield.Operation(op))
+					return srverr.NewServiceError(srverr.UnknownError, "failed to update object upload status in database to completed", op, "", err)
+				}
+			} else {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' upload has not been completed", object.ID), op, "", nil)
+			}
 		}
 
 		if expiresIn == 0 {
