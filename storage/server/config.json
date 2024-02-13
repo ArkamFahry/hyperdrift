@@ -4,6 +4,7 @@
   "server_environment": "dev",
   "server_host": "",
   "server_port": "",
+  "server_api_key": "01HPG7BZW4HDEHWPS0FT50N3NX",
 
   "postgres_url": "postgresql://arkam:Arkam2004@localhost:5432/postgres",
 

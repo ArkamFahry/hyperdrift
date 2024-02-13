@@ -14,6 +14,7 @@ type Config struct {
 	ServerEnvironment string `json:"server_environment" mapstructure:"server_environment"`
 	ServerHost        string `json:"server_host" mapstructure:"server_host"`
 	ServerPort        string `json:"server_port" mapstructure:"server_port"`
+	ServerApiKey      string `json:"server_api_key" mapstructure:"server_api_key"`
 
 	PostgresUrl string `json:"postgres_url" mapstructure:"postgres_url"`
 
@@ -107,6 +108,10 @@ func setDefaultConfig(config *Config) {
 }
 
 func validateConfig(config *Config) error {
+	if config.ServerApiKey == "" {
+		return errors.New("server_api_key is a required")
+	}
+
 	if config.PostgresUrl == "" {
 		return errors.New("postgres_url is a required")
 	}
