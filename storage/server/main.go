@@ -46,6 +46,8 @@ func main() {
 
 	appServer.Use(middleware.RequestId())
 
+	appServer.Use(middleware.KeyAuth(appConfig))
+
 	pgxPoolConfig, err := pgxpool.ParseConfig(appConfig.PostgresUrl)
 	if err != nil {
 		appLogger.Fatal("error parsing postgres url",
