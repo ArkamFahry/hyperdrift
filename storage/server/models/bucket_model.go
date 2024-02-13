@@ -2,25 +2,30 @@ package models
 
 import "time"
 
+const (
+	BucketLockedReasonBucketDeletion = "bucket.deletion"
+	BucketLockedReasonBucketEmptying = "bucket.emptying"
+)
+
 type Bucket struct {
-	Id                   string     `json:"id"`
-	Version              int32      `json:"version"`
-	Name                 string     `json:"name"`
-	AllowedContentTypes  []string   `json:"allowed_content_types"`
-	MaxAllowedObjectSize *int64     `json:"max_allowed_object_size"`
-	Public               bool       `json:"public"`
-	Disabled             bool       `json:"enabled"`
-	Locked               bool       `json:"locked"`
-	LockReason           *string    `json:"lock_reason"`
-	LockedAt             *time.Time `json:"locked_at"`
-	CreatedAt            time.Time  `json:"created_at"`
-	UpdatedAt            *time.Time `json:"updated_at"`
+	Id                   string     `json:"id" example:"01HPG4GN5JY2Z6S0638ERSG375"`
+	Version              int32      `json:"version" example:"0"`
+	Name                 string     `json:"name" example:"avatar"`
+	AllowedContentTypes  []string   `json:"allowed_content_types" example:"image/jpeg, image/png, video/mp4, audio/wav"`
+	MaxAllowedObjectSize *int64     `json:"max_allowed_object_size" example:"10485760" extensions:"x-nullable"`
+	Public               bool       `json:"public" example:"false"`
+	Disabled             bool       `json:"disabled" example:"false"`
+	Locked               bool       `json:"locked" example:"false"`
+	LockReason           *string    `json:"lock_reason" enum:"bucket.deletion,bucket.emptying" example:"bucket.deletion" extensions:"x-nullable"`
+	LockedAt             *time.Time `json:"locked_at" default:"2024-02-13T08:16:49.952238+05:30" extensions:"x-nullable"`
+	CreatedAt            time.Time  `json:"created_at" default:"2024-02-13T08:14:49.952238+05:30"`
+	UpdatedAt            *time.Time `json:"updated_at" default:"2024-02-13T08:18:21.47635+05:30" extensions:"x-nullable"`
 }
 
 type BucketSize struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Size int64  `json:"size"`
+	Id   string `json:"id" example:"01HPG4GN5JY2Z6S0638ERSG375"`
+	Name string `json:"name" example:"avatar"`
+	Size int64  `json:"size" example:"10737418240"`
 }
 
 type BucketCreate struct {
