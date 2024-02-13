@@ -343,8 +343,8 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 	return nil
 }
 
-func (os *ObjectService) GetObjectById(ctx context.Context, bucketName string, objectId string) (*models.Object, error) {
-	const op = "ObjectService.GetObjectById"
+func (os *ObjectService) GetObject(ctx context.Context, bucketName string, objectId string) (*models.Object, error) {
+	const op = "ObjectService.GetObjectByGetObjectByBucketNameAndObjectId"
 
 	if validators.ValidateNotEmptyTrimmedString(objectId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to get object", op, "", nil)
@@ -390,8 +390,8 @@ func (os *ObjectService) GetObjectById(ctx context.Context, bucketName string, o
 	}, nil
 }
 
-func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*models.Object, error) {
-	const op = "ObjectService.SearchObjectsByBucketNameAndObjectPath"
+func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*models.Object, error) {
+	const op = "ObjectService.SearchObjects"
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to search objects", op, "", nil)
