@@ -46,7 +46,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 
 	if bucketCreate.AllowedContentTypes != nil {
 		if len(bucketCreate.AllowedContentTypes) > 1 {
-			if lo.Contains[string](bucketCreate.AllowedContentTypes, "*/*") {
+			if lo.Contains[string](bucketCreate.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
 				return nil, srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types use  '*/*'", op, "", nil)
 			}
 		}
@@ -56,7 +56,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
 		}
 	} else {
-		bucketCreate.AllowedContentTypes = []string{"*/*"}
+		bucketCreate.AllowedContentTypes = []string{models.BucketAllowedWildcardContentTypes}
 	}
 
 	if bucketCreate.MaxAllowedObjectSize != nil {
@@ -111,7 +111,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 
 		if bucketUpdate.AllowedContentTypes != nil {
 			if len(bucketUpdate.AllowedContentTypes) > 1 {
-				if lo.Contains[string](bucketUpdate.AllowedContentTypes, "*/*") {
+				if lo.Contains[string](bucketUpdate.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
 					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, "", nil)
 				}
 			}
