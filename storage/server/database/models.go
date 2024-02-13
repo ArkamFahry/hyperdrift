@@ -41,7 +41,6 @@ type StorageObject struct {
 	PathTokens     []string
 	ContentType    string
 	Size           int64
-	Public         bool
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time

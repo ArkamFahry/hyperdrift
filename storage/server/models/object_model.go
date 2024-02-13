@@ -18,7 +18,6 @@ type Object struct {
 	Name           string         `json:"name"`
 	ContentType    string         `json:"content_type"`
 	Size           int64          `json:"size"`
-	Public         bool           `json:"public"`
 	Metadata       map[string]any `json:"metadata"`
 	UploadStatus   string         `json:"upload_status"`
 	LastAccessedAt *time.Time     `json:"last_accessed_at"`
@@ -32,7 +31,6 @@ type ObjectCreate struct {
 	BucketId       string     `json:"bucket_id"`
 	ContentType    string     `json:"content_type"`
 	Size           int64      `json:"size"`
-	Public         bool       `json:"public"`
 	Metadata       []byte     `json:"metadata"`
 	UploadStatus   string     `json:"upload_status"`
 	LastAccessedAt *time.Time `json:"last_accessed_at"`
@@ -73,7 +71,6 @@ type PreSignedUploadObjectCreate struct {
 	ExpiresIn   *int64         `json:"expires_in"`
 	ContentType *string        `json:"content_type"`
 	Size        int64          `json:"size"`
-	Public      bool           `json:"public"`
 	Metadata    map[string]any `json:"metadata"`
 }
 

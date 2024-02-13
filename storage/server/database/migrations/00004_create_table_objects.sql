@@ -10,7 +10,6 @@ create table if not exists storage.objects
     path_tokens      text[]                                         not null generated always as (string_to_array(name, '/')) stored,
     content_type     text        default 'application/octet-stream' not null check ( storage.text_non_empty_trimmed_text(content_type) ),
     size             bigint      default 0                          not null check ( size >= 0 ),
-    public           boolean     default false                      not null,
     metadata         jsonb                                          null,
     upload_status    text        default 'pending'                  not null check (
         upload_status in ('pending', 'processing', 'completed', 'failed')

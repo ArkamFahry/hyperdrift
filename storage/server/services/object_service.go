@@ -100,7 +100,6 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, preSig
 			Name:         preSignedUploadObjectCreate.Name,
 			ContentType:  preSignedUploadObjectCreate.ContentType,
 			Size:         preSignedUploadObjectCreate.Size,
-			Public:       preSignedUploadObjectCreate.Public,
 			Metadata:     metadataBytes,
 			UploadStatus: models.ObjectUploadStatusPending,
 		})
@@ -341,7 +340,6 @@ func (os *ObjectService) GetObjectById(ctx context.Context, id string) (*models.
 		Name:         object.Name,
 		ContentType:  object.ContentType,
 		Size:         object.Size,
-		Public:       object.Public,
 		Metadata:     metadataMap,
 		UploadStatus: object.UploadStatus,
 		CreatedAt:    object.CreatedAt,
@@ -406,7 +404,6 @@ func (os *ObjectService) SearchObjectsByBucketNameAndObjectPath(ctx context.Cont
 			Name:         object.Name,
 			ContentType:  object.ContentType,
 			Size:         object.Size,
-			Public:       object.Public,
 			Metadata:     metadataMap,
 			UploadStatus: object.UploadStatus,
 			CreatedAt:    object.CreatedAt,

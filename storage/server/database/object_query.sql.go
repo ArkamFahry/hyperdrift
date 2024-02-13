@@ -12,14 +12,13 @@ import (
 
 const createObject = `-- name: CreateObject :one
 insert into storage.objects
-    (bucket_id, name, content_type, size, public, metadata, upload_status)
+    (bucket_id, name, content_type, size, metadata, upload_status)
 values ($1,
         $2,
         $3,
         $4,
         $5,
-        $6,
-        $7) returning id
+        $6) returning id
 `
 
 type CreateObjectParams struct {
@@ -27,7 +26,6 @@ type CreateObjectParams struct {
 	Name         string
 	ContentType  *string
 	Size         int64
-	Public       bool
 	Metadata     []byte
 	UploadStatus string
 }
@@ -38,7 +36,6 @@ func (q *Queries) CreateObject(ctx context.Context, arg *CreateObjectParams) (st
 		arg.Name,
 		arg.ContentType,
 		arg.Size,
-		arg.Public,
 		arg.Metadata,
 		arg.UploadStatus,
 	)
@@ -65,7 +62,6 @@ select id,
        path_tokens,
        content_type,
        size,
-       public,
        metadata,
        upload_status,
        last_accessed_at,
@@ -89,7 +85,6 @@ type GetObjectByBucketIdAndNameRow struct {
 	PathTokens     []string
 	ContentType    string
 	Size           int64
-	Public         bool
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
@@ -107,7 +102,6 @@ func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObject
 		&i.PathTokens,
 		&i.ContentType,
 		&i.Size,
-		&i.Public,
 		&i.Metadata,
 		&i.UploadStatus,
 		&i.LastAccessedAt,
@@ -124,7 +118,6 @@ select id,
        path_tokens,
        content_type,
        size,
-       public,
        metadata,
        upload_status,
        last_accessed_at,
@@ -142,7 +135,6 @@ type GetObjectByIdRow struct {
 	PathTokens     []string
 	ContentType    string
 	Size           int64
-	Public         bool
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
@@ -160,7 +152,6 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdR
 		&i.PathTokens,
 		&i.ContentType,
 		&i.Size,
-		&i.Public,
 		&i.Metadata,
 		&i.UploadStatus,
 		&i.LastAccessedAt,
@@ -178,7 +169,6 @@ select o.id,
        o.path_tokens,
        o.content_type,
        o.size,
-       o.public,
        o.metadata,
        o.upload_status,
        o.last_accessed_at,
@@ -198,7 +188,6 @@ type GetObjectByIdWithBucketNameRow struct {
 	PathTokens     []string
 	ContentType    string
 	Size           int64
-	Public         bool
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
@@ -217,7 +206,6 @@ func (q *Queries) GetObjectByIdWithBucketName(ctx context.Context, id string) (*
 		&i.PathTokens,
 		&i.ContentType,
 		&i.Size,
-		&i.Public,
 		&i.Metadata,
 		&i.UploadStatus,
 		&i.LastAccessedAt,
@@ -234,7 +222,6 @@ select id,
        path_tokens,
        content_type,
        size,
-       public,
        metadata,
        upload_status,
        last_accessed_at,
@@ -252,7 +239,6 @@ type GetObjectByNameRow struct {
 	PathTokens     []string
 	ContentType    string
 	Size           int64
-	Public         bool
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
@@ -270,7 +256,6 @@ func (q *Queries) GetObjectByName(ctx context.Context, name string) (*GetObjectB
 		&i.PathTokens,
 		&i.ContentType,
 		&i.Size,
-		&i.Public,
 		&i.Metadata,
 		&i.UploadStatus,
 		&i.LastAccessedAt,
@@ -287,7 +272,6 @@ select id,
        path_tokens,
        content_type,
        size,
-       public,
        metadata,
        upload_status,
        last_accessed_at,
@@ -311,7 +295,6 @@ type ListObjectsByBucketIdPagedRow struct {
 	PathTokens     []string
 	ContentType    string
 	Size           int64
-	Public         bool
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
@@ -335,7 +318,6 @@ func (q *Queries) ListObjectsByBucketIdPaged(ctx context.Context, arg *ListObjec
 			&i.PathTokens,
 			&i.ContentType,
 			&i.Size,
-			&i.Public,
 			&i.Metadata,
 			&i.UploadStatus,
 			&i.LastAccessedAt,
@@ -398,7 +380,6 @@ select id::text,
        bucket_name::text,
        content_type::text,
        size::bigint,
-       public::boolean,
        metadata::jsonb,
        upload_status::text,
        last_accessed_at::timestamptz,
@@ -424,7 +405,6 @@ type SearchObjectsByPathRow struct {
 	BucketName     string
 	ContentType    string
 	Size           int64
-	Public         bool
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt time.Time
@@ -455,7 +435,6 @@ func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByP
 			&i.BucketName,
 			&i.ContentType,
 			&i.Size,
-			&i.Public,
 			&i.Metadata,
 			&i.UploadStatus,
 			&i.LastAccessedAt,
