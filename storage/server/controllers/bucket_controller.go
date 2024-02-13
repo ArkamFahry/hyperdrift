@@ -39,7 +39,7 @@ func (bc *BucketController) RegisterBucketRoutes(app *fiber.App) {
 // @Accept json
 // @Produce json
 // @Param bucket body models.BucketCreate true "Bucket Create"
-// @Success 201 {object} entities.Bucket
+// @Success 201 {object} models.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets [post]
@@ -60,14 +60,14 @@ func (bc *BucketController) CreateBucket(ctx *fiber.Ctx) error {
 }
 
 // UpdateBucket is used to update a bucket
-// @Summary Update a bucket by id
-// @Description Update a bucket by id
+// @Summary Update a bucket
+// @Description Update a bucket
 // @Tags buckets
 // @Accept json
 // @Produce json
 // @Param id path string true "Bucket ID"
 // @Param bucket body models.BucketUpdate true "Bucket Update"
-// @Success 200 {object} entities.Bucket
+// @Success 200 {object} models.Bucket
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/buckets/{id} [patch]
@@ -90,8 +90,8 @@ func (bc *BucketController) UpdateBucket(ctx *fiber.Ctx) error {
 }
 
 // EmptyBucket is used to empty a bucket
-// @Summary Empty a bucket by id
-// @Description Empty a bucket by id
+// @Summary Empty a bucket
+// @Description Empty a bucket
 // @Tags buckets
 // @Accept json
 // @Produce json
@@ -112,8 +112,8 @@ func (bc *BucketController) EmptyBucket(ctx *fiber.Ctx) error {
 }
 
 // DisableBucket is used to disable an enabled bucket
-// @Summary Disable an enabled bucket by id
-// @Description Disable an enabled bucket by id
+// @Summary Disable a bucket
+// @Description Disable an enabled bucket
 // @Tags buckets
 // @Accept json
 // @Produce json
@@ -134,8 +134,8 @@ func (bc *BucketController) DisableBucket(ctx *fiber.Ctx) error {
 }
 
 // EnableBucket is used to enable a disabled bucket
-// @Summary Enable a disabled bucket by id
-// @Description Enable a disabled bucket by id
+// @Summary Enable a bucket
+// @Description Enable a disabled bucket
 // @Tags buckets
 // @Accept json
 // @Produce json
@@ -156,8 +156,8 @@ func (bc *BucketController) EnableBucket(ctx *fiber.Ctx) error {
 }
 
 // DeleteBucket is used to delete a bucket
-// @Summary Delete a bucket by id
-// @Description Delete a bucket by id
+// @Summary Delete a bucket
+// @Description Delete a bucket
 // @Tags buckets
 // @Accept json
 // @Produce json
@@ -178,8 +178,8 @@ func (bc *BucketController) DeleteBucket(ctx *fiber.Ctx) error {
 }
 
 // GetBucket is used to get a bucket
-// @Summary Get a bucket by id
-// @Description Get a bucket by id
+// @Summary Get a bucket
+// @Description Get a bucket
 // @Tags buckets
 // @Accept json
 // @Produce json
@@ -199,6 +199,17 @@ func (bc *BucketController) GetBucket(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(bucket)
 }
 
+// GetBucketSize is used to get size of a bucket
+// @Summary Get size of a bucket
+// @Description Get size of a bucket
+// @Tags buckets
+// @Accept json
+// @Produce json
+// @Param id path string true "Bucket ID"
+// @Success 200 {object} models.BucketSize
+// @Failure 400 {object} middleware.HttpError
+// @Failure 500 {object} middleware.HttpError
+// @Router /api/v1/buckets/{id}/size [get]
 func (bc *BucketController) GetBucketSize(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
@@ -210,9 +221,9 @@ func (bc *BucketController) GetBucketSize(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(bucketSize)
 }
 
-// ListAllBuckets is used to list all available buckets
-// @Summary List all available buckets
-// @Description List all available buckets
+// ListAllBuckets is used to list all buckets
+// @Summary List all buckets
+// @Description List all buckets
 // @Tags buckets
 // @Accept json
 // @Produce json
