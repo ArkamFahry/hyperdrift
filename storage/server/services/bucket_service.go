@@ -80,7 +80,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to create bucket", op, "", err)
 	}
 
-	bucket, err := bs.GetBucketById(ctx, id)
+	bucket, err := bs.GetBucket(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 		return nil, err
 	}
 
-	bucket, err := bs.GetBucketById(ctx, id)
+	bucket, err := bs.GetBucket(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 		return nil, err
 	}
 
-	bucket, err := bs.GetBucketById(ctx, id)
+	bucket, err := bs.GetBucket(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 		return nil, err
 	}
 
-	bucket, err := bs.GetBucketById(ctx, id)
+	bucket, err := bs.GetBucket(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -336,8 +336,8 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	return nil
 }
 
-func (bs *BucketService) GetBucketById(ctx context.Context, id string) (*models.Bucket, error) {
-	const op = "BucketService.GetBucketById"
+func (bs *BucketService) GetBucket(ctx context.Context, id string) (*models.Bucket, error) {
+	const op = "BucketService.GetBucket"
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket", op, "", nil)
