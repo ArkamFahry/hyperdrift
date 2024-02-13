@@ -266,7 +266,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 
 		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
 			ID:         bucket.ID,
-			LockReason: "bucket.empty",
+			LockReason: models.BucketLockedReasonBucketEmptying,
 		})
 		if err != nil {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for emptying", op, "", err)
@@ -312,7 +312,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 
 		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
 			ID:         bucket.ID,
-			LockReason: "bucket.delete",
+			LockReason: models.BucketLockedReasonBucketDeletion,
 		})
 		if err != nil {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for deletion", op, "", err)
