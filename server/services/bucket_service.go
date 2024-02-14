@@ -7,6 +7,7 @@ import (
 	"github.com/ArkamFahry/storage/server/jobs"
 	"github.com/ArkamFahry/storage/server/models"
 	"github.com/ArkamFahry/storage/server/srverr"
+	"github.com/ArkamFahry/storage/server/utils"
 	"github.com/ArkamFahry/storage/server/validators"
 	"github.com/ArkamFahry/storage/server/zapfield"
 	"github.com/jackc/pgx/v5"
@@ -35,25 +36,26 @@ func NewBucketService(db *pgxpool.Pool, job *river.Client[pgx.Tx], logger *zap.L
 
 func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.BucketCreate) (*models.Bucket, error) {
 	const op = "BucketService.CreateBucket"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(bucketCreate.Name) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to create bucket", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to create bucket", op, reqId, nil)
 	}
 
 	if validateBucketName(bucketCreate.Name) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters.", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters.", op, reqId, nil)
 	}
 
 	if bucketCreate.AllowedContentTypes != nil {
 		if len(bucketCreate.AllowedContentTypes) > 1 {
 			if lo.Contains[string](bucketCreate.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
-				return nil, srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types use  '*/*'", op, "", nil)
+				return nil, srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only use '*/*'", op, reqId, nil)
 			}
 		}
 
 		err := validators.ValidateAllowedContentTypes(bucketCreate.AllowedContentTypes)
 		if err != nil {
-			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 	} else {
 		bucketCreate.AllowedContentTypes = []string{models.BucketAllowedWildcardContentTypes}
@@ -62,7 +64,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 	if bucketCreate.MaxAllowedObjectSize != nil {
 		err := validators.ValidateMaxAllowedObjectSize(*bucketCreate.MaxAllowedObjectSize)
 		if err != nil {
-			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 	}
 
@@ -74,10 +76,10 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 	})
 	if err != nil {
 		if database.IsConflictError(err) {
-			return nil, srverr.NewServiceError(srverr.ConflictError, fmt.Sprintf("bucket with name '%s' already exists", bucketCreate.Name), op, "", err)
+			return nil, srverr.NewServiceError(srverr.ConflictError, fmt.Sprintf("bucket with name '%s' already exists", bucketCreate.Name), op, reqId, err)
 		}
-		bs.logger.Error("failed to create bucket", zap.Error(err), zapfield.Operation(op))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to create bucket", op, "", err)
+		bs.logger.Error("failed to create bucket", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to create bucket", op, reqId, err)
 	}
 
 	bucket, err := bs.GetBucket(ctx, id)
@@ -90,9 +92,10 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 
 func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpdate *models.BucketUpdate) (*models.Bucket, error) {
 	const op = "BucketService.UpdateBucket"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to update bucket", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to update bucket", op, reqId, nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -102,23 +105,23 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 		}
 
 		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be updated", bucket.ID), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be updated", bucket.ID), op, reqId, nil)
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
 		if bucketUpdate.AllowedContentTypes != nil {
 			if len(bucketUpdate.AllowedContentTypes) > 1 {
 				if lo.Contains[string](bucketUpdate.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
-					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, "", nil)
+					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, reqId, nil)
 				}
 			}
 
 			err = validators.ValidateAllowedContentTypes(bucketUpdate.AllowedContentTypes)
 			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 			}
 
 			bucket.AllowedContentTypes = bucketUpdate.AllowedContentTypes
@@ -127,7 +130,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 		if bucketUpdate.MaxAllowedObjectSize != nil {
 			err = validators.ValidateMaxAllowedObjectSize(*bucketUpdate.MaxAllowedObjectSize)
 			if err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, "", err)
+				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 			}
 			bucket.MaxAllowedObjectSize = bucketUpdate.MaxAllowedObjectSize
 		}
@@ -143,8 +146,8 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 			Public:               &bucket.Public,
 		})
 		if err != nil {
-			bs.logger.Error("failed to update bucket", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to update bucket", op, "", err)
+			bs.logger.Error("failed to update bucket", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to update bucket", op, reqId, err)
 		}
 
 		return nil
@@ -163,9 +166,10 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 
 func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.Bucket, error) {
 	const op = "BucketService.EnableBucket"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to enable bucket", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to enable bucket", op, reqId, nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -175,17 +179,17 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be enabled", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be enabled", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
 		if bucket.Disabled {
 			err = bs.query.WithTx(tx).EnableBucket(ctx, id)
 			if err != nil {
-				bs.logger.Error("failed to enable bucket", zap.Error(err), zapfield.Operation(op))
-				return srverr.NewServiceError(srverr.UnknownError, "failed to enable bucket", op, "", err)
+				bs.logger.Error("failed to enable bucket", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+				return srverr.NewServiceError(srverr.UnknownError, "failed to enable bucket", op, reqId, err)
 			}
 		} else {
-			return srverr.NewServiceError(srverr.BadRequestError, "bucket is already enabled", op, "", nil)
+			return srverr.NewServiceError(srverr.BadRequestError, "bucket is already enabled", op, reqId, nil)
 		}
 
 		return nil
@@ -204,9 +208,10 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 
 func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.Bucket, error) {
 	const op = "BucketService.DisableBucket"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to disable bucket", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to disable bucket", op, reqId, nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -216,17 +221,17 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be disabled", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be disabled", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
 		if !bucket.Disabled {
 			err = bs.query.WithTx(tx).DisableBucket(ctx, id)
 			if err != nil {
-				bs.logger.Error("failed to disable bucket", zap.Error(err), zapfield.Operation(op))
-				return srverr.NewServiceError(srverr.UnknownError, "failed to disable bucket", op, "", err)
+				bs.logger.Error("failed to disable bucket", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+				return srverr.NewServiceError(srverr.UnknownError, "failed to disable bucket", op, reqId, err)
 			}
 		} else {
-			return srverr.NewServiceError(srverr.BadRequestError, "bucket is already disabled", op, "", nil)
+			return srverr.NewServiceError(srverr.BadRequestError, "bucket is already disabled", op, reqId, nil)
 		}
 
 		return nil
@@ -245,9 +250,10 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 
 func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 	const op = "BucketService.EmptyBucket"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to empty bucket", op, "", nil)
+		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to empty bucket", op, reqId, nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -257,11 +263,11 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 		}
 
 		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be emptied", bucket.ID), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be emptied", bucket.ID), op, reqId, nil)
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be emptied", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be emptied", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
 		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
@@ -269,7 +275,8 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			LockReason: models.BucketLockedReasonBucketEmptying,
 		})
 		if err != nil {
-			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for emptying", op, "", err)
+			bs.logger.Error("failed to lock bucket for emptying", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for emptying", op, reqId, err)
 		}
 
 		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmpty{
@@ -277,7 +284,8 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			Name: bucket.Name,
 		}, nil)
 		if err != nil {
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket empty job", op, "", err)
+			bs.logger.Error("failed to create bucket empty job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket empty job", op, reqId, err)
 		}
 
 		return nil
@@ -291,9 +299,10 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 
 func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	const op = "BucketService.DeleteBucket"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to delete bucket", op, "", nil)
+		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to delete bucket", op, reqId, nil)
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -303,11 +312,11 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 		}
 
 		if bucket.Disabled {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be deleted", bucket.ID), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled and cannot be deleted", bucket.ID), op, reqId, nil)
 		}
 
 		if bucket.Locked {
-			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be deleted", bucket.ID, *bucket.LockReason), op, "", nil)
+			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be deleted", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
 		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
@@ -315,7 +324,8 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			LockReason: models.BucketLockedReasonBucketDeletion,
 		})
 		if err != nil {
-			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for deletion", op, "", err)
+			bs.logger.Error("failed to lock bucket for deletion", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for deletion", op, reqId, err)
 		}
 
 		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDelete{
@@ -323,8 +333,8 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			Name: bucket.Name,
 		}, nil)
 		if err != nil {
-			bs.logger.Error("failed to create bucket delete job", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket delete job", op, "", err)
+			bs.logger.Error("failed to create bucket delete job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket delete job", op, reqId, err)
 		}
 
 		return nil
@@ -338,18 +348,19 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 
 func (bs *BucketService) GetBucket(ctx context.Context, id string) (*models.Bucket, error) {
 	const op = "BucketService.GetBucket"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket", op, reqId, nil)
 	}
 
 	bucket, err := bs.query.GetBucketById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, "", err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, reqId, err)
 		}
-		bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, "", err)
+		bs.logger.Error("failed to get bucket", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, reqId, err)
 	}
 
 	return &models.Bucket{
@@ -370,18 +381,19 @@ func (bs *BucketService) GetBucket(ctx context.Context, id string) (*models.Buck
 
 func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*models.BucketSize, error) {
 	const op = "BucketService.GetBucketSize"
+	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(id) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket size", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket size", op, reqId, nil)
 	}
 
 	bucketSize, err := bs.query.GetBucketSizeById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, "", err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, reqId, err)
 		}
-		bs.logger.Error("failed to get bucket size", zap.Error(err), zapfield.Operation(op))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket size", op, "", err)
+		bs.logger.Error("failed to get bucket size", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket size", op, reqId, err)
 	}
 
 	return &models.BucketSize{
@@ -393,14 +405,15 @@ func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*models.
 
 func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*models.Bucket, error) {
 	const op = "BucketService.ListAllBuckets"
+	reqId := utils.RequestId(ctx)
 
 	buckets, err := bs.query.ListAllBuckets(ctx)
 	if err != nil {
-		bs.logger.Error("failed to list all buckets", zap.Error(err), zapfield.Operation(op))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to list all buckets", op, "", err)
+		bs.logger.Error("failed to list all buckets", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to list all buckets", op, reqId, err)
 	}
 	if len(buckets) == 0 {
-		return nil, srverr.NewServiceError(srverr.NotFoundError, "no buckets found", op, "", nil)
+		return nil, srverr.NewServiceError(srverr.NotFoundError, "no buckets found", op, reqId, nil)
 	}
 
 	var result []*models.Bucket
@@ -426,13 +439,15 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*models.Bucket, 
 }
 
 func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id string, op string) (*database.StorageBucket, error) {
+	reqId := utils.RequestId(ctx)
+
 	bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, "", err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, reqId, err)
 		}
-		bs.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, "", err)
+		bs.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, reqId, err)
 	}
 	return bucket, nil
 }
