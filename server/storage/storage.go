@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ArkamFahry/storage/server/config"
-	"github.com/ArkamFahry/storage/server/models"
 	"github.com/ArkamFahry/storage/server/zapfield"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
@@ -50,8 +49,8 @@ func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload
 	return nil
 }
 
-func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *PreSignedUploadObjectCreate) (*models.PreSignedUploadObject, error) {
-	const op = "S3Storage.PreSignedUploadObjectCreate"
+func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *PreSignedUploadObjectCreate) (*PreSignedObject, error) {
+	const op = "S3Storage.CreatePreSignedUploadObject"
 
 	var expiresIn time.Duration
 
@@ -79,14 +78,14 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 		return nil, err
 	}
 
-	return &models.PreSignedUploadObject{
+	return &PreSignedObject{
 		Url:       preSignedPutObject.URL,
 		Method:    preSignedPutObject.Method,
 		ExpiresAt: time.Now().Unix() + int64(expiresIn.Seconds()),
 	}, nil
 }
 
-func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *PreSignedDownloadObjectCreate) (*models.PreSignedUploadObject, error) {
+func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *PreSignedDownloadObjectCreate) (*PreSignedObject, error) {
 	const op = "S3Storage.PreSignedDownloadObjectCreate"
 
 	var expiresIn time.Duration
@@ -112,7 +111,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 		return nil, err
 	}
 
-	return &models.PreSignedUploadObject{
+	return &PreSignedObject{
 		Url:       preSignedGetObject.URL,
 		Method:    preSignedGetObject.Method,
 		ExpiresAt: time.Now().Unix() + int64(expiresIn.Seconds()),
