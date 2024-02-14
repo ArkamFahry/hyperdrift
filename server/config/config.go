@@ -99,11 +99,11 @@ func setDefaultConfig(config *Config) {
 	}
 
 	if config.DefaultPreSignedUploadUrlExpiresIn == 0 {
-		config.DefaultPreSignedUploadUrlExpiresIn = 1800
+		config.DefaultPreSignedUploadUrlExpiresIn = 900
 	}
 
 	if config.DefaultPreSignedDownloadUrlExpiresIn == 0 {
-		config.DefaultPreSignedDownloadUrlExpiresIn = 1800
+		config.DefaultPreSignedDownloadUrlExpiresIn = 900
 	}
 }
 
