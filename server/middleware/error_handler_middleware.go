@@ -8,19 +8,19 @@ import (
 
 type HttpError struct {
 	// status_code return a http status code depending on the error
-	StatusCode int `json:"status_code"`
+	StatusCode int `json:"status_code" example:"404"`
 	/*
 		message is a human-readable displayable safe to use error
 		message on what the error is reason for the error and how to resolve the error
 	*/
-	Message string `json:"message"`
+	Message string `json:"message" example:"bucket not found"`
 	//	path the error happened on means the http endpoint where the error happened
-	Path string `json:"path"`
+	Path string `json:"path" example:"/api/v1/buckets"`
 	/*
 			request_id is an id used to track the request from start to response return.
 		 	this can be used for finding out the starting point of the error how it happened in the system
 	*/
-	RequestId string `json:"request_id"`
+	RequestId string `json:"request_id" example:"01HPG4GN5JY2Z6S0638ERSG375"`
 }
 
 func ErrorHandler(ctx *fiber.Ctx, err error) error {
