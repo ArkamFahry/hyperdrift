@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"errors"
-	"github.com/ArkamFahry/hyperdrift/storage/server/srverr"
+	"github.com/ArkamFahry/storage/server/srverr"
 	"github.com/gofiber/fiber/v2"
 )
 

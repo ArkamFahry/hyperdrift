@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"github.com/ArkamFahry/hyperdrift/storage/server/models"
-	"github.com/ArkamFahry/hyperdrift/storage/server/services"
+	"github.com/ArkamFahry/storage/server/models"
+	"github.com/ArkamFahry/storage/server/services"
 	"github.com/gofiber/fiber/v2"
 )
 

@@ -1,4 +1,4 @@
-module github.com/ArkamFahry/hyperdrift/storage/server
+module github.com/ArkamFahry/storage/server
 
 go 1.22.0
 

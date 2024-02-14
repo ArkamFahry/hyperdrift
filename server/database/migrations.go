@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"embed"
-	"github.com/ArkamFahry/hyperdrift/storage/server/config"
+	"github.com/ArkamFahry/storage/server/config"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"

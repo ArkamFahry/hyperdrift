@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/ArkamFahry/hyperdrift/storage/server/config"
+	"github.com/ArkamFahry/storage/server/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
