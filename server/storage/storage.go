@@ -56,9 +56,9 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 	var expiresIn time.Duration
 
 	if preSignedUploadObjectCreate.ExpiresIn != nil {
-		expiresIn = time.Duration(*preSignedUploadObjectCreate.ExpiresIn)
+		expiresIn = time.Duration(*preSignedUploadObjectCreate.ExpiresIn) * time.Second
 	} else {
-		expiresIn = time.Duration(s.config.DefaultPreSignedUploadUrlExpiresIn)
+		expiresIn = time.Duration(s.config.DefaultPreSignedUploadUrlExpiresIn) * time.Second
 	}
 
 	key := createS3Key(preSignedUploadObjectCreate.Bucket, preSignedUploadObjectCreate.Name)
@@ -81,8 +81,8 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 
 	return &models.PreSignedUploadObject{
 		Url:       preSignedPutObject.URL,
-		Method:    "PUT",
-		ExpiresAt: time.Now().Add(expiresIn).Unix(),
+		Method:    preSignedPutObject.Method,
+		ExpiresAt: time.Now().Unix() + int64(expiresIn.Seconds()),
 	}, nil
 }
 
@@ -92,9 +92,9 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 	var expiresIn time.Duration
 
 	if preSignedDownloadObjectCreate.ExpiresIn != nil {
-		expiresIn = time.Duration(*preSignedDownloadObjectCreate.ExpiresIn)
+		expiresIn = time.Duration(*preSignedDownloadObjectCreate.ExpiresIn) * time.Second
 	} else {
-		expiresIn = time.Duration(s.config.DefaultPreSignedDownloadUrlExpiresIn)
+		expiresIn = time.Duration(s.config.DefaultPreSignedDownloadUrlExpiresIn) * time.Second
 	}
 
 	key := createS3Key(preSignedDownloadObjectCreate.Bucket, preSignedDownloadObjectCreate.Name)
@@ -114,8 +114,8 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 
 	return &models.PreSignedUploadObject{
 		Url:       preSignedGetObject.URL,
-		Method:    "GET",
-		ExpiresAt: time.Now().Add(expiresIn).Unix(),
+		Method:    preSignedGetObject.Method,
+		ExpiresAt: time.Now().Unix() + int64(expiresIn.Seconds()),
 	}, nil
 }
 
