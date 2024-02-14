@@ -83,10 +83,13 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 			return err
 		}
 	} else {
-		err = w.queries.DeleteObject(ctx, preSignedObjectUploadCompletion.Args.ObjectId)
+		err = w.queries.UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+			ID:           preSignedObjectUploadCompletion.Args.ObjectId,
+			UploadStatus: models.ObjectUploadStatusFailed,
+		})
 		if err != nil {
 			w.logger.Error(
-				"failed to delete object",
+				"failed to update object upload status to failed",
 				zap.String("object_id", preSignedObjectUploadCompletion.Args.ObjectId),
 				zapfield.Operation(op),
 				zap.Error(err),
