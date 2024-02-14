@@ -1,3 +1,3 @@
-# HyperDrift
+# Storage
 
-A set of services built to fix the pain points and edge cases in development
+A simple service written abstract away object storage
