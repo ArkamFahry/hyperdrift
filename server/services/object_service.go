@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ArkamFahry/storage/server/utils"
 	"github.com/samber/lo"
+	"github.com/zhooravell/mime"
 	"strings"
 	"time"
 
@@ -70,9 +71,14 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, bucket
 		}
 
 		if lo.Contains[string](bucket.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
-			if preSignedUploadObjectCreate.ContentType == nil {
-				contentType := models.ObjectDefaultObjectContentType
-				preSignedUploadObjectCreate.ContentType = &contentType
+			if preSignedUploadObjectCreate.ContentType == nil || *preSignedUploadObjectCreate.ContentType == "" {
+				contentType, err := mime.GetMimeTypes(strings.Split(preSignedUploadObjectCreate.Name, ".")[1])
+				if err != nil {
+					defaultContentType := models.ObjectDefaultObjectContentType
+					preSignedUploadObjectCreate.ContentType = &defaultContentType
+				} else {
+					preSignedUploadObjectCreate.ContentType = &contentType[0]
+				}
 			} else {
 				err = validateContentType(*preSignedUploadObjectCreate.ContentType)
 				if err != nil {
@@ -582,7 +588,7 @@ func validateExpiration(expiresIn int64) error {
 }
 
 func validateContentType(contentType string) error {
-	if validators.ValidateContentType(contentType) {
+	if !validators.ValidateContentType(contentType) {
 		return fmt.Errorf("invalid content type '%s'", contentType)
 	}
 
