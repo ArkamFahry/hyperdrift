@@ -23,15 +23,15 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 
 	routesV1.Post("/objects/:bucket_name/pre-signed/upload", oc.CreatePreSignedUploadObject)
 	routesV1.Post("/objects/:bucket_name/pre-signed/upload/:object_id/complete", oc.CompletePreSignedObjectUpload)
-	routesV1.Get("/objects/:bucket_name/pre-signed/download/:object_id", oc.CreatePreSignedDownloadObject)
+	routesV1.Get("/objects/:bucket_name/pre-signed/:object_id/download", oc.CreatePreSignedDownloadObject)
 	routesV1.Delete("/objects/:bucket_name/:object_id", oc.DeleteObject)
 	routesV1.Get("/objects/:bucket_name/:object_id", oc.GetObject)
 	routesV1.Get("/objects/:bucket_name/:object_path", oc.SearchObjects)
 }
 
-// CreatePreSignedUploadObject is used to create a pre signed upload object
-// @Summary Create a pre signed upload object
-// @Description Create a pre signed upload object
+// CreatePreSignedUploadObject is used to create a pre signed upload session
+// @Summary Create a pre signed upload session
+// @Description Create a pre signed upload session
 // @Tags objects
 // @Accept json
 // @Produce json
@@ -95,7 +95,7 @@ func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error 
 // @Success 201 {object} models.PreSignedDownloadObject
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
-// @Router /api/v1/objects/{bucket_name}/pre-signed/download/{object_id} [post]
+// @Router /api/v1/objects/{bucket_name}/pre-signed/{object_id}/download [post]
 func (oc *ObjectController) CreatePreSignedDownloadObject(ctx *fiber.Ctx) error {
 	bucketName := ctx.Params("bucket_name")
 	objectId := ctx.Params("object_id")
