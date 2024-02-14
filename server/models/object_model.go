@@ -52,39 +52,23 @@ type ObjectMove struct {
 	NewPath string `json:"new_path"`
 }
 
-type PreSignedUploadObject struct {
+type PreSignedUploadSession struct {
 	Id        string `json:"id"`
 	Url       string `json:"url"`
 	Method    string `json:"method"`
 	ExpiresAt int64  `json:"expires_at"`
 }
 
-type PreSignedDownloadObject struct {
+type PreSignedDownloadSession struct {
 	Url       string `json:"url"`
 	Method    string `json:"method"`
 	ExpiresAt int64  `json:"expires_at"`
 }
 
-type PreSignedUploadObjectCreate struct {
+type PreSignedUploadSessionCreate struct {
 	Name        string         `json:"name"`
 	ExpiresIn   *int64         `json:"expires_in"`
 	ContentType *string        `json:"content_type"`
 	Size        int64          `json:"size"`
 	Metadata    map[string]any `json:"metadata"`
-}
-
-type PreSignedDownloadObjectCreate struct {
-	Bucket    string `json:"bucket"`
-	Name      string `json:"name"`
-	ExpiresIn *int64 `json:"expires_in"`
-}
-
-type ObjectExistsCheck struct {
-	Bucket string `json:"bucket"`
-	Name   string `json:"name"`
-}
-
-type ObjectDelete struct {
-	Bucket string `json:"bucket"`
-	Name   string `json:"name"`
 }

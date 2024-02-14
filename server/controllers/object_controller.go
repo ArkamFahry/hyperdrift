@@ -21,28 +21,28 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 
 	routesV1 := routes.Group("/v1")
 
-	routesV1.Post("/objects/:bucket_name/pre-signed/upload", oc.CreatePreSignedUploadObject)
-	routesV1.Post("/objects/:bucket_name/pre-signed/upload/:object_id/complete", oc.CompletePreSignedObjectUpload)
-	routesV1.Get("/objects/:bucket_name/pre-signed/:object_id/download", oc.CreatePreSignedDownloadObject)
+	routesV1.Post("/objects/:bucket_name/pre-signed/upload", oc.CreatePreSignedUploadSession)
+	routesV1.Post("/objects/:bucket_name/pre-signed/upload/:object_id/complete", oc.CompletePreSignedUploadSession)
+	routesV1.Get("/objects/:bucket_name/pre-signed/:object_id/download", oc.CreatePreSignedDownloadSession)
 	routesV1.Delete("/objects/:bucket_name/:object_id", oc.DeleteObject)
 	routesV1.Get("/objects/:bucket_name/:object_id", oc.GetObject)
 	routesV1.Get("/objects/:bucket_name/:object_path", oc.SearchObjects)
 }
 
-// CreatePreSignedUploadObject is used to create a pre signed upload session
+// CreatePreSignedUploadSession is used to create a pre signed upload session
 // @Summary Create a pre signed upload session
 // @Description Create a pre signed upload session
 // @Tags objects
 // @Accept json
 // @Produce json
 // @Param bucket_name path string true "Bucket Name"
-// @Param bucket body models.PreSignedUploadObjectCreate true "Pre Signed Upload Object Create"
-// @Success 201 {object} models.PreSignedUploadObject
+// @Param bucket body models.PreSignedUploadSessionCreate true "Pre Signed Upload Session Create"
+// @Success 201 {object} models.PreSignedUploadSession
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/objects/{bucket_name}/pre-signed/upload [post]
-func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
-	var preSignedUploadObjectCreate models.PreSignedUploadObjectCreate
+func (oc *ObjectController) CreatePreSignedUploadSession(ctx *fiber.Ctx) error {
+	var preSignedUploadObjectCreate models.PreSignedUploadSessionCreate
 
 	bucketName := ctx.Params("bucket_name")
 
@@ -51,7 +51,7 @@ func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	preSignedUploadObject, err := oc.objectService.CreatePreSignedUploadObject(ctx.Context(), bucketName, &preSignedUploadObjectCreate)
+	preSignedUploadObject, err := oc.objectService.CreatePreSignedUploadSession(ctx.Context(), bucketName, &preSignedUploadObjectCreate)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(preSignedUploadObject)
 }
 
-// CompletePreSignedObjectUpload is used to complete a pre signed upload session
+// CompletePreSignedUploadSession is used to complete a pre signed upload session
 // @Summary Complete a pre signed upload session
 // @Description Complete a pre signed upload session
 // @Tags objects
@@ -71,11 +71,11 @@ func (oc *ObjectController) CreatePreSignedUploadObject(ctx *fiber.Ctx) error {
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1//objects/{bucket_name}/pre-signed/upload/{object_id}/complete [post]
-func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error {
+func (oc *ObjectController) CompletePreSignedUploadSession(ctx *fiber.Ctx) error {
 	bucketName := ctx.Params("bucket_name")
 	objectId := ctx.Params("object_id")
 
-	err := oc.objectService.CompletePreSignedObjectUpload(ctx.Context(), bucketName, objectId)
+	err := oc.objectService.CompletePreSignedUploadSession(ctx.Context(), bucketName, objectId)
 	if err != nil {
 		return err
 	}
@@ -83,26 +83,26 @@ func (oc *ObjectController) CompletePreSignedObjectUpload(ctx *fiber.Ctx) error 
 	return ctx.SendStatus(fiber.StatusAccepted)
 }
 
-// CreatePreSignedDownloadObject is used to create a pre signed download object
-// @Summary Create a pre signed download object
-// @Description Create a pre signed download object
+// CreatePreSignedDownloadSession is used to create a pre signed download session
+// @Summary Create a pre signed download session
+// @Description Create a pre signed download session
 // @Tags objects
 // @Accept json
 // @Produce json
 // @Param bucket_name path string true "Bucket Name"
 // @Param object_id path string true "Object ID"
 // @Param expires_in query int true "Expires In"
-// @Success 201 {object} models.PreSignedDownloadObject
+// @Success 201 {object} models.PreSignedDownloadSession
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/objects/{bucket_name}/pre-signed/{object_id}/download [post]
-func (oc *ObjectController) CreatePreSignedDownloadObject(ctx *fiber.Ctx) error {
+func (oc *ObjectController) CreatePreSignedDownloadSession(ctx *fiber.Ctx) error {
 	bucketName := ctx.Params("bucket_name")
 	objectId := ctx.Params("object_id")
 
 	expiresIn := ctx.QueryInt("expires_in")
 
-	preSignedDownloadObject, err := oc.objectService.CreatePreSignedDownloadObject(ctx.Context(), bucketName, objectId, int64(expiresIn))
+	preSignedDownloadObject, err := oc.objectService.CreatePreSignedDownloadSession(ctx.Context(), bucketName, objectId, int64(expiresIn))
 	if err != nil {
 		return err
 	}

@@ -44,11 +44,11 @@ func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.C
 	}
 }
 
-func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, bucketName string, preSignedUploadObjectCreate *models.PreSignedUploadObjectCreate) (*models.PreSignedUploadObject, error) {
-	const op = "ObjectService.CreatePreSignedUploadUrl"
+func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucketName string, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*models.PreSignedUploadSession, error) {
+	const op = "ObjectService.CreatePreSignedSession"
 	reqId := utils.RequestId(ctx)
 
-	var preSignedObject *models.PreSignedUploadObject
+	var preSignedObject *storage.PreSignedObject
 	var id string
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
@@ -61,68 +61,75 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, bucket
 			return err
 		}
 
-		if preSignedUploadObjectCreate.ExpiresIn == nil {
-			preSignedUploadObjectCreate.ExpiresIn = &os.config.DefaultPreSignedUploadUrlExpiresIn
+		if preSignedUploadSessionCreate.ExpiresIn == nil {
+			preSignedUploadSessionCreate.ExpiresIn = &os.config.DefaultPreSignedUploadUrlExpiresIn
 		} else {
-			err = validateExpiration(*preSignedUploadObjectCreate.ExpiresIn)
+			err = validateExpiration(*preSignedUploadSessionCreate.ExpiresIn)
 			if err != nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 			}
 		}
 
 		if lo.Contains[string](bucket.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
-			if preSignedUploadObjectCreate.ContentType == nil || *preSignedUploadObjectCreate.ContentType == "" {
-				contentType, err := mime.GetMimeTypes(strings.Split(preSignedUploadObjectCreate.Name, ".")[1])
-				if err != nil {
-					defaultContentType := models.ObjectDefaultObjectContentType
-					preSignedUploadObjectCreate.ContentType = &defaultContentType
+			defaultContentType := models.ObjectDefaultObjectContentType
+
+			if preSignedUploadSessionCreate.ContentType == nil || (preSignedUploadSessionCreate.ContentType != nil && *preSignedUploadSessionCreate.ContentType == "") {
+				fileNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
+				if len(fileNameParts) == 2 {
+					contentType, err := mime.GetMimeTypes(fileNameParts[1])
+					if err != nil {
+						preSignedUploadSessionCreate.ContentType = &defaultContentType
+					} else {
+						preSignedUploadSessionCreate.ContentType = &contentType[0]
+					}
 				} else {
-					preSignedUploadObjectCreate.ContentType = &contentType[0]
+					preSignedUploadSessionCreate.ContentType = &defaultContentType
 				}
+
 			} else {
-				err = validateContentType(*preSignedUploadObjectCreate.ContentType)
+				err = validateContentType(*preSignedUploadSessionCreate.ContentType)
 				if err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
 			}
 		} else {
-			if preSignedUploadObjectCreate.ContentType == nil {
+			if preSignedUploadSessionCreate.ContentType == nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("content_type cannot be empty. bucket only allows [%s] content types. please specify a allowed content type", strings.Join(bucket.AllowedContentTypes, ", ")), op, reqId, nil)
 			} else {
-				err = validateContentType(*preSignedUploadObjectCreate.ContentType)
+				err = validateContentType(*preSignedUploadSessionCreate.ContentType)
 				if err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
-				if !lo.Contains[string](bucket.AllowedContentTypes, *preSignedUploadObjectCreate.ContentType) {
-					return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("content_type '%s' is not allowed. bucket only allows [%s] content types. please specify a allowed content type", *preSignedUploadObjectCreate.ContentType, strings.Join(bucket.AllowedContentTypes, ", ")), op, reqId, nil)
+				if !lo.Contains[string](bucket.AllowedContentTypes, *preSignedUploadSessionCreate.ContentType) {
+					return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("content_type '%s' is not allowed. bucket only allows [%s] content types. please specify a allowed content type", *preSignedUploadSessionCreate.ContentType, strings.Join(bucket.AllowedContentTypes, ", ")), op, reqId, nil)
 				}
 			}
 		}
 
-		err = validateContentSize(preSignedUploadObjectCreate.Size)
+		err = validateContentSize(preSignedUploadSessionCreate.Size)
 		if err != nil {
 			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 
 		if bucket.MaxAllowedObjectSize != nil {
-			if preSignedUploadObjectCreate.Size > *bucket.MaxAllowedObjectSize {
+			if preSignedUploadSessionCreate.Size > *bucket.MaxAllowedObjectSize {
 				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("object size is too large. max allowed object size is %d bytes", *bucket.MaxAllowedObjectSize), op, reqId, nil)
 			}
 		}
 
 		preSignedObject, err = os.storage.CreatePreSignedUploadObject(ctx, &storage.PreSignedUploadObjectCreate{
 			Bucket:      bucket.Name,
-			Name:        preSignedUploadObjectCreate.Name,
-			ExpiresIn:   preSignedUploadObjectCreate.ExpiresIn,
-			ContentType: *preSignedUploadObjectCreate.ContentType,
-			Size:        preSignedUploadObjectCreate.Size,
+			Name:        preSignedUploadSessionCreate.Name,
+			ExpiresIn:   preSignedUploadSessionCreate.ExpiresIn,
+			ContentType: *preSignedUploadSessionCreate.ContentType,
+			Size:        preSignedUploadSessionCreate.Size,
 		})
 		if err != nil {
 			os.logger.Error("failed to create pre-signed upload object", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed upload object", op, reqId, err)
 		}
 
-		metadataBytes, err := metadataToBytes(preSignedUploadObjectCreate.Metadata)
+		metadataBytes, err := metadataToBytes(preSignedUploadSessionCreate.Metadata)
 		if err != nil {
 			os.logger.Error("failed to convert metadata to bytes", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata to bytes", op, reqId, err)
@@ -130,23 +137,23 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, bucket
 
 		id, err = os.queries.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
 			BucketID:     bucket.Id,
-			Name:         preSignedUploadObjectCreate.Name,
-			ContentType:  preSignedUploadObjectCreate.ContentType,
-			Size:         preSignedUploadObjectCreate.Size,
+			Name:         preSignedUploadSessionCreate.Name,
+			ContentType:  preSignedUploadSessionCreate.ContentType,
+			Size:         preSignedUploadSessionCreate.Size,
 			Metadata:     metadataBytes,
 			UploadStatus: models.ObjectUploadStatusPending,
 		})
 		if err != nil {
 			if database.IsConflictError(err) {
-				return srverr.NewServiceError(srverr.ConflictError, fmt.Sprintf("object with name '%s' already exists", preSignedUploadObjectCreate.Name), op, reqId, err)
+				return srverr.NewServiceError(srverr.ConflictError, fmt.Sprintf("object with name '%s' already exists", preSignedUploadSessionCreate.Name), op, reqId, err)
 			}
 			os.logger.Error("failed to create object in database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to create object in database", op, reqId, err)
 		}
 
-		_, err = os.job.InsertTx(ctx, tx, jobs.PreSignedObjectUploadCompletion{
+		_, err = os.job.InsertTx(ctx, tx, jobs.PreSignedUploadSessionCompletion{
 			BucketName: bucket.Name,
-			ObjectName: preSignedUploadObjectCreate.Name,
+			ObjectName: preSignedUploadSessionCreate.Name,
 			ObjectId:   id,
 		}, &river.InsertOpts{
 			ScheduledAt: time.Unix(preSignedObject.ExpiresAt, 0),
@@ -162,7 +169,7 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, bucket
 		return nil, err
 	}
 
-	return &models.PreSignedUploadObject{
+	return &models.PreSignedUploadSession{
 		Id:        id,
 		Url:       preSignedObject.Url,
 		Method:    preSignedObject.Method,
@@ -170,16 +177,16 @@ func (os *ObjectService) CreatePreSignedUploadObject(ctx context.Context, bucket
 	}, nil
 }
 
-func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, bucketName string, objectId string) error {
-	const op = "ObjectService.CompletePreSignedObjectUpload"
+func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, bucketName string, objectId string) error {
+	const op = "ObjectService.CompletePreSignedUploadSession"
 	reqId := utils.RequestId(ctx)
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
-		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to complete pre-signed upload", op, reqId, nil)
+		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
 	if validators.ValidateNotEmptyTrimmedString(objectId) {
-		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object object_id is required to complete pre-signed upload", op, reqId, nil)
+		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object object_id is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
 	bucket, err := os.getBucketByName(ctx, bucketName, op)
@@ -198,9 +205,9 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, buck
 
 	switch object.UploadStatus {
 	case models.ObjectUploadStatusCompleted:
-		return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has already been completed for object '%s'", objectId), op, reqId, nil)
+		return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("upload session has already been completed for object '%s'", objectId), op, reqId, nil)
 	case models.ObjectUploadStatusFailed:
-		return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has failed for object '%s'", objectId), op, reqId, nil)
+		return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("upload session has failed for object '%s'", objectId), op, reqId, nil)
 	}
 
 	objectExists, err := os.storage.CheckIfObjectExists(ctx, &storage.ObjectExistsCheck{
@@ -228,18 +235,18 @@ func (os *ObjectService) CompletePreSignedObjectUpload(ctx context.Context, buck
 	return nil
 }
 
-func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, bucketName string, objectId string, expiresIn int64) (*models.PreSignedDownloadObject, error) {
-	const op = "ObjectService.CreatePreSignedDownloadObject"
+func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, bucketName string, objectId string, expiresIn int64) (*models.PreSignedDownloadSession, error) {
+	const op = "ObjectService.CreatePreSignedDownloadSession"
 	reqId := utils.RequestId(ctx)
 
-	var preSignedDownloadObject models.PreSignedDownloadObject
+	var preSignedDownloadObject models.PreSignedDownloadSession
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to create pre-signed download object", op, reqId, nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to create pre-signed download session", op, reqId, nil)
 	}
 
 	if validators.ValidateNotEmptyTrimmedString(objectId) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to create pre-signed download object", op, reqId, nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to create pre-signed download session", op, reqId, nil)
 	}
 
 	if expiresIn == 0 {
@@ -305,7 +312,7 @@ func (os *ObjectService) CreatePreSignedDownloadObject(ctx context.Context, buck
 			return srverr.NewServiceError(srverr.UnknownError, "failed to update object last accessed at", op, reqId, err)
 		}
 
-		preSignedDownloadObject = models.PreSignedDownloadObject{
+		preSignedDownloadObject = models.PreSignedDownloadSession{
 			Url:       preSignedObject.Url,
 			Method:    preSignedObject.Method,
 			ExpiresAt: preSignedObject.ExpiresAt,
