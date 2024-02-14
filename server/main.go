@@ -105,22 +105,22 @@ func main() {
 
 	workers := river.NewWorkers()
 
-	if err = river.AddWorkerSafely[jobs.BucketDelete](workers, jobs.NewBucketDeleteWorker(pgxPool, appStorage, appLogger)); err != nil {
-		appLogger.Fatal("error adding bucket delete worker",
+	if err = river.AddWorkerSafely[jobs.BucketDeletion](workers, jobs.NewBucketDeletionWorker(pgxPool, appStorage, appLogger)); err != nil {
+		appLogger.Fatal("error adding bucket deletion worker",
 			zap.Error(err),
 			zapfield.Operation(op),
 		)
 	}
 
-	if err = river.AddWorkerSafely[jobs.BucketEmpty](workers, jobs.NewBucketEmptyWorker(pgxPool, appStorage, appLogger)); err != nil {
-		appLogger.Fatal("error adding bucket empty worker",
+	if err = river.AddWorkerSafely[jobs.BucketEmptying](workers, jobs.NewBucketEmptyingWorker(pgxPool, appStorage, appLogger)); err != nil {
+		appLogger.Fatal("error adding bucket emptying worker",
 			zap.Error(err),
 			zapfield.Operation(op),
 		)
 	}
 
-	if err = river.AddWorkerSafely[jobs.PreSignedObjectUploadCompletion](workers, jobs.NewPreSignedObjectUploadCompletionWorker(pgxPool, appStorage, appLogger)); err != nil {
-		appLogger.Fatal("error adding pre signed object upload completion worker",
+	if err = river.AddWorkerSafely[jobs.PreSignedUploadSessionCompletion](workers, jobs.NewPreSignedUploadSessionCompletionWorker(pgxPool, appStorage, appLogger)); err != nil {
+		appLogger.Fatal("error adding pre signed upload session completion worker",
 			zap.Error(err),
 			zapfield.Operation(op),
 		)

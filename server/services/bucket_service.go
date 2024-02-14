@@ -279,7 +279,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for emptying", op, reqId, err)
 		}
 
-		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmpty{
+		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmptying{
 			Id:   bucket.ID,
 			Name: bucket.Name,
 		}, nil)
@@ -328,7 +328,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.UnknownError, "failed to lock bucket for deletion", op, reqId, err)
 		}
 
-		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDelete{
+		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDeletion{
 			Id:   bucket.ID,
 			Name: bucket.Name,
 		}, nil)
