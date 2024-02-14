@@ -12,50 +12,51 @@ import (
 	"go.uber.org/zap"
 )
 
-type PreSignedObjectUploadCompletion struct {
+type PreSignedUploadSessionCompletion struct {
 	BucketName string `json:"bucket_name"`
 	ObjectId   string `json:"object_id"`
 	ObjectName string `json:"object_name"`
 }
 
-func (PreSignedObjectUploadCompletion) Kind() string {
-	return "pre.signed.object.upload.completion"
+func (PreSignedUploadSessionCompletion) Kind() string {
+	return "pre.signed.upload.session.completion"
 }
 
-type PreSignedObjectUploadCompletionWorker struct {
+type PreSignedUploadSessionCompletionWorker struct {
 	queries     *database.Queries
 	transaction *database.Transaction
 	storage     *storage.S3Storage
 	logger      *zap.Logger
-	river.WorkerDefaults[PreSignedObjectUploadCompletion]
+	river.WorkerDefaults[PreSignedUploadSessionCompletion]
 }
 
-func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSignedObjectUploadCompletion *river.Job[PreSignedObjectUploadCompletion]) error {
-	const op = "PreSignedObjectUploadCompletionWorker.Work"
+func (w *PreSignedUploadSessionCompletionWorker) Work(ctx context.Context, preSignedUploadSessionCompletion *river.Job[PreSignedUploadSessionCompletion]) error {
+	const op = "PreSignedUploadSessionCompletionWorker.Work"
 
 	objectExists, err := w.storage.CheckIfObjectExists(ctx, &storage.ObjectExistsCheck{
-		Bucket: preSignedObjectUploadCompletion.Args.BucketName,
-		Name:   preSignedObjectUploadCompletion.Args.ObjectName,
+		Bucket: preSignedUploadSessionCompletion.Args.BucketName,
+		Name:   preSignedUploadSessionCompletion.Args.ObjectName,
 	})
 	if err != nil {
 		w.logger.Error(
 			"failed to check if object exists",
-			zap.String("bucket_name", preSignedObjectUploadCompletion.Args.BucketName),
-			zap.String("object_name", preSignedObjectUploadCompletion.Args.ObjectName),
-			zapfield.Operation(op),
 			zap.Error(err),
+			zapfield.Operation(op),
+			zap.String("bucket_name", preSignedUploadSessionCompletion.Args.BucketName),
+			zap.String("object_name", preSignedUploadSessionCompletion.Args.ObjectName),
 		)
 		return err
 	}
 
 	if objectExists {
 		err = w.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-			object, err := w.queries.WithTx(tx).GetObjectById(ctx, preSignedObjectUploadCompletion.Args.ObjectId)
+			object, err := w.queries.WithTx(tx).GetObjectById(ctx, preSignedUploadSessionCompletion.Args.ObjectId)
 			if err != nil {
 				w.logger.Error(
 					"failed to get object",
-					zap.String("object_id", preSignedObjectUploadCompletion.Args.ObjectId),
+					zap.Error(err),
 					zapfield.Operation(op),
+					zap.String("object_id", preSignedUploadSessionCompletion.Args.ObjectId),
 				)
 			}
 
@@ -64,15 +65,15 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 			}
 
 			err = w.queries.WithTx(tx).UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
-				ID:           preSignedObjectUploadCompletion.Args.ObjectId,
+				ID:           preSignedUploadSessionCompletion.Args.ObjectId,
 				UploadStatus: models.ObjectUploadStatusCompleted,
 			})
 			if err != nil {
 				w.logger.Error(
 					"failed to update object upload status to completed",
-					zap.String("object_id", preSignedObjectUploadCompletion.Args.ObjectId),
-					zapfield.Operation(op),
 					zap.Error(err),
+					zapfield.Operation(op),
+					zap.String("object_id", preSignedUploadSessionCompletion.Args.ObjectId),
 				)
 				return err
 			}
@@ -84,15 +85,15 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 		}
 	} else {
 		err = w.queries.UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
-			ID:           preSignedObjectUploadCompletion.Args.ObjectId,
+			ID:           preSignedUploadSessionCompletion.Args.ObjectId,
 			UploadStatus: models.ObjectUploadStatusFailed,
 		})
 		if err != nil {
 			w.logger.Error(
 				"failed to update object upload status to failed",
-				zap.String("object_id", preSignedObjectUploadCompletion.Args.ObjectId),
-				zapfield.Operation(op),
 				zap.Error(err),
+				zapfield.Operation(op),
+				zap.String("object_id", preSignedUploadSessionCompletion.Args.ObjectId),
 			)
 			return err
 		}
@@ -101,8 +102,8 @@ func (w *PreSignedObjectUploadCompletionWorker) Work(ctx context.Context, preSig
 	return nil
 }
 
-func NewPreSignedObjectUploadCompletionWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *PreSignedObjectUploadCompletionWorker {
-	return &PreSignedObjectUploadCompletionWorker{
+func NewPreSignedUploadSessionCompletionWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *PreSignedUploadSessionCompletionWorker {
+	return &PreSignedUploadSessionCompletionWorker{
 		queries: database.New(db),
 		storage: storage,
 		logger:  logger,
