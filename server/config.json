@@ -1,0 +1,32 @@
+{
+  "server_id": "",
+  "server_name": "",
+  "server_environment": "dev",
+  "server_host": "",
+  "server_port": "",
+  "server_api_key": "01HPG7BZW4HDEHWPS0FT50N3NX",
+
+  "postgres_url": "postgresql://arkam:Arkam2004@localhost:5432/postgres",
+
+  "s3_endpoint": "http://localhost:9000",
+  "s3_access_key_id": "arkam",
+  "s3_secret_access_key": "Arkam2004",
+  "s3_bucket_name": "test-bucket",
+  "s3_region": "",
+  "s3_force_path_style": true,
+  "s3_disable_ssl": true,
+
+  "default_buckets": [
+    {
+      "id": "",
+      "name": "",
+      "allowed_mime_types": [],
+      "max_allowed_object_size": null,
+      "public": false,
+      "disabled": false
+    }
+  ],
+
+  "default_pre_signed_upload_url_expires_in": 0,
+  "default_pre_signed_download_url_expires_in": 0
+}
