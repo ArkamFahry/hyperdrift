@@ -44,6 +44,7 @@ func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload
 		Body:        objectUpload.Content,
 	})
 	if err != nil {
+		s.logger.Error("failed to put object", zap.Error(err), zapfield.Operation(op))
 		return err
 	}
 
@@ -63,16 +64,17 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 
 	key := createS3Key(preSignedUploadObjectCreate.Bucket, preSignedUploadObjectCreate.Name)
 
+	// TODO: implement pre signed url level content length limitation to secure pre signed url from variable length uploads
 	preSignedPutObject, err := s.s3PreSignedClient.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:        aws.String(s.bucketName),
-		Key:           aws.String(key),
-		ContentType:   aws.String(preSignedUploadObjectCreate.ContentType),
-		ContentLength: aws.Int64(preSignedUploadObjectCreate.ContentLength),
+		Bucket:      aws.String(s.bucketName),
+		Key:         aws.String(key),
+		ContentType: aws.String(preSignedUploadObjectCreate.ContentType),
+		// ContentLength: aws.Int64(preSignedUploadObjectCreate.ContentLength),
 	},
 		s3.WithPresignExpires(expiresIn),
 	)
 	if err != nil {
-		s.logger.Error("failed to create pre-signed upload url", zap.Error(err), zapfield.Operation(op))
+		s.logger.Error("failed to create pre-signed put object", zap.Error(err), zapfield.Operation(op))
 		return nil, err
 	}
 
@@ -103,7 +105,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 		s3.WithPresignExpires(expiresIn),
 	)
 	if err != nil {
-		s.logger.Error("failed to create pre-signed download url", zap.Error(err), zapfield.Operation(op))
+		s.logger.Error("failed to create pre-signed get object", zap.Error(err), zapfield.Operation(op))
 		return nil, err
 	}
 
@@ -128,7 +130,7 @@ func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *
 		if errors.As(err, &responseError) && responseError.ResponseError.HTTPStatusCode() == http.StatusNotFound {
 			return false, nil
 		}
-		s.logger.Error("failed to check if object exists", zap.Error(err), zapfield.Operation(op))
+		s.logger.Error("failed to head object", zap.Error(err), zapfield.Operation(op))
 		return false, err
 	}
 
