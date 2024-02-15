@@ -87,7 +87,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 				}
 
 			} else {
-				err = validateContentType(*preSignedUploadSessionCreate.MimeType)
+				err = validateMimeType(*preSignedUploadSessionCreate.MimeType)
 				if err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
@@ -96,7 +96,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			if preSignedUploadSessionCreate.MimeType == nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify a allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 			} else {
-				err = validateContentType(*preSignedUploadSessionCreate.MimeType)
+				err = validateMimeType(*preSignedUploadSessionCreate.MimeType)
 				if err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
@@ -355,7 +355,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 		}
 
 		if object.UploadStatus == models.ObjectUploadStatusPending {
-			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'. delete operation can only be performed on objects that have been uploaded", object.ID), op, reqId, nil)
+			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("upload has not yet been completed for object '%s'. delete operation can only be performed on objects that have been uploaded", object.ID), op, reqId, nil)
 		}
 
 		err = os.storage.DeleteObject(ctx, &storage.ObjectDelete{
@@ -594,9 +594,9 @@ func validateExpiration(expiresIn int64) error {
 	return nil
 }
 
-func validateContentType(contentType string) error {
+func validateMimeType(contentType string) error {
 	if !validators.ValidateMimeType(contentType) {
-		return fmt.Errorf("invalid content type '%s'", contentType)
+		return fmt.Errorf("invalid mime type '%s'", contentType)
 	}
 
 	return nil
