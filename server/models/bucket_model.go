@@ -13,7 +13,7 @@ type Bucket struct {
 	Id                   string     `json:"id" example:"01HPG4GN5JY2Z6S0638ERSG375"`
 	Version              int32      `json:"version" example:"0"`
 	Name                 string     `json:"name" example:"avatar"`
-	AllowedContentTypes  []string   `json:"allowed_content_types" example:"image/jpeg, image/png, video/mp4, audio/wav"`
+	AllowedMimeTypes     []string   `json:"allowed_mime_types" example:"image/jpeg, image/png, video/mp4, audio/wav"`
 	MaxAllowedObjectSize *int64     `json:"max_allowed_object_size" example:"10485760" extensions:"x-nullable"`
 	Public               bool       `json:"public" example:"false"`
 	Disabled             bool       `json:"disabled" example:"false"`
@@ -38,12 +38,12 @@ type BucketCreate struct {
 		name is required to create bucket cannot be empty
 	*/
 	Name string `json:"name" example:"avatar"`
-	//	allowed_content_types should be a list of valid mimetypes,
+	//	allowed_mime_types should be a list of valid mimetypes,
 	//	or it can be empty list or `null` then the system would infer it as wild card `*/*` allowing all content types.
 	//	if a list mime types are being sent all of them should be valid.
 	//	also if allowed content types are being set it can't include wild card with all other content types like `["*/*", "video/mp4", "audio/wav"]`
 	// 	this will be invalid if wild card is going to be set it should only be used by itself like `["*/*"]`
-	AllowedContentTypes []string `json:"allowed_content_types" example:"image/jpeg, image/png, video/mp4, audio/wav" extensions:"x-nullable"`
+	AllowedMimeTypes []string `json:"allowed_mime_types" example:"image/jpeg, image/png, video/mp4, audio/wav" extensions:"x-nullable"`
 	/*
 		max_allowed_object_size should be the max size of an object allowed to be uploaded into a bucket.
 		the max allowed size should be defined in `bytes`. if it's set to `null` the system will infer this as there
@@ -58,13 +58,13 @@ type BucketCreate struct {
 }
 
 type BucketUpdate struct {
-	//	allowed_content_types should be a list of valid mimetypes,
+	//	allowed_mime_types should be a list of valid mimetypes,
 	//	or it can be empty list or `null` then the system would infer it as wild card `*/*` allowing all content types.
 	//	if a list mime types are being sent all of them should be valid.
 	//	also if allowed content types are being set it can't include wild card with all other content types like `["*/*", "video/mp4", "audio/wav"]`
 	// 	this will be invalid if wild card is going to be set it should only be used by itself like `["*/*"]`. if the new allowed_content_types are valid
-	//  they will replace the previously defined allowed_content_types
-	AllowedContentTypes []string `json:"allowed_content_types" example:"image/jpeg, image/png, video/mp4, audio/wav" extensions:"x-nullable"`
+	//  they will replace the previously defined allowed_mime_types
+	AllowedMimeTypes []string `json:"allowed_mime_types" example:"image/jpeg, image/png, video/mp4, audio/wav" extensions:"x-nullable"`
 	/*
 		max_allowed_object_size should be the max size of an object allowed to be uploaded into a bucket.
 		the max allowed size should be defined in `bytes`. if it's set to `null` the system will infer this as there

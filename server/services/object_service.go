@@ -70,59 +70,59 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			}
 		}
 
-		if lo.Contains[string](bucket.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
+		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedWildcardContentTypes) {
 			defaultContentType := models.ObjectDefaultObjectContentType
 
-			if preSignedUploadSessionCreate.ContentType == nil || (preSignedUploadSessionCreate.ContentType != nil && *preSignedUploadSessionCreate.ContentType == "") {
+			if preSignedUploadSessionCreate.MimeType == nil || (preSignedUploadSessionCreate.MimeType != nil && *preSignedUploadSessionCreate.MimeType == "") {
 				fileNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
 				if len(fileNameParts) == 2 {
 					contentType, err := mime.GetMimeTypes(fileNameParts[1])
 					if err != nil {
-						preSignedUploadSessionCreate.ContentType = &defaultContentType
+						preSignedUploadSessionCreate.MimeType = &defaultContentType
 					} else {
-						preSignedUploadSessionCreate.ContentType = &contentType[0]
+						preSignedUploadSessionCreate.MimeType = &contentType[0]
 					}
 				} else {
-					preSignedUploadSessionCreate.ContentType = &defaultContentType
+					preSignedUploadSessionCreate.MimeType = &defaultContentType
 				}
 
 			} else {
-				err = validateContentType(*preSignedUploadSessionCreate.ContentType)
+				err = validateContentType(*preSignedUploadSessionCreate.MimeType)
 				if err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
 			}
 		} else {
-			if preSignedUploadSessionCreate.ContentType == nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("content_type cannot be empty. bucket only allows [%s] content types. please specify a allowed content type", strings.Join(bucket.AllowedContentTypes, ", ")), op, reqId, nil)
+			if preSignedUploadSessionCreate.MimeType == nil {
+				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify a allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 			} else {
-				err = validateContentType(*preSignedUploadSessionCreate.ContentType)
+				err = validateContentType(*preSignedUploadSessionCreate.MimeType)
 				if err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
-				if !lo.Contains[string](bucket.AllowedContentTypes, *preSignedUploadSessionCreate.ContentType) {
-					return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("content_type '%s' is not allowed. bucket only allows [%s] content types. please specify a allowed content type", *preSignedUploadSessionCreate.ContentType, strings.Join(bucket.AllowedContentTypes, ", ")), op, reqId, nil)
+				if !lo.Contains[string](bucket.AllowedMimeTypes, *preSignedUploadSessionCreate.MimeType) {
+					return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type '%s' is not allowed. bucket only allows [%s] mime types. please specify a allowed mime type", *preSignedUploadSessionCreate.MimeType, strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 				}
 			}
 		}
 
-		err = validateContentSize(preSignedUploadSessionCreate.Size)
+		err = validateObjectSize(preSignedUploadSessionCreate.Size)
 		if err != nil {
 			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 
 		if bucket.MaxAllowedObjectSize != nil {
 			if preSignedUploadSessionCreate.Size > *bucket.MaxAllowedObjectSize {
-				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("object size is too large. max allowed object size is %d bytes", *bucket.MaxAllowedObjectSize), op, reqId, nil)
+				return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("object size is too large. max allowed object size is %d bytes", *bucket.MaxAllowedObjectSize), op, reqId, nil)
 			}
 		}
 
 		preSignedObject, err = os.storage.CreatePreSignedUploadObject(ctx, &storage.PreSignedUploadObjectCreate{
-			Bucket:      bucket.Name,
-			Name:        preSignedUploadSessionCreate.Name,
-			ExpiresIn:   preSignedUploadSessionCreate.ExpiresIn,
-			ContentType: *preSignedUploadSessionCreate.ContentType,
-			Size:        preSignedUploadSessionCreate.Size,
+			Bucket:        bucket.Name,
+			Name:          preSignedUploadSessionCreate.Name,
+			ExpiresIn:     preSignedUploadSessionCreate.ExpiresIn,
+			ContentType:   *preSignedUploadSessionCreate.MimeType,
+			ContentLength: preSignedUploadSessionCreate.Size,
 		})
 		if err != nil {
 			os.logger.Error("failed to create pre-signed upload object", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
@@ -138,7 +138,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 		id, err = os.queries.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
 			BucketID:     bucket.Id,
 			Name:         preSignedUploadSessionCreate.Name,
-			ContentType:  preSignedUploadSessionCreate.ContentType,
+			ContentType:  preSignedUploadSessionCreate.MimeType,
 			Size:         preSignedUploadSessionCreate.Size,
 			Metadata:     metadataBytes,
 			UploadStatus: models.ObjectUploadStatusPending,
@@ -354,7 +354,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, reqId, err)
 		}
 
-		if object.UploadStatus != models.ObjectUploadStatusCompleted {
+		if object.UploadStatus == models.ObjectUploadStatusPending {
 			return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("upload has not yet been completed for object '%s'. delete operation can only be performed on objects that have been uploaded", object.ID), op, reqId, nil)
 		}
 
@@ -421,7 +421,7 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketName string, objec
 		Id:           object.ID,
 		BucketId:     object.BucketID,
 		Name:         object.Name,
-		ContentType:  object.ContentType,
+		MimeType:     object.MimeType,
 		Size:         object.Size,
 		Metadata:     metadataMap,
 		UploadStatus: object.UploadStatus,
@@ -486,7 +486,7 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 			Version:      object.Version,
 			BucketId:     object.BucketID,
 			Name:         object.Name,
-			ContentType:  object.ContentType,
+			MimeType:     object.MimeType,
 			Size:         object.Size,
 			Metadata:     metadataMap,
 			UploadStatus: object.UploadStatus,
@@ -530,7 +530,7 @@ func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, buck
 		Id:                   bucket.ID,
 		Version:              bucket.Version,
 		Name:                 bucket.Name,
-		AllowedContentTypes:  bucket.AllowedContentTypes,
+		AllowedMimeTypes:     bucket.AllowedMimeTypes,
 		MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
 		Public:               bucket.Public,
 		Disabled:             bucket.Disabled,
@@ -574,7 +574,7 @@ func (os *ObjectService) getBucketByName(ctx context.Context, bucketName string,
 		Id:                   bucket.ID,
 		Version:              bucket.Version,
 		Name:                 bucket.Name,
-		AllowedContentTypes:  bucket.AllowedContentTypes,
+		AllowedMimeTypes:     bucket.AllowedMimeTypes,
 		MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
 		Public:               bucket.Public,
 		Disabled:             bucket.Disabled,
@@ -595,16 +595,16 @@ func validateExpiration(expiresIn int64) error {
 }
 
 func validateContentType(contentType string) error {
-	if !validators.ValidateContentType(contentType) {
+	if !validators.ValidateMimeType(contentType) {
 		return fmt.Errorf("invalid content type '%s'", contentType)
 	}
 
 	return nil
 }
 
-func validateContentSize(size int64) error {
+func validateObjectSize(size int64) error {
 	if size <= 0 {
-		return fmt.Errorf("content size must be greater than 0")
+		return fmt.Errorf("content lenght must be greater than 0")
 	}
 
 	return nil

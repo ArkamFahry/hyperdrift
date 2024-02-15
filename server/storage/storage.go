@@ -33,6 +33,7 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 }
 
 func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload) error {
+	const op = "S3Storage.UploadObject"
 
 	key := createS3Key(objectUpload.Bucket, objectUpload.Name)
 
@@ -65,13 +66,10 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 	preSignedPutObject, err := s.s3PreSignedClient.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(s.bucketName),
 		Key:           aws.String(key),
-		ContentLength: aws.Int64(preSignedUploadObjectCreate.Size),
 		ContentType:   aws.String(preSignedUploadObjectCreate.ContentType),
+		ContentLength: aws.Int64(preSignedUploadObjectCreate.ContentLength),
 	},
-
-		func(po *s3.PresignOptions) {
-			po.Expires = expiresIn
-		},
+		s3.WithPresignExpires(expiresIn),
 	)
 	if err != nil {
 		s.logger.Error("failed to create pre-signed upload url", zap.Error(err), zapfield.Operation(op))
@@ -86,7 +84,7 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 }
 
 func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *PreSignedDownloadObjectCreate) (*PreSignedObject, error) {
-	const op = "S3Storage.PreSignedDownloadObjectCreate"
+	const op = "S3Storage.CreatePreSignedDownloadObject"
 
 	var expiresIn time.Duration
 
@@ -102,9 +100,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
 	},
-		func(po *s3.PresignOptions) {
-			po.Expires = expiresIn
-		},
+		s3.WithPresignExpires(expiresIn),
 	)
 	if err != nil {
 		s.logger.Error("failed to create pre-signed download url", zap.Error(err), zapfield.Operation(op))
@@ -140,7 +136,7 @@ func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *
 }
 
 func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *ObjectDelete) error {
-	const op = "S3Storage.ObjectDelete"
+	const op = "S3Storage.DeleteObject"
 
 	key := createS3Key(objectDelete.Bucket, objectDelete.Name)
 

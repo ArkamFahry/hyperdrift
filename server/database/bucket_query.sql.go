@@ -24,16 +24,17 @@ func (q *Queries) CountBuckets(ctx context.Context) (int64, error) {
 
 const createBucket = `-- name: CreateBucket :one
 insert into storage.buckets
-(name, allowed_content_types, max_allowed_object_size, public)
+    (name, allowed_mime_types, max_allowed_object_size, public)
 values ($1,
         $2,
         $3,
-        $4) returning id
+        $4)
+returning id
 `
 
 type CreateBucketParams struct {
 	Name                 string
-	AllowedContentTypes  []string
+	AllowedMimeTypes     []string
 	MaxAllowedObjectSize *int64
 	Public               bool
 }
@@ -41,7 +42,7 @@ type CreateBucketParams struct {
 func (q *Queries) CreateBucket(ctx context.Context, arg *CreateBucketParams) (string, error) {
 	row := q.db.QueryRow(ctx, createBucket,
 		arg.Name,
-		arg.AllowedContentTypes,
+		arg.AllowedMimeTypes,
 		arg.MaxAllowedObjectSize,
 		arg.Public,
 	)
@@ -87,7 +88,7 @@ const getBucketById = `-- name: GetBucketById :one
 select id,
        version,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -108,7 +109,7 @@ func (q *Queries) GetBucketById(ctx context.Context, id string) (*StorageBucket,
 		&i.ID,
 		&i.Version,
 		&i.Name,
-		&i.AllowedContentTypes,
+		&i.AllowedMimeTypes,
 		&i.MaxAllowedObjectSize,
 		&i.Public,
 		&i.Disabled,
@@ -125,7 +126,7 @@ const getBucketByName = `-- name: GetBucketByName :one
 select id,
        version,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -146,7 +147,7 @@ func (q *Queries) GetBucketByName(ctx context.Context, name string) (*StorageBuc
 		&i.ID,
 		&i.Version,
 		&i.Name,
-		&i.AllowedContentTypes,
+		&i.AllowedMimeTypes,
 		&i.MaxAllowedObjectSize,
 		&i.Public,
 		&i.Disabled,
@@ -203,7 +204,7 @@ const listAllBuckets = `-- name: ListAllBuckets :many
 select id,
        version,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -228,7 +229,7 @@ func (q *Queries) ListAllBuckets(ctx context.Context) ([]*StorageBucket, error) 
 			&i.ID,
 			&i.Version,
 			&i.Name,
-			&i.AllowedContentTypes,
+			&i.AllowedMimeTypes,
 			&i.MaxAllowedObjectSize,
 			&i.Public,
 			&i.Disabled,
@@ -251,7 +252,7 @@ func (q *Queries) ListAllBuckets(ctx context.Context) ([]*StorageBucket, error) 
 const listBucketsPaginated = `-- name: ListBucketsPaginated :many
 select id,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -273,7 +274,7 @@ type ListBucketsPaginatedParams struct {
 type ListBucketsPaginatedRow struct {
 	ID                   string
 	Name                 string
-	AllowedContentTypes  []string
+	AllowedMimeTypes     []string
 	MaxAllowedObjectSize *int64
 	Public               bool
 	Disabled             bool
@@ -296,7 +297,7 @@ func (q *Queries) ListBucketsPaginated(ctx context.Context, arg *ListBucketsPagi
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.AllowedContentTypes,
+			&i.AllowedMimeTypes,
 			&i.MaxAllowedObjectSize,
 			&i.Public,
 			&i.Disabled,
@@ -359,7 +360,7 @@ func (q *Queries) MakeBucketPublic(ctx context.Context, id string) error {
 const searchBucketsPaginated = `-- name: SearchBucketsPaginated :many
 select id,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -382,7 +383,7 @@ type SearchBucketsPaginatedParams struct {
 type SearchBucketsPaginatedRow struct {
 	ID                   string
 	Name                 string
-	AllowedContentTypes  []string
+	AllowedMimeTypes     []string
 	MaxAllowedObjectSize *int64
 	Public               bool
 	Disabled             bool
@@ -405,7 +406,7 @@ func (q *Queries) SearchBucketsPaginated(ctx context.Context, arg *SearchBuckets
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.AllowedContentTypes,
+			&i.AllowedMimeTypes,
 			&i.MaxAllowedObjectSize,
 			&i.Public,
 			&i.Disabled,
@@ -442,14 +443,14 @@ const updateBucket = `-- name: UpdateBucket :exec
 update storage.buckets
 set max_allowed_object_size = coalesce($1, max_allowed_object_size),
     public                  = coalesce($2, public),
-    allowed_content_types   = coalesce($3, allowed_content_types)
+    allowed_mime_types      = coalesce($3, allowed_mime_types)
 where id = $4
 `
 
 type UpdateBucketParams struct {
 	MaxAllowedObjectSize *int64
 	Public               *bool
-	AllowedContentTypes  []string
+	AllowedMimeTypes     []string
 	ID                   string
 }
 
@@ -457,7 +458,7 @@ func (q *Queries) UpdateBucket(ctx context.Context, arg *UpdateBucketParams) err
 	_, err := q.db.Exec(ctx, updateBucket,
 		arg.MaxAllowedObjectSize,
 		arg.Public,
-		arg.AllowedContentTypes,
+		arg.AllowedMimeTypes,
 		arg.ID,
 	)
 	return err

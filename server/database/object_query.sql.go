@@ -12,13 +12,14 @@ import (
 
 const createObject = `-- name: CreateObject :one
 insert into storage.objects
-    (bucket_id, name, content_type, size, metadata, upload_status)
+    (bucket_id, name, mime_type, size, metadata, upload_status)
 values ($1,
         $2,
         $3,
         $4,
         $5,
-        $6) returning id
+        $6)
+returning id
 `
 
 type CreateObjectParams struct {
@@ -60,7 +61,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -83,7 +84,7 @@ type GetObjectByBucketIdAndNameRow struct {
 	BucketID       string
 	Name           string
 	PathTokens     []string
-	ContentType    string
+	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
@@ -100,7 +101,7 @@ func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObject
 		&i.BucketID,
 		&i.Name,
 		&i.PathTokens,
-		&i.ContentType,
+		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
 		&i.UploadStatus,
@@ -116,7 +117,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -133,7 +134,7 @@ type GetObjectByIdRow struct {
 	BucketID       string
 	Name           string
 	PathTokens     []string
-	ContentType    string
+	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
@@ -150,7 +151,7 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdR
 		&i.BucketID,
 		&i.Name,
 		&i.PathTokens,
-		&i.ContentType,
+		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
 		&i.UploadStatus,
@@ -167,7 +168,7 @@ select o.id,
        b.name as bucket_name,
        o.name,
        o.path_tokens,
-       o.content_type,
+       o.mime_type,
        o.size,
        o.metadata,
        o.upload_status,
@@ -175,7 +176,7 @@ select o.id,
        o.created_at,
        o.updated_at
 from storage.objects as o
-inner join storage.buckets as b on o.bucket_id = b.id
+         inner join storage.buckets as b on o.bucket_id = b.id
 where o.id = $1
 limit 1
 `
@@ -186,7 +187,7 @@ type GetObjectByIdWithBucketNameRow struct {
 	BucketName     string
 	Name           string
 	PathTokens     []string
-	ContentType    string
+	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
@@ -204,7 +205,7 @@ func (q *Queries) GetObjectByIdWithBucketName(ctx context.Context, id string) (*
 		&i.BucketName,
 		&i.Name,
 		&i.PathTokens,
-		&i.ContentType,
+		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
 		&i.UploadStatus,
@@ -220,7 +221,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -237,7 +238,7 @@ type GetObjectByNameRow struct {
 	BucketID       string
 	Name           string
 	PathTokens     []string
-	ContentType    string
+	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
@@ -254,7 +255,7 @@ func (q *Queries) GetObjectByName(ctx context.Context, name string) (*GetObjectB
 		&i.BucketID,
 		&i.Name,
 		&i.PathTokens,
-		&i.ContentType,
+		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
 		&i.UploadStatus,
@@ -270,7 +271,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -293,7 +294,7 @@ type ListObjectsByBucketIdPagedRow struct {
 	BucketID       string
 	Name           string
 	PathTokens     []string
-	ContentType    string
+	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
@@ -316,7 +317,7 @@ func (q *Queries) ListObjectsByBucketIdPaged(ctx context.Context, arg *ListObjec
 			&i.BucketID,
 			&i.Name,
 			&i.PathTokens,
-			&i.ContentType,
+			&i.MimeType,
 			&i.Size,
 			&i.Metadata,
 			&i.UploadStatus,
@@ -378,7 +379,7 @@ select id::text,
        name::text,
        bucket_id::text,
        bucket_name::text,
-       content_type::text,
+       mime_type::text,
        size::bigint,
        metadata::jsonb,
        upload_status::text,
@@ -403,7 +404,7 @@ type SearchObjectsByPathRow struct {
 	Name           string
 	BucketID       string
 	BucketName     string
-	ContentType    string
+	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
@@ -433,7 +434,7 @@ func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByP
 			&i.Name,
 			&i.BucketID,
 			&i.BucketName,
-			&i.ContentType,
+			&i.MimeType,
 			&i.Size,
 			&i.Metadata,
 			&i.UploadStatus,
@@ -453,23 +454,23 @@ func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByP
 
 const updateObject = `-- name: UpdateObject :exec
 update storage.objects
-set size         = coalesce($1, size),
-    content_type = coalesce($2, content_type),
-    metadata     = coalesce($3, metadata)
+set size      = coalesce($1, size),
+    mime_type = coalesce($2, mime_type),
+    metadata  = coalesce($3, metadata)
 where id = $4
 `
 
 type UpdateObjectParams struct {
-	Size        int64
-	ContentType string
-	Metadata    []byte
-	ID          string
+	Size     int64
+	MimeType string
+	Metadata []byte
+	ID       string
 }
 
 func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) error {
 	_, err := q.db.Exec(ctx, updateObject,
 		arg.Size,
-		arg.ContentType,
+		arg.MimeType,
 		arg.Metadata,
 		arg.ID,
 	)

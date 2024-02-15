@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func ValidateContentType(mimeType string) bool {
+func ValidateMimeType(mimeType string) bool {
 	mimeTypePattern := `^[a-zA-Z]+/[a-zA-Z0-9\-\.\+]+$`
 
 	re := regexp.MustCompile(mimeTypePattern)
@@ -14,10 +14,10 @@ func ValidateContentType(mimeType string) bool {
 	return re.MatchString(mimeType)
 }
 
-func ValidateAllowedContentTypes(mimeTypes []string) error {
+func ValidateAllowedMimeTypes(mimeTypes []string) error {
 	var invalidContentTypes []string
 	for _, mimeType := range mimeTypes {
-		if !ValidateContentType(mimeType) {
+		if !ValidateMimeType(mimeType) {
 			invalidContentTypes = append(invalidContentTypes, mimeType)
 		}
 	}

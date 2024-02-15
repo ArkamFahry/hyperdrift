@@ -12,7 +12,7 @@ type StorageBucket struct {
 	ID                   string
 	Version              int32
 	Name                 string
-	AllowedContentTypes  []string
+	AllowedMimeTypes     []string
 	MaxAllowedObjectSize *int64
 	Public               bool
 	Disabled             bool
@@ -39,11 +39,12 @@ type StorageObject struct {
 	BucketID       string
 	Name           string
 	PathTokens     []string
-	ContentType    string
+	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
+	LockedAt       *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      *time.Time
 }

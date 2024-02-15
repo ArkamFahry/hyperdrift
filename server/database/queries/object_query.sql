@@ -1,12 +1,13 @@
 -- name: CreateObject :one
 insert into storage.objects
-    (bucket_id, name, content_type, size, metadata, upload_status)
+    (bucket_id, name, mime_type, size, metadata, upload_status)
 values (sqlc.arg('bucket_id'),
         sqlc.arg('name'),
         sqlc.narg('content_type'),
         sqlc.arg('size'),
         sqlc.arg('metadata'),
-        sqlc.arg('upload_status')) returning id;
+        sqlc.arg('upload_status'))
+returning id;
 
 -- name: UpdateObjectUploadStatus :exec
 update storage.objects
@@ -20,9 +21,9 @@ where id = sqlc.arg('id');
 
 -- name: UpdateObject :exec
 update storage.objects
-set size         = coalesce(sqlc.arg('size'), size),
-    content_type = coalesce(sqlc.arg('content_type'), content_type),
-    metadata     = coalesce(sqlc.arg('metadata'), metadata)
+set size      = coalesce(sqlc.arg('size'), size),
+    mime_type = coalesce(sqlc.arg('mime_type'), mime_type),
+    metadata  = coalesce(sqlc.arg('metadata'), metadata)
 where id = sqlc.arg('id');
 
 -- name: MakeObjectPublic :exec
@@ -50,7 +51,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -67,7 +68,7 @@ select o.id,
        b.name as bucket_name,
        o.name,
        o.path_tokens,
-       o.content_type,
+       o.mime_type,
        o.size,
        o.metadata,
        o.upload_status,
@@ -75,7 +76,7 @@ select o.id,
        o.created_at,
        o.updated_at
 from storage.objects as o
-inner join storage.buckets as b on o.bucket_id = b.id
+         inner join storage.buckets as b on o.bucket_id = b.id
 where o.id = sqlc.arg('id')
 limit 1;
 
@@ -84,7 +85,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -100,7 +101,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -117,7 +118,7 @@ select id,
        bucket_id,
        name,
        path_tokens,
-       content_type,
+       mime_type,
        size,
        metadata,
        upload_status,
@@ -134,7 +135,7 @@ select id::text,
        name::text,
        bucket_id::text,
        bucket_name::text,
-       content_type::text,
+       mime_type::text,
        size::bigint,
        metadata::jsonb,
        upload_status::text,

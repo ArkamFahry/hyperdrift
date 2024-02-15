@@ -6,10 +6,10 @@ create table if not exists storage.buckets
     id                      text                      not null check ( storage.text_non_empty_trimmed_text(id) ),
     version                 int         default 0     not null check ( version >= 0 ),
     name                    text                      not null check ( storage.text_non_empty_trimmed_text(name) ),
-    allowed_content_types   text[]                    null check (
-        storage.array_null_or_contains_empty_trimmed_text(allowed_content_types)
+    allowed_mime_types      text[]                    null check (
+        storage.array_null_or_contains_empty_trimmed_text(allowed_mime_types)
             and
-        storage.array_null_or_text_values_unique(allowed_content_types)
+        storage.array_null_or_text_values_unique(allowed_mime_types)
         ),
     max_allowed_object_size bigint                    null check ( storage.bigint_null_or_non_zero_bigint(max_allowed_object_size) ),
     public                  boolean     default false not null,

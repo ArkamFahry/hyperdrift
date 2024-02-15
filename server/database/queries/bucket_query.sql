@@ -1,16 +1,17 @@
 -- name: CreateBucket :one
 insert into storage.buckets
-(name, allowed_content_types, max_allowed_object_size, public)
+    (name, allowed_mime_types, max_allowed_object_size, public)
 values (sqlc.arg('name'),
-        sqlc.narg('allowed_content_types'),
+        sqlc.narg('allowed_mime_types'),
         sqlc.narg('max_allowed_object_size'),
-        sqlc.arg('public')) returning id;
+        sqlc.arg('public'))
+returning id;
 
 -- name: UpdateBucket :exec
 update storage.buckets
 set max_allowed_object_size = coalesce(sqlc.narg('max_allowed_object_size'), max_allowed_object_size),
     public                  = coalesce(sqlc.narg('public'), public),
-    allowed_content_types   = coalesce(sqlc.narg('allowed_content_types'), allowed_content_types)
+    allowed_mime_types      = coalesce(sqlc.narg('allowed_mime_types'), allowed_mime_types)
 where id = sqlc.arg('id');
 
 -- name: DisableBucket :exec
@@ -56,7 +57,7 @@ where id = sqlc.arg('id');
 select id,
        version,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -73,7 +74,7 @@ limit 1;
 select id,
        version,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -90,7 +91,7 @@ limit 1;
 select id,
        version,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -104,7 +105,7 @@ from storage.buckets;
 -- name: ListBucketsPaginated :many
 select id,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,
@@ -120,7 +121,7 @@ limit sqlc.arg('limit');
 -- name: SearchBucketsPaginated :many
 select id,
        name,
-       allowed_content_types,
+       allowed_mime_types,
        max_allowed_object_size,
        public,
        disabled,

@@ -16,7 +16,7 @@ type Object struct {
 	Version        int32          `json:"version"`
 	BucketId       string         `json:"bucket_id"`
 	Name           string         `json:"name"`
-	ContentType    string         `json:"content_type"`
+	MimeType       string         `json:"mime_type"`
 	Size           int64          `json:"size"`
 	Metadata       map[string]any `json:"metadata"`
 	UploadStatus   string         `json:"upload_status"`
@@ -66,9 +66,9 @@ type PreSignedDownloadSession struct {
 }
 
 type PreSignedUploadSessionCreate struct {
-	Name        string         `json:"name"`
-	ExpiresIn   *int64         `json:"expires_in"`
-	ContentType *string        `json:"content_type"`
-	Size        int64          `json:"size"`
-	Metadata    map[string]any `json:"metadata"`
+	Name      string         `json:"name"`
+	ExpiresIn *int64         `json:"expires_in"`
+	MimeType  *string        `json:"mime_type"`
+	Size      int64          `json:"size"`
+	Metadata  map[string]any `json:"metadata"`
 }

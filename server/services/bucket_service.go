@@ -46,19 +46,19 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters.", op, reqId, nil)
 	}
 
-	if bucketCreate.AllowedContentTypes != nil {
-		if len(bucketCreate.AllowedContentTypes) > 1 {
-			if lo.Contains[string](bucketCreate.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
+	if bucketCreate.AllowedMimeTypes != nil {
+		if len(bucketCreate.AllowedMimeTypes) > 1 {
+			if lo.Contains[string](bucketCreate.AllowedMimeTypes, models.BucketAllowedWildcardContentTypes) {
 				return nil, srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only use '*/*'", op, reqId, nil)
 			}
 		}
 
-		err := validators.ValidateAllowedContentTypes(bucketCreate.AllowedContentTypes)
+		err := validators.ValidateAllowedMimeTypes(bucketCreate.AllowedMimeTypes)
 		if err != nil {
 			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 	} else {
-		bucketCreate.AllowedContentTypes = []string{models.BucketAllowedWildcardContentTypes}
+		bucketCreate.AllowedMimeTypes = []string{models.BucketAllowedWildcardContentTypes}
 	}
 
 	if bucketCreate.MaxAllowedObjectSize != nil {
@@ -70,7 +70,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 
 	id, err := bs.query.CreateBucket(ctx, &database.CreateBucketParams{
 		Name:                 bucketCreate.Name,
-		AllowedContentTypes:  bucketCreate.AllowedContentTypes,
+		AllowedMimeTypes:     bucketCreate.AllowedMimeTypes,
 		MaxAllowedObjectSize: bucketCreate.MaxAllowedObjectSize,
 		Public:               bucketCreate.Public,
 	})
@@ -112,19 +112,19 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
-		if bucketUpdate.AllowedContentTypes != nil {
-			if len(bucketUpdate.AllowedContentTypes) > 1 {
-				if lo.Contains[string](bucketUpdate.AllowedContentTypes, models.BucketAllowedWildcardContentTypes) {
+		if bucketUpdate.AllowedMimeTypes != nil {
+			if len(bucketUpdate.AllowedMimeTypes) > 1 {
+				if lo.Contains[string](bucketUpdate.AllowedMimeTypes, models.BucketAllowedWildcardContentTypes) {
 					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, reqId, nil)
 				}
 			}
 
-			err = validators.ValidateAllowedContentTypes(bucketUpdate.AllowedContentTypes)
+			err = validators.ValidateAllowedMimeTypes(bucketUpdate.AllowedMimeTypes)
 			if err != nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 			}
 
-			bucket.AllowedContentTypes = bucketUpdate.AllowedContentTypes
+			bucket.AllowedMimeTypes = bucketUpdate.AllowedMimeTypes
 		}
 
 		if bucketUpdate.MaxAllowedObjectSize != nil {
@@ -141,7 +141,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 
 		err = bs.query.WithTx(tx).UpdateBucket(ctx, &database.UpdateBucketParams{
 			ID:                   bucket.ID,
-			AllowedContentTypes:  bucket.AllowedContentTypes,
+			AllowedMimeTypes:     bucket.AllowedMimeTypes,
 			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
 			Public:               &bucket.Public,
 		})
@@ -367,7 +367,7 @@ func (bs *BucketService) GetBucket(ctx context.Context, id string) (*models.Buck
 		Id:                   bucket.ID,
 		Version:              bucket.Version,
 		Name:                 bucket.Name,
-		AllowedContentTypes:  bucket.AllowedContentTypes,
+		AllowedMimeTypes:     bucket.AllowedMimeTypes,
 		MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
 		Public:               bucket.Public,
 		Disabled:             bucket.Disabled,
@@ -423,7 +423,7 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*models.Bucket, 
 			Id:                   bucket.ID,
 			Version:              bucket.Version,
 			Name:                 bucket.Name,
-			AllowedContentTypes:  bucket.AllowedContentTypes,
+			AllowedMimeTypes:     bucket.AllowedMimeTypes,
 			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
 			Public:               bucket.Public,
 			Disabled:             bucket.Disabled,
