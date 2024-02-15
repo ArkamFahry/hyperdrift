@@ -11,7 +11,7 @@
   "s3_endpoint": "http://localhost:9000",
   "s3_access_key_id": "arkam",
   "s3_secret_access_key": "Arkam2004",
-  "s3_bucket_name": "test-bucket",
+  "s3_bucket": "test-bucket",
   "s3_region": "",
   "s3_force_path_style": true,
   "s3_disable_ssl": true,

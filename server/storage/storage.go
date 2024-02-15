@@ -17,7 +17,7 @@ import (
 type S3Storage struct {
 	s3Client          *s3.Client
 	s3PreSignedClient *s3.PresignClient
-	bucketName        string
+	bucket            string
 	config            *config.Config
 	logger            *zap.Logger
 }
@@ -26,7 +26,7 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 	return &S3Storage{
 		s3Client:          s3Client,
 		s3PreSignedClient: s3.NewPresignClient(s3Client),
-		bucketName:        config.S3BucketName,
+		bucket:            config.S3Bucket,
 		config:            config,
 		logger:            logger,
 	}
@@ -38,7 +38,7 @@ func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload
 	key := createS3Key(objectUpload.Bucket, objectUpload.Name)
 
 	_, err := s.s3Client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucketName),
+		Bucket:      aws.String(s.bucket),
 		Key:         aws.String(key),
 		ContentType: aws.String(objectUpload.ContentType),
 		Body:        objectUpload.Content,
@@ -66,10 +66,10 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 
 	// TODO: implement pre signed url level content length limitation to secure pre signed url from variable length uploads
 	preSignedPutObject, err := s.s3PreSignedClient.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucketName),
-		Key:         aws.String(key),
-		ContentType: aws.String(preSignedUploadObjectCreate.ContentType),
-		// ContentLength: aws.Int64(preSignedUploadObjectCreate.ContentLength),
+		Bucket:        aws.String(s.bucket),
+		Key:           aws.String(key),
+		ContentType:   aws.String(preSignedUploadObjectCreate.ContentType),
+		ContentLength: aws.Int64(preSignedUploadObjectCreate.ContentLength),
 	},
 		s3.WithPresignExpires(expiresIn),
 	)
@@ -99,7 +99,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 	key := createS3Key(preSignedDownloadObjectCreate.Bucket, preSignedDownloadObjectCreate.Name)
 
 	preSignedGetObject, err := s.s3PreSignedClient.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucketName),
+		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	},
 		s3.WithPresignExpires(expiresIn),
@@ -122,7 +122,7 @@ func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *
 	key := createS3Key(objectExistsCheck.Bucket, objectExistsCheck.Name)
 
 	_, err := s.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
-		Bucket: aws.String(s.bucketName),
+		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
@@ -143,7 +143,7 @@ func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *ObjectDelete
 	key := createS3Key(objectDelete.Bucket, objectDelete.Name)
 
 	_, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(s.bucketName),
+		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
