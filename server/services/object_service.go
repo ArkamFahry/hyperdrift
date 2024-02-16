@@ -7,6 +7,7 @@ import (
 	"github.com/ArkamFahry/storage/server/utils"
 	"github.com/samber/lo"
 	"github.com/zhooravell/mime"
+	"regexp"
 	"strings"
 	"time"
 
@@ -52,7 +53,15 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 	var id string
 
 	if validators.ValidateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to create pre-signed upload url", op, reqId, nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to create pre-signed upload session", op, reqId, nil)
+	}
+
+	if validators.ValidateNotEmptyTrimmedString(preSignedUploadSessionCreate.Name) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "name cannot be empty. name is required to create pre-signed upload session", op, reqId, nil)
+	}
+
+	if err := validateName(preSignedUploadSessionCreate.Name); err != nil {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, nil)
 	}
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
@@ -62,7 +71,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 		}
 
 		if preSignedUploadSessionCreate.ExpiresIn == nil {
-			preSignedUploadSessionCreate.ExpiresIn = &os.config.DefaultPreSignedUploadUrlExpiresIn
+			preSignedUploadSessionCreate.ExpiresIn = &os.config.DefaultPreSignedUploadUrlExpiry
 		} else {
 			err = validateExpiration(*preSignedUploadSessionCreate.ExpiresIn)
 			if err != nil {
@@ -70,25 +79,23 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			}
 		}
 
-		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedWildcardContentTypes) {
-			defaultContentType := models.ObjectDefaultObjectContentType
-
+		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedWildcardMimeType) {
+			defaultMimeType := models.ObjectDefaultMimeType
 			if preSignedUploadSessionCreate.MimeType == nil || (preSignedUploadSessionCreate.MimeType != nil && *preSignedUploadSessionCreate.MimeType == "") {
-				fileNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
-				if len(fileNameParts) == 2 {
-					contentType, err := mime.GetMimeTypes(fileNameParts[1])
+				objectNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
+				if len(objectNameParts) > 1 {
+					objectExtension := objectNameParts[len(objectNameParts)-1]
+					mimeType, err := mime.GetMimeTypes(objectExtension)
 					if err != nil {
-						preSignedUploadSessionCreate.MimeType = &defaultContentType
+						preSignedUploadSessionCreate.MimeType = &defaultMimeType
 					} else {
-						preSignedUploadSessionCreate.MimeType = &contentType[0]
+						preSignedUploadSessionCreate.MimeType = &mimeType[0]
 					}
 				} else {
-					preSignedUploadSessionCreate.MimeType = &defaultContentType
+					preSignedUploadSessionCreate.MimeType = &defaultMimeType
 				}
-
 			} else {
-				err = validateMimeType(*preSignedUploadSessionCreate.MimeType)
-				if err != nil {
+				if err = validateMimeType(*preSignedUploadSessionCreate.MimeType); err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
 			}
@@ -96,8 +103,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			if preSignedUploadSessionCreate.MimeType == nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify a allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 			} else {
-				err = validateMimeType(*preSignedUploadSessionCreate.MimeType)
-				if err != nil {
+				if err = validateMimeType(*preSignedUploadSessionCreate.MimeType); err != nil {
 					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 				}
 				if !lo.Contains[string](bucket.AllowedMimeTypes, *preSignedUploadSessionCreate.MimeType) {
@@ -106,8 +112,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			}
 		}
 
-		err = validateObjectSize(preSignedUploadSessionCreate.Size)
-		if err != nil {
+		if err = validateObjectSize(preSignedUploadSessionCreate.Size); err != nil {
 			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 
@@ -250,7 +255,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 	}
 
 	if expiresIn == 0 {
-		expiresIn = os.config.DefaultPreSignedUploadUrlExpiresIn
+		expiresIn = os.config.DefaultPreSignedUploadUrlExpiry
 	} else {
 		err := validateExpiration(expiresIn)
 		if err != nil {
@@ -273,7 +278,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, reqId, err)
 		}
 
-		if object.UploadStatus != models.ObjectUploadStatusCompleted {
+		if object.UploadStatus == models.ObjectUploadStatusPending {
 			objectExists, err := os.storage.CheckIfObjectExists(ctx, &storage.ObjectExistsCheck{
 				Bucket: bucket.Name,
 				Name:   object.Name,
@@ -303,7 +308,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 		})
 		if err != nil {
 			os.logger.Error("failed to create pre-signed download url", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download url", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download session", op, reqId, err)
 		}
 
 		err = os.queries.WithTx(tx).UpdateObjectLastAccessedAt(ctx, object.ID)
@@ -584,6 +589,25 @@ func (os *ObjectService) getBucketByName(ctx context.Context, bucketName string,
 		CreatedAt:            bucket.CreatedAt,
 		UpdatedAt:            bucket.UpdatedAt,
 	}, nil
+}
+
+func validateName(name string) error {
+	if strings.HasSuffix(name, "/") || strings.HasPrefix(name, "/") {
+		return fmt.Errorf("invalid name. name cannot start or end with '/'")
+	}
+
+	if len(name) < 1 || len(name) > 961 {
+		return fmt.Errorf("invalid name length: %d. name must be between 1 and 961", len(name))
+	}
+
+	pattern := `^[\s\S]+$`
+	re := regexp.MustCompile(pattern)
+
+	if re.MatchString(name) {
+		return nil
+	}
+
+	return fmt.Errorf("invalid name '%s'", name)
 }
 
 func validateExpiration(expiresIn int64) error {
