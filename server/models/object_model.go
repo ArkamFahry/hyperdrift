@@ -8,7 +8,7 @@ const (
 	ObjectUploadStatusCompleted  = "completed"
 	ObjectUploadStatusFailed     = "failed"
 
-	ObjectDefaultObjectContentType = "application/octet-stream"
+	ObjectDefaultMimeType = "application/octet-stream"
 )
 
 type Object struct {
@@ -61,14 +61,14 @@ type PreSignedUploadSession struct {
 
 type PreSignedDownloadSession struct {
 	Url       string `json:"url"`
-	Method    string `json:"method"`
-	ExpiresAt int64  `json:"expires_at"`
+	Method    string `json:"method" default:"GET" example:"GET"`
+	ExpiresAt int64  `json:"expires_at" `
 }
 
 type PreSignedUploadSessionCreate struct {
-	Name      string         `json:"name"`
-	ExpiresIn *int64         `json:"expires_in"`
-	MimeType  *string        `json:"mime_type"`
-	Size      int64          `json:"size"`
-	Metadata  map[string]any `json:"metadata"`
+	Name      string         `json:"name" example:"user/david/avatar.jpg"`
+	MimeType  *string        `json:"mime_type" example:"image/jpeg" extensions:"x-nullable"`
+	Size      int64          `json:"size" example:"1218077"`
+	Metadata  map[string]any `json:"metadata" extensions:"x-nullable"`
+	ExpiresIn *int64         `json:"expires_in" example:"600" extensions:"x-nullable"`
 }
