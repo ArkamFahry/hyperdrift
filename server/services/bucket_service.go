@@ -275,8 +275,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 		}
 
 		_, err = bs.job.InsertTx(ctx, tx, &jobs.BucketEmptying{
-			Id:   bucket.ID,
-			Name: bucket.Name,
+			BucketId: bucket.ID,
 		}, nil)
 		if err != nil {
 			bs.logger.Error("failed to create bucket empty job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
@@ -324,8 +323,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 		}
 
 		_, err = bs.job.InsertTx(ctx, tx, jobs.BucketDeletion{
-			Id:   bucket.ID,
-			Name: bucket.Name,
+			BucketId: bucket.ID,
 		}, nil)
 		if err != nil {
 			bs.logger.Error("failed to create bucket delete job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))

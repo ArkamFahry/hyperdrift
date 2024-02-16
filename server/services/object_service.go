@@ -153,9 +153,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 		}
 
 		_, err = os.job.InsertTx(ctx, tx, jobs.PreSignedUploadSessionCompletion{
-			BucketName: bucket.Name,
-			ObjectName: preSignedUploadSessionCreate.Name,
-			ObjectId:   id,
+			ObjectId: id,
 		}, &river.InsertOpts{
 			ScheduledAt: time.Unix(preSignedObject.ExpiresAt, 0),
 		})
