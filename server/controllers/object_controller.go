@@ -67,7 +67,7 @@ func (oc *ObjectController) CreatePreSignedUploadSession(ctx *fiber.Ctx) error {
 // @Produce json
 // @Param bucket_name path string true "Bucket Name"
 // @Param object_id path string true "Object ID"
-// @Success 202
+// @Success 200
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1//objects/{bucket_name}/pre-signed/upload/{object_id}/complete [post]
@@ -80,7 +80,7 @@ func (oc *ObjectController) CompletePreSignedUploadSession(ctx *fiber.Ctx) error
 		return err
 	}
 
-	return ctx.SendStatus(fiber.StatusAccepted)
+	return ctx.SendStatus(fiber.StatusOK)
 }
 
 // CreatePreSignedDownloadSession is used to create a pre signed download session
@@ -92,7 +92,7 @@ func (oc *ObjectController) CompletePreSignedUploadSession(ctx *fiber.Ctx) error
 // @Param bucket_name path string true "Bucket Name"
 // @Param object_id path string true "Object ID"
 // @Param expires_in query int true "Expires In"
-// @Success 201 {object} models.PreSignedDownloadSession
+// @Success 200 {object} models.PreSignedDownloadSession
 // @Failure 400 {object} middleware.HttpError
 // @Failure 500 {object} middleware.HttpError
 // @Router /api/v1/objects/{bucket_name}/pre-signed/{object_id}/download [post]

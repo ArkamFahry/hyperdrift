@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"github.com/ArkamFahry/storage/server/srverr"
+	"github.com/ArkamFahry/storage/server/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -59,7 +60,7 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 			httpError.StatusCode = fiberError.Code
 			httpError.Message = fiberError.Message
 			httpError.Path = ctx.Path()
-			httpError.RequestId = ctx.Context().Value("request_id").(string)
+			httpError.RequestId = utils.RequestId(ctx.Context())
 		}
 
 		return ctx.Status(httpError.StatusCode).JSON(httpError)

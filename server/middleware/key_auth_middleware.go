@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"github.com/ArkamFahry/storage/server/config"
+	"github.com/ArkamFahry/storage/server/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/keyauth"
 )
@@ -15,14 +16,14 @@ func KeyAuth(config *config.Config) fiber.Handler {
 					StatusCode: fiber.StatusUnauthorized,
 					Message:    "missing or malformed api key access denied. please provide a valid api key",
 					Path:       ctx.Path(),
-					RequestId:  ctx.Context().Value("request_id").(string),
+					RequestId:  utils.RequestId(ctx.Context()),
 				})
 			}
 			return ctx.Status(fiber.StatusUnauthorized).JSON(&HttpError{
 				StatusCode: fiber.StatusUnauthorized,
 				Message:    "invalid api key access denied. please provide a valid api key",
 				Path:       ctx.Path(),
-				RequestId:  ctx.Context().Value("request_id").(string),
+				RequestId:  utils.RequestId(ctx.Context()),
 			})
 		},
 		KeyLookup: "header:X-STORAGE-API-KEY",
@@ -34,7 +35,7 @@ func KeyAuth(config *config.Config) fiber.Handler {
 					StatusCode: fiber.StatusUnauthorized,
 					Message:    "invalid api key access denied. please provide a valid api key",
 					Path:       ctx.Path(),
-					RequestId:  ctx.Context().Value("request_id").(string),
+					RequestId:  utils.RequestId(ctx.Context()),
 				})
 			}
 		},

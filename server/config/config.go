@@ -21,7 +21,7 @@ type Config struct {
 	S3Endpoint        string `json:"s3_endpoint" mapstructure:"s3_endpoint"`
 	S3AccessKeyId     string `json:"s3_access_key_id" mapstructure:"s3_access_key_id"`
 	S3SecretAccessKey string `json:"s3_secret_access_key" mapstructure:"s3_secret_access_key"`
-	S3BucketName      string `json:"s3_bucket_name" mapstructure:"s3_bucket_name"`
+	S3Bucket          string `json:"s3_bucket" mapstructure:"s3_bucket"`
 	S3Region          string `json:"s3_region" mapstructure:"s3_region"`
 	S3ForcePathStyle  bool   `json:"s3_force_path_style" mapstructure:"s3_force_path_style"`
 	S3DisableSSL      bool   `json:"s3_disable_ssl" mapstructure:"s3_disable_ssl"`
@@ -35,8 +35,8 @@ type Config struct {
 		Disabled             bool     `json:"disabled" mapstructure:"disabled"`
 	} `json:"default_buckets" mapstructure:"default_buckets"`
 
-	DefaultPreSignedUploadUrlExpiresIn   int64 `json:"default_pre_signed_upload_url_expires_in" mapstructure:"default_pre_signed_upload_url_expires_in"`
-	DefaultPreSignedDownloadUrlExpiresIn int64 `json:"default_pre_signed_download_url_expires_in" mapstructure:"default_pre_signed_download_url_expires_in"`
+	DefaultPreSignedUploadUrlExpiry   int64 `json:"default_pre_signed_upload_url_expiry" mapstructure:"default_pre_signed_upload_url_expiry"`
+	DefaultPreSignedDownloadUrlExpiry int64 `json:"default_pre_signed_download_url_expiry" mapstructure:"default_pre_signed_download_url_expiry"`
 }
 
 func NewConfig() *Config {
@@ -98,12 +98,12 @@ func setDefaultConfig(config *Config) {
 		config.S3Region = "us-east-1"
 	}
 
-	if config.DefaultPreSignedUploadUrlExpiresIn == 0 {
-		config.DefaultPreSignedUploadUrlExpiresIn = 900
+	if config.DefaultPreSignedUploadUrlExpiry == 0 {
+		config.DefaultPreSignedUploadUrlExpiry = 120
 	}
 
-	if config.DefaultPreSignedDownloadUrlExpiresIn == 0 {
-		config.DefaultPreSignedDownloadUrlExpiresIn = 900
+	if config.DefaultPreSignedDownloadUrlExpiry == 0 {
+		config.DefaultPreSignedDownloadUrlExpiry = 300
 	}
 }
 
@@ -128,7 +128,7 @@ func validateConfig(config *Config) error {
 		return errors.New("s3_secret_access_key is a required")
 	}
 
-	if config.S3BucketName == "" {
+	if config.S3Bucket == "" {
 		return errors.New("s3_bucket_name is a required")
 	}
 
