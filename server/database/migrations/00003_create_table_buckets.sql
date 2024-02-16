@@ -30,7 +30,7 @@ create or replace trigger buckets_on_create
     before insert
     on storage.buckets
     for each row
-execute function storage.on_create();
+execute function storage.on_create('bucket');
 
 create or replace trigger buckets_on_update
     before update
