@@ -8,7 +8,6 @@ import (
 	"github.com/ArkamFahry/storage/server/models"
 	"github.com/ArkamFahry/storage/server/srverr"
 	"github.com/ArkamFahry/storage/server/utils"
-	"github.com/ArkamFahry/storage/server/validators"
 	"github.com/ArkamFahry/storage/server/zapfield"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -38,7 +37,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 	const op = "BucketService.CreateBucket"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(bucketCreate.Name) {
+	if validateNotEmptyTrimmedString(bucketCreate.Name) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to create bucket", op, reqId, nil)
 	}
 
@@ -53,8 +52,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 			}
 		}
 
-		err := validators.ValidateAllowedMimeTypes(bucketCreate.AllowedMimeTypes)
-		if err != nil {
+		if err := validateAllowedMimeTypes(bucketCreate.AllowedMimeTypes); err != nil {
 			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 	} else {
@@ -62,8 +60,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 	}
 
 	if bucketCreate.MaxAllowedObjectSize != nil {
-		err := validators.ValidateMaxAllowedObjectSize(*bucketCreate.MaxAllowedObjectSize)
-		if err != nil {
+		if err := validateMaxAllowedObjectSize(*bucketCreate.MaxAllowedObjectSize); err != nil {
 			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 	}
@@ -94,7 +91,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 	const op = "BucketService.UpdateBucket"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(id) {
+	if validateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to update bucket", op, reqId, nil)
 	}
 
@@ -119,8 +116,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 				}
 			}
 
-			err = validators.ValidateAllowedMimeTypes(bucketUpdate.AllowedMimeTypes)
-			if err != nil {
+			if err = validateAllowedMimeTypes(bucketUpdate.AllowedMimeTypes); err != nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 			}
 
@@ -128,8 +124,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 		}
 
 		if bucketUpdate.MaxAllowedObjectSize != nil {
-			err = validators.ValidateMaxAllowedObjectSize(*bucketUpdate.MaxAllowedObjectSize)
-			if err != nil {
+			if err = validateMaxAllowedObjectSize(*bucketUpdate.MaxAllowedObjectSize); err != nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 			}
 			bucket.MaxAllowedObjectSize = bucketUpdate.MaxAllowedObjectSize
@@ -168,7 +163,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 	const op = "BucketService.EnableBucket"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(id) {
+	if validateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to enable bucket", op, reqId, nil)
 	}
 
@@ -210,7 +205,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 	const op = "BucketService.DisableBucket"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(id) {
+	if validateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to disable bucket", op, reqId, nil)
 	}
 
@@ -252,7 +247,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 	const op = "BucketService.EmptyBucket"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(id) {
+	if validateNotEmptyTrimmedString(id) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to empty bucket", op, reqId, nil)
 	}
 
@@ -301,7 +296,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	const op = "BucketService.DeleteBucket"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(id) {
+	if validateNotEmptyTrimmedString(id) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to delete bucket", op, reqId, nil)
 	}
 
@@ -350,7 +345,7 @@ func (bs *BucketService) GetBucket(ctx context.Context, id string) (*models.Buck
 	const op = "BucketService.GetBucket"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(id) {
+	if validateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket", op, reqId, nil)
 	}
 
@@ -383,7 +378,7 @@ func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*models.
 	const op = "BucketService.GetBucketSize"
 	reqId := utils.RequestId(ctx)
 
-	if validators.ValidateNotEmptyTrimmedString(id) {
+	if validateNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket size", op, reqId, nil)
 	}
 
@@ -466,4 +461,12 @@ func validateBucketName(name string) bool {
 	} else {
 		return true
 	}
+}
+
+func validateMaxAllowedObjectSize(maxAllowedObjectSize int64) error {
+	if maxAllowedObjectSize < 0 {
+		return fmt.Errorf("max allowed object size must be 0 or greater than 0")
+	}
+
+	return nil
 }
