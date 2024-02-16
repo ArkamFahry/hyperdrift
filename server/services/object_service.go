@@ -43,7 +43,7 @@ func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.C
 }
 
 func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucketName string, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*models.PreSignedUploadSession, error) {
-	const op = "ObjectService.CreatePreSignedSession"
+	const op = "ObjectService.CreatePreSignedUploadSession"
 	reqId := utils.RequestId(ctx)
 
 	var preSignedObject *storage.PreSignedObject
@@ -204,11 +204,8 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 		return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, reqId, err)
 	}
 
-	switch object.UploadStatus {
-	case models.ObjectUploadStatusCompleted:
+	if object.UploadStatus == models.ObjectUploadStatusCompleted {
 		return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("upload session has already been completed for object '%s'", objectId), op, reqId, nil)
-	case models.ObjectUploadStatusFailed:
-		return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("upload session has failed for object '%s'", objectId), op, reqId, nil)
 	}
 
 	objectExists, err := os.storage.CheckIfObjectExists(ctx, &storage.ObjectExistsCheck{
