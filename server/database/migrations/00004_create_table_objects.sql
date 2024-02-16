@@ -30,7 +30,7 @@ create or replace trigger objects_on_create
     before insert
     on storage.objects
     for each row
-execute function storage.on_create();
+execute function storage.on_create('object');
 
 create or replace trigger objects_on_update
     before update
