@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/ArkamFahry/storage/server/config"
 	"github.com/ArkamFahry/storage/server/zapfield"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type S3Storage struct {
@@ -59,12 +60,11 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 	if preSignedUploadObjectCreate.ExpiresIn != nil {
 		expiresIn = time.Duration(*preSignedUploadObjectCreate.ExpiresIn) * time.Second
 	} else {
-		expiresIn = time.Duration(s.config.DefaultPreSignedUploadUrlExpiresIn) * time.Second
+		expiresIn = time.Duration(s.config.DefaultPreSignedUploadUrlExpiry) * time.Second
 	}
 
 	key := createS3Key(preSignedUploadObjectCreate.Bucket, preSignedUploadObjectCreate.Name)
 
-	// TODO: implement pre signed url level content length limitation to secure pre signed url from variable length uploads
 	preSignedPutObject, err := s.s3PreSignedClient.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(s.bucket),
 		Key:           aws.String(key),
@@ -93,7 +93,7 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 	if preSignedDownloadObjectCreate.ExpiresIn != nil {
 		expiresIn = time.Duration(*preSignedDownloadObjectCreate.ExpiresIn) * time.Second
 	} else {
-		expiresIn = time.Duration(s.config.DefaultPreSignedDownloadUrlExpiresIn) * time.Second
+		expiresIn = time.Duration(s.config.DefaultPreSignedDownloadUrlExpiry) * time.Second
 	}
 
 	key := createS3Key(preSignedDownloadObjectCreate.Bucket, preSignedDownloadObjectCreate.Name)

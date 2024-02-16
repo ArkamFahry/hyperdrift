@@ -35,8 +35,8 @@ type Config struct {
 		Disabled             bool     `json:"disabled" mapstructure:"disabled"`
 	} `json:"default_buckets" mapstructure:"default_buckets"`
 
-	DefaultPreSignedUploadUrlExpiresIn   int64 `json:"default_pre_signed_upload_url_expires_in" mapstructure:"default_pre_signed_upload_url_expires_in"`
-	DefaultPreSignedDownloadUrlExpiresIn int64 `json:"default_pre_signed_download_url_expires_in" mapstructure:"default_pre_signed_download_url_expires_in"`
+	DefaultPreSignedUploadUrlExpiry   int64 `json:"default_pre_signed_upload_url_expiry" mapstructure:"default_pre_signed_upload_url_expiry"`
+	DefaultPreSignedDownloadUrlExpiry int64 `json:"default_pre_signed_download_url_expiry" mapstructure:"default_pre_signed_download_url_expiry"`
 }
 
 func NewConfig() *Config {
@@ -98,12 +98,12 @@ func setDefaultConfig(config *Config) {
 		config.S3Region = "us-east-1"
 	}
 
-	if config.DefaultPreSignedUploadUrlExpiresIn == 0 {
-		config.DefaultPreSignedUploadUrlExpiresIn = 120
+	if config.DefaultPreSignedUploadUrlExpiry == 0 {
+		config.DefaultPreSignedUploadUrlExpiry = 120
 	}
 
-	if config.DefaultPreSignedDownloadUrlExpiresIn == 0 {
-		config.DefaultPreSignedDownloadUrlExpiresIn = 300
+	if config.DefaultPreSignedDownloadUrlExpiry == 0 {
+		config.DefaultPreSignedDownloadUrlExpiry = 300
 	}
 }
 
