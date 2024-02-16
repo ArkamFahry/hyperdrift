@@ -3,10 +3,8 @@ package models
 import "time"
 
 const (
-	ObjectUploadStatusPending    = "pending"
-	ObjectUploadStatusProcessing = "processing"
-	ObjectUploadStatusCompleted  = "completed"
-	ObjectUploadStatusFailed     = "failed"
+	ObjectUploadStatusPending   = "pending"
+	ObjectUploadStatusCompleted = "completed"
 
 	ObjectDefaultMimeType = "application/octet-stream"
 )

@@ -12,7 +12,7 @@ create table if not exists storage.objects
     size             bigint      default 0                          not null check ( size >= 0 ),
     metadata         jsonb                                          null,
     upload_status    text        default 'pending'                  not null check (
-        upload_status in ('pending', 'processing', 'completed', 'failed')
+        upload_status in ('pending', 'completed')
         ),
     last_accessed_at timestamptz                                    null,
     locked_at        timestamptz                                    null,
