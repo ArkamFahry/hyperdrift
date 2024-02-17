@@ -58,9 +58,9 @@ func (q *Queries) DeleteObject(ctx context.Context, id string) error {
 
 const getObjectByBucketIdAndName = `-- name: GetObjectByBucketIdAndName :one
 select id,
+       version,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -81,9 +81,9 @@ type GetObjectByBucketIdAndNameParams struct {
 
 type GetObjectByBucketIdAndNameRow struct {
 	ID             string
+	Version        int32
 	BucketID       string
 	Name           string
-	PathTokens     []string
 	MimeType       string
 	Size           int64
 	Metadata       []byte
@@ -98,9 +98,9 @@ func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObject
 	var i GetObjectByBucketIdAndNameRow
 	err := row.Scan(
 		&i.ID,
+		&i.Version,
 		&i.BucketID,
 		&i.Name,
-		&i.PathTokens,
 		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
@@ -114,9 +114,9 @@ func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObject
 
 const getObjectById = `-- name: GetObjectById :one
 select id,
+       version,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -131,9 +131,9 @@ limit 1
 
 type GetObjectByIdRow struct {
 	ID             string
+	Version        int32
 	BucketID       string
 	Name           string
-	PathTokens     []string
 	MimeType       string
 	Size           int64
 	Metadata       []byte
@@ -148,9 +148,9 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdR
 	var i GetObjectByIdRow
 	err := row.Scan(
 		&i.ID,
+		&i.Version,
 		&i.BucketID,
 		&i.Name,
-		&i.PathTokens,
 		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
@@ -163,30 +163,30 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdR
 }
 
 const getObjectByIdWithBucketName = `-- name: GetObjectByIdWithBucketName :one
-select o.id,
-       o.bucket_id,
-       b.name as bucket_name,
-       o.name,
-       o.path_tokens,
-       o.mime_type,
-       o.size,
-       o.metadata,
-       o.upload_status,
-       o.last_accessed_at,
-       o.created_at,
-       o.updated_at
-from storage.objects as o
-         inner join storage.buckets as b on o.bucket_id = b.id
-where o.id = $1
+select object.id,
+       object.version,
+       object.bucket_id,
+       bucket.name as bucket_name,
+       object.name,
+       object.mime_type,
+       object.size,
+       object.metadata,
+       object.upload_status,
+       object.last_accessed_at,
+       object.created_at,
+       object.updated_at
+from storage.objects as object
+         inner join storage.buckets as bucket on object.bucket_id = bucket.id
+where object.id = $1
 limit 1
 `
 
 type GetObjectByIdWithBucketNameRow struct {
 	ID             string
+	Version        int32
 	BucketID       string
 	BucketName     string
 	Name           string
-	PathTokens     []string
 	MimeType       string
 	Size           int64
 	Metadata       []byte
@@ -201,10 +201,10 @@ func (q *Queries) GetObjectByIdWithBucketName(ctx context.Context, id string) (*
 	var i GetObjectByIdWithBucketNameRow
 	err := row.Scan(
 		&i.ID,
+		&i.Version,
 		&i.BucketID,
 		&i.BucketName,
 		&i.Name,
-		&i.PathTokens,
 		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
@@ -218,9 +218,9 @@ func (q *Queries) GetObjectByIdWithBucketName(ctx context.Context, id string) (*
 
 const getObjectByName = `-- name: GetObjectByName :one
 select id,
+       version,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -235,9 +235,9 @@ limit 1
 
 type GetObjectByNameRow struct {
 	ID             string
+	Version        int32
 	BucketID       string
 	Name           string
-	PathTokens     []string
 	MimeType       string
 	Size           int64
 	Metadata       []byte
@@ -252,9 +252,9 @@ func (q *Queries) GetObjectByName(ctx context.Context, name string) (*GetObjectB
 	var i GetObjectByNameRow
 	err := row.Scan(
 		&i.ID,
+		&i.Version,
 		&i.BucketID,
 		&i.Name,
-		&i.PathTokens,
 		&i.MimeType,
 		&i.Size,
 		&i.Metadata,
@@ -270,7 +270,6 @@ const listObjectsByBucketIdPaged = `-- name: ListObjectsByBucketIdPaged :many
 select id,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -293,7 +292,6 @@ type ListObjectsByBucketIdPagedRow struct {
 	ID             string
 	BucketID       string
 	Name           string
-	PathTokens     []string
 	MimeType       string
 	Size           int64
 	Metadata       []byte
@@ -316,7 +314,6 @@ func (q *Queries) ListObjectsByBucketIdPaged(ctx context.Context, arg *ListObjec
 			&i.ID,
 			&i.BucketID,
 			&i.Name,
-			&i.PathTokens,
 			&i.MimeType,
 			&i.Size,
 			&i.Metadata,
@@ -373,67 +370,64 @@ func (q *Queries) MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetad
 	return err
 }
 
-const searchObjectsByPath = `-- name: SearchObjectsByPath :many
-select id::text,
-       version::int,
-       name::text,
-       bucket_id::text,
-       bucket_name::text,
-       mime_type::text,
-       size::bigint,
-       metadata::jsonb,
-       upload_status::text,
-       last_accessed_at::timestamptz,
-       created_at::timestamptz,
-       updated_at::timestamptz
-from storage.objects_search($1::text, $2::text, $3::int,
-                            $4::int, $5::int)
+const searchObjectsByBucketNameAndPath = `-- name: SearchObjectsByBucketNameAndPath :many
+select object.id,
+       object.version,
+       object.bucket_id,
+       object.name,
+       object.mime_type,
+       object.size,
+       object.metadata,
+       object.upload_status,
+       object.last_accessed_at,
+       object.created_at,
+       object.updated_at
+from storage.objects as object
+where object.bucket_id = (select bucket.id from storage.buckets as bucket where bucket.name = $1)
+  and object.name ilike $2::text || '%'
+limit $4 offset $3
 `
 
-type SearchObjectsByPathParams struct {
+type SearchObjectsByBucketNameAndPathParams struct {
 	BucketName string
 	ObjectPath string
-	Level      *int32
-	Limit      *int32
-	Offset     *int32
+	Offset     int32
+	Limit      int32
 }
 
-type SearchObjectsByPathRow struct {
+type SearchObjectsByBucketNameAndPathRow struct {
 	ID             string
 	Version        int32
-	Name           string
 	BucketID       string
-	BucketName     string
+	Name           string
 	MimeType       string
 	Size           int64
 	Metadata       []byte
 	UploadStatus   string
-	LastAccessedAt time.Time
+	LastAccessedAt *time.Time
 	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	UpdatedAt      *time.Time
 }
 
-func (q *Queries) SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByPathParams) ([]*SearchObjectsByPathRow, error) {
-	rows, err := q.db.Query(ctx, searchObjectsByPath,
+func (q *Queries) SearchObjectsByBucketNameAndPath(ctx context.Context, arg *SearchObjectsByBucketNameAndPathParams) ([]*SearchObjectsByBucketNameAndPathRow, error) {
+	rows, err := q.db.Query(ctx, searchObjectsByBucketNameAndPath,
 		arg.BucketName,
 		arg.ObjectPath,
-		arg.Level,
-		arg.Limit,
 		arg.Offset,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*SearchObjectsByPathRow
+	var items []*SearchObjectsByBucketNameAndPathRow
 	for rows.Next() {
-		var i SearchObjectsByPathRow
+		var i SearchObjectsByBucketNameAndPathRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Version,
-			&i.Name,
 			&i.BucketID,
-			&i.BucketName,
+			&i.Name,
 			&i.MimeType,
 			&i.Size,
 			&i.Metadata,

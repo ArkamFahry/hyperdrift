@@ -11,7 +11,7 @@ import (
 
 const createEvent = `-- name: CreateEvent :one
 insert into storage.events
-    (aggregate_type, aggregate_id, type, payload)
+    (aggregate_type, aggregate_id, event_type, payload)
 values ($1,
         $2,
         $3,
@@ -21,7 +21,7 @@ values ($1,
 type CreateEventParams struct {
 	AggregateType string
 	AggregateID   string
-	Type          string
+	EventType     string
 	Payload       []byte
 }
 
@@ -29,7 +29,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg *CreateEventParams) (stri
 	row := q.db.QueryRow(ctx, createEvent,
 		arg.AggregateType,
 		arg.AggregateID,
-		arg.Type,
+		arg.EventType,
 		arg.Payload,
 	)
 	var id string

@@ -35,7 +35,7 @@ type Querier interface {
 	MakeObjectPublic(ctx context.Context, id string) error
 	MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetadataParams) error
 	SearchBucketsPaginated(ctx context.Context, arg *SearchBucketsPaginatedParams) ([]*SearchBucketsPaginatedRow, error)
-	SearchObjectsByPath(ctx context.Context, arg *SearchObjectsByPathParams) ([]*SearchObjectsByPathRow, error)
+	SearchObjectsByBucketNameAndPath(ctx context.Context, arg *SearchObjectsByBucketNameAndPathParams) ([]*SearchObjectsByBucketNameAndPathRow, error)
 	UnlockBucket(ctx context.Context, id string) error
 	UpdateBucket(ctx context.Context, arg *UpdateBucketParams) error
 	UpdateObject(ctx context.Context, arg *UpdateObjectParams) error

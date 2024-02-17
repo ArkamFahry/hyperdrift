@@ -28,7 +28,7 @@ type StorageEvent struct {
 	Version       int32
 	AggregateType string
 	AggregateID   string
-	Type          string
+	EventType     string
 	Payload       []byte
 	CreatedAt     time.Time
 }
@@ -38,7 +38,6 @@ type StorageObject struct {
 	Version        int32
 	BucketID       string
 	Name           string
-	PathTokens     []string
 	MimeType       string
 	Size           int64
 	Metadata       []byte
