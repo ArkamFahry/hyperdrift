@@ -95,6 +95,7 @@ from storage.buckets;
 
 -- name: BucketListPaginated :many
 select id,
+       version,
        name,
        allowed_mime_types,
        max_allowed_object_size,
@@ -109,8 +110,9 @@ from storage.buckets
 where id >= sqlc.arg('cursor')
 limit sqlc.arg('limit');
 
--- name: BucketSearchPaginated :many
+-- name: BucketSearch :many
 select id,
+       version,
        name,
        allowed_mime_types,
        max_allowed_object_size,

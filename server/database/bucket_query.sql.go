@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"time"
 )
 
 const bucketCount = `-- name: BucketCount :one
@@ -251,6 +250,7 @@ func (q *Queries) BucketListAll(ctx context.Context) ([]*StorageBucket, error) {
 
 const bucketListPaginated = `-- name: BucketListPaginated :many
 select id,
+       version,
        name,
        allowed_mime_types,
        max_allowed_object_size,
@@ -271,31 +271,18 @@ type BucketListPaginatedParams struct {
 	Limit  int32
 }
 
-type BucketListPaginatedRow struct {
-	ID                   string
-	Name                 string
-	AllowedMimeTypes     []string
-	MaxAllowedObjectSize *int64
-	Public               bool
-	Disabled             bool
-	Locked               bool
-	LockReason           *string
-	LockedAt             *time.Time
-	CreatedAt            time.Time
-	UpdatedAt            *time.Time
-}
-
-func (q *Queries) BucketListPaginated(ctx context.Context, arg *BucketListPaginatedParams) ([]*BucketListPaginatedRow, error) {
+func (q *Queries) BucketListPaginated(ctx context.Context, arg *BucketListPaginatedParams) ([]*StorageBucket, error) {
 	rows, err := q.db.Query(ctx, bucketListPaginated, arg.Cursor, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*BucketListPaginatedRow
+	var items []*StorageBucket
 	for rows.Next() {
-		var i BucketListPaginatedRow
+		var i StorageBucket
 		if err := rows.Scan(
 			&i.ID,
+			&i.Version,
 			&i.Name,
 			&i.AllowedMimeTypes,
 			&i.MaxAllowedObjectSize,
@@ -335,8 +322,9 @@ func (q *Queries) BucketLock(ctx context.Context, arg *BucketLockParams) error {
 	return err
 }
 
-const bucketSearchPaginated = `-- name: BucketSearchPaginated :many
+const bucketSearch = `-- name: BucketSearch :many
 select id,
+       version,
        name,
        allowed_mime_types,
        max_allowed_object_size,
@@ -351,31 +339,18 @@ from storage.buckets
 where name ilike '%' || $1::text || '%'
 `
 
-type BucketSearchPaginatedRow struct {
-	ID                   string
-	Name                 string
-	AllowedMimeTypes     []string
-	MaxAllowedObjectSize *int64
-	Public               bool
-	Disabled             bool
-	Locked               bool
-	LockReason           *string
-	LockedAt             *time.Time
-	CreatedAt            time.Time
-	UpdatedAt            *time.Time
-}
-
-func (q *Queries) BucketSearchPaginated(ctx context.Context, name string) ([]*BucketSearchPaginatedRow, error) {
-	rows, err := q.db.Query(ctx, bucketSearchPaginated, name)
+func (q *Queries) BucketSearch(ctx context.Context, name string) ([]*StorageBucket, error) {
+	rows, err := q.db.Query(ctx, bucketSearch, name)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*BucketSearchPaginatedRow
+	var items []*StorageBucket
 	for rows.Next() {
-		var i BucketSearchPaginatedRow
+		var i StorageBucket
 		if err := rows.Scan(
 			&i.ID,
+			&i.Version,
 			&i.Name,
 			&i.AllowedMimeTypes,
 			&i.MaxAllowedObjectSize,

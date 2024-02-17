@@ -19,9 +19,9 @@ type Querier interface {
 	BucketGetObjectCountById(ctx context.Context, id string) (*BucketGetObjectCountByIdRow, error)
 	BucketGetSizeById(ctx context.Context, id string) (*BucketGetSizeByIdRow, error)
 	BucketListAll(ctx context.Context) ([]*StorageBucket, error)
-	BucketListPaginated(ctx context.Context, arg *BucketListPaginatedParams) ([]*BucketListPaginatedRow, error)
+	BucketListPaginated(ctx context.Context, arg *BucketListPaginatedParams) ([]*StorageBucket, error)
 	BucketLock(ctx context.Context, arg *BucketLockParams) error
-	BucketSearchPaginated(ctx context.Context, name string) ([]*BucketSearchPaginatedRow, error)
+	BucketSearch(ctx context.Context, name string) ([]*StorageBucket, error)
 	BucketUnlock(ctx context.Context, id string) error
 	BucketUpdate(ctx context.Context, arg *BucketUpdateParams) error
 	EventCreate(ctx context.Context, arg *EventCreateParams) (string, error)
