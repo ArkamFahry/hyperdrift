@@ -64,7 +64,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 		}
 	}
 
-	id, err := bs.query.CreateBucket(ctx, &database.CreateBucketParams{
+	id, err := bs.query.BucketCreate(ctx, &database.BucketCreateParams{
 		Name:                 bucketCreate.Name,
 		AllowedMimeTypes:     bucketCreate.AllowedMimeTypes,
 		MaxAllowedObjectSize: bucketCreate.MaxAllowedObjectSize,
@@ -133,7 +133,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 			bucket.Public = *bucketUpdate.Public
 		}
 
-		err = bs.query.WithTx(tx).UpdateBucket(ctx, &database.UpdateBucketParams{
+		err = bs.query.WithTx(tx).BucketUpdate(ctx, &database.BucketUpdateParams{
 			ID:                   bucket.ID,
 			AllowedMimeTypes:     bucket.AllowedMimeTypes,
 			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
@@ -177,7 +177,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 		}
 
 		if bucket.Disabled {
-			err = bs.query.WithTx(tx).EnableBucket(ctx, id)
+			err = bs.query.WithTx(tx).BucketEnable(ctx, id)
 			if err != nil {
 				bs.logger.Error("failed to enable bucket", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 				return srverr.NewServiceError(srverr.UnknownError, "failed to enable bucket", op, reqId, err)
@@ -219,7 +219,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 		}
 
 		if !bucket.Disabled {
-			err = bs.query.WithTx(tx).DisableBucket(ctx, id)
+			err = bs.query.WithTx(tx).BucketDisable(ctx, id)
 			if err != nil {
 				bs.logger.Error("failed to disable bucket", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 				return srverr.NewServiceError(srverr.UnknownError, "failed to disable bucket", op, reqId, err)
@@ -264,7 +264,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be emptied", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
-		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
+		err = bs.query.WithTx(tx).BucketLock(ctx, &database.BucketLockParams{
 			ID:         bucket.ID,
 			LockReason: models.BucketLockedReasonBucketEmptying,
 		})
@@ -312,7 +312,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be deleted", bucket.ID, *bucket.LockReason), op, reqId, nil)
 		}
 
-		err = bs.query.WithTx(tx).LockBucket(ctx, &database.LockBucketParams{
+		err = bs.query.WithTx(tx).BucketLock(ctx, &database.BucketLockParams{
 			ID:         bucket.ID,
 			LockReason: models.BucketLockedReasonBucketDeletion,
 		})
@@ -346,7 +346,7 @@ func (bs *BucketService) GetBucket(ctx context.Context, id string) (*models.Buck
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket", op, reqId, nil)
 	}
 
-	bucket, err := bs.query.GetBucketById(ctx, id)
+	bucket, err := bs.query.BucketGetById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, reqId, err)
@@ -379,7 +379,7 @@ func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*models.
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket size", op, reqId, nil)
 	}
 
-	bucketSize, err := bs.query.GetBucketSizeById(ctx, id)
+	bucketSize, err := bs.query.BucketGetSizeById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, reqId, err)
@@ -399,7 +399,7 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*models.Bucket, 
 	const op = "BucketService.ListAllBuckets"
 	reqId := utils.RequestId(ctx)
 
-	buckets, err := bs.query.ListAllBuckets(ctx)
+	buckets, err := bs.query.BucketListAll(ctx)
 	if err != nil {
 		bs.logger.Error("failed to list all buckets", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to list all buckets", op, reqId, err)
@@ -433,7 +433,7 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*models.Bucket, 
 func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id string, op string) (*database.StorageBucket, error) {
 	reqId := utils.RequestId(ctx)
 
-	bucket, err := bs.query.WithTx(tx).GetBucketById(ctx, id)
+	bucket, err := bs.query.WithTx(tx).BucketGetById(ctx, id)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, reqId, err)

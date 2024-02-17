@@ -28,7 +28,7 @@ type BucketDeletionWorker struct {
 func (w *BucketDeletionWorker) Work(ctx context.Context, bucketDeletion *river.Job[BucketDeletion]) error {
 	const op = "BucketDeletionWorker.Work"
 
-	bucket, err := w.queries.GetBucketById(ctx, bucketDeletion.Args.BucketId)
+	bucket, err := w.queries.BucketGetById(ctx, bucketDeletion.Args.BucketId)
 	if err != nil {
 		w.logger.Error(
 			"failed to get bucket",
@@ -43,7 +43,7 @@ func (w *BucketDeletionWorker) Work(ctx context.Context, bucketDeletion *river.J
 	offset := int32(0)
 
 	for {
-		objects, err := w.queries.ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
+		objects, err := w.queries.ObjectsListBucketIdPaged(ctx, &database.ObjectsListBucketIdPagedParams{
 			BucketID: bucket.ID,
 			Offset:   offset,
 			Limit:    limit,
@@ -76,7 +76,7 @@ func (w *BucketDeletionWorker) Work(ctx context.Context, bucketDeletion *river.J
 				)
 				return err
 			}
-			err = w.queries.DeleteObject(ctx, object.ID)
+			err = w.queries.ObjectDelete(ctx, object.ID)
 			if err != nil {
 				w.logger.Error(
 					"failed to delete object from database",
@@ -91,7 +91,7 @@ func (w *BucketDeletionWorker) Work(ctx context.Context, bucketDeletion *river.J
 		offset += limit
 	}
 
-	err = w.queries.DeleteBucket(ctx, bucket.ID)
+	err = w.queries.BucketDelete(ctx, bucket.ID)
 	if err != nil {
 		w.logger.Error(
 			"failed to delete bucket from database",

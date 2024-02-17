@@ -136,7 +136,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			return srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata to bytes", op, reqId, err)
 		}
 
-		id, err = os.queries.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
+		id, err = os.queries.WithTx(tx).ObjectCreate(ctx, &database.ObjectCreateParams{
 			BucketID:     bucket.Id,
 			Name:         preSignedUploadSessionCreate.Name,
 			ContentType:  preSignedUploadSessionCreate.MimeType,
@@ -193,7 +193,7 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 		return err
 	}
 
-	object, err := os.queries.GetObjectById(ctx, objectId)
+	object, err := os.queries.ObjectGetById(ctx, objectId)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
@@ -216,7 +216,7 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 	}
 
 	if objectExists {
-		err = os.queries.UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+		err = os.queries.ObjectUpdateUploadStatus(ctx, &database.ObjectUpdateUploadStatusParams{
 			ID:           object.ID,
 			UploadStatus: models.ObjectUploadStatusCompleted,
 		})
@@ -260,7 +260,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 			return err
 		}
 
-		object, err := os.queries.WithTx(tx).GetObjectById(ctx, objectId)
+		object, err := os.queries.WithTx(tx).ObjectGetById(ctx, objectId)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
@@ -280,7 +280,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 			}
 
 			if objectExists {
-				err = os.queries.WithTx(tx).UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+				err = os.queries.WithTx(tx).ObjectUpdateUploadStatus(ctx, &database.ObjectUpdateUploadStatusParams{
 					ID:           object.ID,
 					UploadStatus: models.ObjectUploadStatusCompleted,
 				})
@@ -302,7 +302,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download session", op, reqId, err)
 		}
 
-		err = os.queries.WithTx(tx).UpdateObjectLastAccessedAt(ctx, object.ID)
+		err = os.queries.WithTx(tx).ObjectUpdateLastAccessedAt(ctx, object.ID)
 		if err != nil {
 			os.logger.Error("failed to update object last accessed at", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to update object last accessed at", op, reqId, err)
@@ -341,7 +341,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 			return err
 		}
 
-		object, err := os.queries.WithTx(tx).GetObjectById(ctx, objectId)
+		object, err := os.queries.WithTx(tx).ObjectGetById(ctx, objectId)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
@@ -363,7 +363,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from storage", op, reqId, err)
 		}
 
-		err = os.queries.WithTx(tx).DeleteObject(ctx, object.ID)
+		err = os.queries.WithTx(tx).ObjectDelete(ctx, object.ID)
 		if err != nil {
 			os.logger.Error("failed to delete object from database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from database", op, reqId, err)
@@ -395,7 +395,7 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketName string, objec
 		return nil, err
 	}
 
-	object, err := os.queries.GetObjectByBucketIdAndName(ctx, &database.GetObjectByBucketIdAndNameParams{
+	object, err := os.queries.ObjectGetByBucketIdAndName(ctx, &database.ObjectGetByBucketIdAndNameParams{
 		BucketID: bucket.Id,
 		Name:     objectId,
 	})
@@ -450,7 +450,7 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 		limit = 100
 	}
 
-	objects, err := os.queries.SearchObjectsByBucketNameAndPath(ctx, &database.SearchObjectsByBucketNameAndPathParams{
+	objects, err := os.queries.ObjectSearchByBucketNameAndObjectPath(ctx, &database.ObjectSearchByBucketNameAndObjectPathParams{
 		BucketName: bucketName,
 		ObjectPath: objectPath,
 		Limit:      limit,
@@ -496,7 +496,7 @@ func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, buck
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters", op, reqId, nil)
 	}
 
-	bucket, err := os.queries.WithTx(tx).GetBucketByName(ctx, bucketName)
+	bucket, err := os.queries.WithTx(tx).BucketGetByName(ctx, bucketName)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketName), op, reqId, err)
@@ -540,7 +540,7 @@ func (os *ObjectService) getBucketByName(ctx context.Context, bucketName string,
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters", op, reqId, nil)
 	}
 
-	bucket, err := os.queries.GetBucketByName(ctx, bucketName)
+	bucket, err := os.queries.BucketGetByName(ctx, bucketName)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketName), op, reqId, err)
