@@ -1,4 +1,4 @@
--- name: CreateEvent :one
+-- name: EventCreate :one
 insert into storage.events
     (aggregate_type, aggregate_id, event_type, payload)
 values (sqlc.arg('aggregate_type'),
