@@ -7,6 +7,30 @@ import (
 	"strings"
 )
 
+func validateBucketName(name string) bool {
+	regexPattern := `^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`
+
+	regex := regexp.MustCompile(regexPattern)
+
+	if len(name) < 3 || len(name) > 63 {
+		return true
+	}
+
+	if regex.MatchString(name) {
+		return false
+	} else {
+		return true
+	}
+}
+
+func validateMaxAllowedObjectSize(maxAllowedObjectSize int64) error {
+	if maxAllowedObjectSize < 0 {
+		return fmt.Errorf("max allowed object size must be 0 or greater than 0")
+	}
+
+	return nil
+}
+
 func validateObjectName(name string) error {
 	if strings.HasSuffix(name, "/") || strings.HasPrefix(name, "/") {
 		return fmt.Errorf("invalid name. name cannot start or end with '/'")

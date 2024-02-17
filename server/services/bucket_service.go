@@ -14,7 +14,6 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
-	"regexp"
 )
 
 type BucketService struct {
@@ -443,28 +442,4 @@ func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id str
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, reqId, err)
 	}
 	return bucket, nil
-}
-
-func validateBucketName(name string) bool {
-	regexPattern := `^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`
-
-	regex := regexp.MustCompile(regexPattern)
-
-	if len(name) < 3 || len(name) > 63 {
-		return true
-	}
-
-	if regex.MatchString(name) {
-		return false
-	} else {
-		return true
-	}
-}
-
-func validateMaxAllowedObjectSize(maxAllowedObjectSize int64) error {
-	if maxAllowedObjectSize < 0 {
-		return fmt.Errorf("max allowed object size must be 0 or greater than 0")
-	}
-
-	return nil
 }

@@ -37,9 +37,10 @@ func main() {
 	database.NewMigrations(appConfig, appLogger)
 
 	appServer := fiber.New(fiber.Config{
-		ErrorHandler:      middleware.ErrorHandler,
-		Immutable:         true,
-		EnablePrintRoutes: true,
+		ErrorHandler:             middleware.ErrorHandler,
+		Immutable:                true,
+		EnablePrintRoutes:        true,
+		EnableSplittingOnParsers: true,
 	})
 
 	appServer.Use(middleware.Logger(appLogger))
