@@ -30,6 +30,7 @@ func (bc *BucketController) RegisterBucketRoutes(app *fiber.App) {
 	routesV1.Get("/buckets/:bucket_id", bc.GetBucket)
 	routesV1.Get("/buckets/:bucket_id/size", bc.GetBucketSize)
 	routesV1.Get("/buckets", bc.ListAllBuckets)
+	routesV1.Get("/buckets/search", bc.SearchBuckets)
 }
 
 // CreateBucket is used to create a bucket
@@ -233,6 +234,28 @@ func (bc *BucketController) GetBucketSize(ctx *fiber.Ctx) error {
 // @Router /api/v1/buckets [get]
 func (bc *BucketController) ListAllBuckets(ctx *fiber.Ctx) error {
 	buckets, err := bc.bucketService.ListAllBuckets(ctx.Context())
+	if err != nil {
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(buckets)
+}
+
+// SearchBuckets is used to list all buckets
+// @Summary Search buckets
+// @Description List all buckets
+// @Tags buckets
+// @Accept json
+// @Produce json
+// @Param name path string true "Bucket Name"
+// @Success 200 {array} models.Bucket
+// @Failure 400 {object} middleware.HttpError
+// @Failure 500 {object} middleware.HttpError
+// @Router /api/v1/buckets/search [get]
+func (bc *BucketController) SearchBuckets(ctx *fiber.Ctx) error {
+	name := ctx.Query("name")
+
+	buckets, err := bc.bucketService.SearchBuckets(ctx.Context(), name)
 	if err != nil {
 		return err
 	}
