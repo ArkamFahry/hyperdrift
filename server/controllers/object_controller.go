@@ -166,7 +166,6 @@ func (oc *ObjectController) GetObject(ctx *fiber.Ctx) error {
 // @Produce json
 // @Param bucket_name path string true "Bucket Name"
 // @Param object_path path string true "Object Path"
-// @Param levels query int true "Levels"
 // @Param limit query int true "Limit"
 // @Param offset query int true "Offset"
 // @Success 200 {array} models.Object
@@ -177,11 +176,10 @@ func (oc *ObjectController) SearchObjects(ctx *fiber.Ctx) error {
 	bucketName := ctx.Params("bucket_name")
 	objectPath := ctx.Params("object_path")
 
-	levels := ctx.QueryInt("levels")
 	limit := ctx.QueryInt("limit")
 	offset := ctx.QueryInt("offset")
 
-	objects, err := oc.objectService.SearchObjects(ctx.Context(), bucketName, objectPath, int32(levels), int32(limit), int32(offset))
+	objects, err := oc.objectService.SearchObjects(ctx.Context(), bucketName, objectPath, int32(limit), int32(offset))
 	if err != nil {
 		return err
 	}
