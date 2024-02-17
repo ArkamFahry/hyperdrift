@@ -430,6 +430,45 @@ func (bs *BucketService) ListAllBuckets(ctx context.Context) ([]*models.Bucket, 
 	return result, nil
 }
 
+func (bs *BucketService) SearchBuckets(ctx context.Context, name string) ([]*models.Bucket, error) {
+	const op = "BucketService.SearchBuckets"
+	reqId := utils.RequestId(ctx)
+
+	if validateNotEmptyTrimmedString(name) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to search buckets", op, reqId, nil)
+	}
+
+	buckets, err := bs.query.BucketSearch(ctx, name)
+	if err != nil {
+		bs.logger.Error("failed to search buckets", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to search buckets", op, reqId, err)
+	}
+	if len(buckets) == 0 {
+		return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("no buckets found with name '%s'", name), op, reqId, nil)
+	}
+
+	var result []*models.Bucket
+
+	for _, bucket := range buckets {
+		result = append(result, &models.Bucket{
+			Id:                   bucket.ID,
+			Version:              bucket.Version,
+			Name:                 bucket.Name,
+			AllowedMimeTypes:     bucket.AllowedMimeTypes,
+			MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
+			Public:               bucket.Public,
+			Disabled:             bucket.Disabled,
+			Locked:               bucket.Locked,
+			LockReason:           bucket.LockReason,
+			LockedAt:             bucket.LockedAt,
+			CreatedAt:            bucket.CreatedAt,
+			UpdatedAt:            bucket.UpdatedAt,
+		})
+	}
+
+	return result, nil
+}
+
 func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id string, op string) (*database.StorageBucket, error) {
 	reqId := utils.RequestId(ctx)
 
