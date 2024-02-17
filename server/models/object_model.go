@@ -10,57 +10,30 @@ const (
 )
 
 type Object struct {
-	Id             string         `json:"id"`
-	Version        int32          `json:"version"`
-	BucketId       string         `json:"bucket_id"`
-	Name           string         `json:"name"`
-	MimeType       string         `json:"mime_type"`
-	Size           int64          `json:"size"`
-	Metadata       map[string]any `json:"metadata"`
-	UploadStatus   string         `json:"upload_status"`
-	LastAccessedAt *time.Time     `json:"last_accessed_at"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      *time.Time     `json:"updated_at"`
-}
-
-type ObjectCreate struct {
-	Id             string     `json:"id"`
-	Name           string     `json:"name"`
-	BucketId       string     `json:"bucket_id"`
-	ContentType    string     `json:"content_type"`
-	Size           int64      `json:"size"`
-	Metadata       []byte     `json:"metadata"`
-	UploadStatus   string     `json:"upload_status"`
-	LastAccessedAt *time.Time `json:"last_accessed_at"`
-	CreatedAt      time.Time  `json:"created_at"`
-}
-
-type ObjectRename struct {
-	OldName string `json:"old_name"`
-	NewName string `json:"new_name"`
-}
-
-type ObjectCopy struct {
-	OldPath string `json:"old_path"`
-	NewPath string `json:"new_path"`
-}
-
-type ObjectMove struct {
-	OldPath string `json:"old_path"`
-	NewPath string `json:"new_path"`
+	Id             string         `json:"id" example:"object_01HPG4GN5JY2Z6S0638ERSG375"`
+	Version        int32          `json:"version" example:"0"`
+	BucketId       string         `json:"bucket_id" example:"bucket_01HPG4GN5JY2Z6S0638ERSG375"`
+	Name           string         `json:"name" example:"user/david/avatar.jpg"`
+	MimeType       string         `json:"mime_type" example:"image/jpeg"`
+	Size           int64          `json:"size" example:"1218077"`
+	Metadata       map[string]any `json:"metadata" extensions:"x-nullable"`
+	UploadStatus   string         `json:"upload_status" enum:"pending,completed" example:"pending"`
+	LastAccessedAt *time.Time     `json:"last_accessed_at" example:"2024-02-13T08:16:49.952238+05:30" extensions:"x-nullable"`
+	CreatedAt      time.Time      `json:"created_at" example:"2024-02-13T08:14:49.952238+05:30"`
+	UpdatedAt      *time.Time     `json:"updated_at" example:"2024-02-13T08:18:21.47635+05:30" extensions:"x-nullable"`
 }
 
 type PreSignedUploadSession struct {
-	Id        string `json:"id"`
-	Url       string `json:"url"`
-	Method    string `json:"method"`
-	ExpiresAt int64  `json:"expires_at"`
+	Id        string `json:"id" example:"object_01HPG4GN5JY2Z6S0638ERSG375"`
+	Url       string `json:"url" example:"http://localhost:9000/test-bucket/avatars/user/david/avatar.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=arkam%2F20240217%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240217T060609Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-type%3Bhost&x-id=PutObject&X-Amz-Signature=62421fb20c67e44fee20035e6f40c0f65d105ae75496ede060c1e97e74fe5faa"`
+	Method    string `json:"method" default:"PUT" example:"PUT"`
+	ExpiresAt int64  `json:"expires_at" example:"1708150396"`
 }
 
 type PreSignedDownloadSession struct {
-	Url       string `json:"url"`
+	Url       string `json:"url" example:"http://localhost:9000/test-bucket/avatars/user/david/avatar.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=arkam%2F20240217%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240217T060816Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&x-id=GetObject&X-Amz-Signature=3daaede103c1b99ff6e4ad16f2b64d2becd29ffedd1a3814f418ec5940302cb7"`
 	Method    string `json:"method" default:"GET" example:"GET"`
-	ExpiresAt int64  `json:"expires_at" `
+	ExpiresAt int64  `json:"expires_at" example:"1708150396"`
 }
 
 type PreSignedUploadSessionCreate struct {
