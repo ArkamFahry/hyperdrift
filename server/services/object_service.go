@@ -426,7 +426,7 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketName string, objec
 	}, nil
 }
 
-func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, objectPath string, level int32, limit int32, offset int32) ([]*models.Object, error) {
+func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, objectPath string, limit int32, offset int32) ([]*models.Object, error) {
 	const op = "ObjectService.SearchObjects"
 	reqId := utils.RequestId(ctx)
 
@@ -438,10 +438,6 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object name cannot be empty. object name is required to search objects", op, reqId, nil)
 	}
 
-	if level < 0 {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "levels cannot be less than 0", op, reqId, nil)
-	}
-
 	if limit < 0 {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "limit cannot be less than 0", op, reqId, nil)
 	}
@@ -450,20 +446,15 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "offset cannot be less than 0", op, reqId, nil)
 	}
 
-	if level == 0 {
-		level = 1
-	}
-
 	if limit == 0 {
 		limit = 100
 	}
 
-	objects, err := os.queries.SearchObjectsByPath(ctx, &database.SearchObjectsByPathParams{
+	objects, err := os.queries.SearchObjectsByBucketNameAndPath(ctx, &database.SearchObjectsByBucketNameAndPathParams{
 		BucketName: bucketName,
 		ObjectPath: objectPath,
-		Level:      &level,
-		Limit:      &limit,
-		Offset:     &offset,
+		Limit:      limit,
+		Offset:     offset,
 	})
 	if err != nil {
 		os.logger.Error("failed to search objects", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
@@ -487,7 +478,7 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 			Metadata:     metadataMap,
 			UploadStatus: object.UploadStatus,
 			CreatedAt:    object.CreatedAt,
-			UpdatedAt:    &object.UpdatedAt,
+			UpdatedAt:    object.UpdatedAt,
 		})
 	}
 
