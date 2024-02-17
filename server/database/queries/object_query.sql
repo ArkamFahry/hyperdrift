@@ -48,9 +48,9 @@ where id = sqlc.arg('id');
 
 -- name: GetObjectById :one
 select id,
+       version,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -63,28 +63,28 @@ where id = sqlc.arg('id')
 limit 1;
 
 -- name: GetObjectByIdWithBucketName :one
-select o.id,
-       o.bucket_id,
-       b.name as bucket_name,
-       o.name,
-       o.path_tokens,
-       o.mime_type,
-       o.size,
-       o.metadata,
-       o.upload_status,
-       o.last_accessed_at,
-       o.created_at,
-       o.updated_at
-from storage.objects as o
-         inner join storage.buckets as b on o.bucket_id = b.id
-where o.id = sqlc.arg('id')
+select object.id,
+       object.version,
+       object.bucket_id,
+       bucket.name as bucket_name,
+       object.name,
+       object.mime_type,
+       object.size,
+       object.metadata,
+       object.upload_status,
+       object.last_accessed_at,
+       object.created_at,
+       object.updated_at
+from storage.objects as object
+         inner join storage.buckets as bucket on object.bucket_id = bucket.id
+where object.id = sqlc.arg('id')
 limit 1;
 
 -- name: GetObjectByName :one
 select id,
+       version,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -98,9 +98,9 @@ limit 1;
 
 -- name: GetObjectByBucketIdAndName :one
 select id,
+       version,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -117,7 +117,6 @@ limit 1;
 select id,
        bucket_id,
        name,
-       path_tokens,
        mime_type,
        size,
        metadata,
@@ -129,18 +128,19 @@ from storage.objects
 where bucket_id = sqlc.arg('bucket_id')
 limit sqlc.arg('limit') offset sqlc.arg('offset');
 
--- name: SearchObjectsByPath :many
-select id::text,
-       version::int,
-       name::text,
-       bucket_id::text,
-       bucket_name::text,
-       mime_type::text,
-       size::bigint,
-       metadata::jsonb,
-       upload_status::text,
-       last_accessed_at::timestamptz,
-       created_at::timestamptz,
-       updated_at::timestamptz
-from storage.objects_search(sqlc.arg('bucket_name')::text, sqlc.arg('object_path')::text, sqlc.narg('level')::int,
-                            sqlc.narg('limit')::int, sqlc.narg('offset')::int);
+-- name: SearchObjectsByBucketNameAndPath :many
+select object.id,
+       object.version,
+       object.bucket_id,
+       object.name,
+       object.mime_type,
+       object.size,
+       object.metadata,
+       object.upload_status,
+       object.last_accessed_at,
+       object.created_at,
+       object.updated_at
+from storage.objects as object
+where object.bucket_id = (select bucket.id from storage.buckets as bucket where bucket.name = sqlc.arg('bucket_name'))
+  and object.name ilike sqlc.arg('object_path')::text || '%'
+limit sqlc.arg('limit') offset sqlc.arg('offset');
