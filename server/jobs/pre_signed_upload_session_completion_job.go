@@ -72,10 +72,24 @@ func (w *PreSignedUploadSessionCompletionWorker) Work(ctx context.Context, preSi
 			}
 		}
 	} else {
+		err = w.storage.DeleteObject(ctx, &storage.ObjectDelete{
+			Bucket: object.BucketName,
+			Name:   object.Name,
+		})
+		if err != nil {
+			w.logger.Error(
+				"failed to delete object from storage",
+				zap.Error(err),
+				zapfield.Operation(op),
+				zap.String("bucket_name", object.BucketName),
+				zap.String("object_name", object.Name),
+			)
+			return err
+		}
 		err = w.queries.DeleteObject(ctx, object.ID)
 		if err != nil {
 			w.logger.Error(
-				"failed to delete object",
+				"failed to delete object from database",
 				zap.Error(err),
 				zapfield.Operation(op),
 				zap.String("object_id", object.ID),

@@ -155,7 +155,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 		_, err = os.job.InsertTx(ctx, tx, jobs.PreSignedUploadSessionCompletion{
 			ObjectId: id,
 		}, &river.InsertOpts{
-			ScheduledAt: time.Unix(preSignedObject.ExpiresAt, 0),
+			ScheduledAt: time.Unix(preSignedObject.ExpiresAt, 0).Add(time.Second * 10),
 		})
 		if err != nil {
 			os.logger.Error("failed to create pre-signed object upload completion job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
