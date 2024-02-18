@@ -30,7 +30,7 @@ type PreSignedUploadSessionCompletionWorker struct {
 func (w *PreSignedUploadSessionCompletionWorker) Work(ctx context.Context, preSignedUploadSessionCompletion *river.Job[PreSignedUploadSessionCompletion]) error {
 	const op = "PreSignedUploadSessionCompletionWorker.Work"
 
-	object, err := w.queries.GetObjectByIdWithBucketName(ctx, preSignedUploadSessionCompletion.Args.ObjectId)
+	object, err := w.queries.ObjectGetByIdWithBucketName(ctx, preSignedUploadSessionCompletion.Args.ObjectId)
 	if err != nil {
 		w.logger.Error(
 			"failed to get object",
@@ -57,7 +57,7 @@ func (w *PreSignedUploadSessionCompletionWorker) Work(ctx context.Context, preSi
 
 	if objectExists {
 		if object.UploadStatus != models.ObjectUploadStatusCompleted {
-			err = w.queries.UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+			err = w.queries.ObjectUpdateUploadStatus(ctx, &database.ObjectUpdateUploadStatusParams{
 				ID:           object.ID,
 				UploadStatus: models.ObjectUploadStatusCompleted,
 			})
@@ -86,7 +86,7 @@ func (w *PreSignedUploadSessionCompletionWorker) Work(ctx context.Context, preSi
 			)
 			return err
 		}
-		err = w.queries.DeleteObject(ctx, object.ID)
+		err = w.queries.ObjectDelete(ctx, object.ID)
 		if err != nil {
 			w.logger.Error(
 				"failed to delete object from database",

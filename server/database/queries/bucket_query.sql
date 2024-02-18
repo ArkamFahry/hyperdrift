@@ -1,4 +1,4 @@
--- name: CreateBucket :one
+-- name: BucketCreate :one
 insert into storage.buckets
     (name, allowed_mime_types, max_allowed_object_size, public)
 values (sqlc.arg('name'),
@@ -7,53 +7,44 @@ values (sqlc.arg('name'),
         sqlc.arg('public'))
 returning id;
 
--- name: UpdateBucket :exec
+-- name: BucketUpdate :exec
 update storage.buckets
 set max_allowed_object_size = coalesce(sqlc.narg('max_allowed_object_size'), max_allowed_object_size),
     public                  = coalesce(sqlc.narg('public'), public),
     allowed_mime_types      = coalesce(sqlc.narg('allowed_mime_types'), allowed_mime_types)
 where id = sqlc.arg('id');
 
--- name: DisableBucket :exec
+-- name: BucketDisable :exec
 update storage.buckets
 set disabled = true
 where id = sqlc.arg('id');
 
--- name: EnableBucket :exec
+-- name: BucketEnable :exec
 update storage.buckets
 set disabled = false
 where id = sqlc.arg('id');
 
--- name: MakeBucketPublic :exec
-update storage.buckets
-set public = true
-where id = sqlc.arg('id');
 
--- name: MakeBucketPrivate :exec
-update storage.buckets
-set public = false
-where id = sqlc.arg('id');
-
--- name: LockBucket :exec
+-- name: BucketLock :exec
 update storage.buckets
 set locked      = true,
     lock_reason = sqlc.arg('lock_reason')::text,
     locked_at   = now()
 where id = sqlc.arg('id');
 
--- name: UnlockBucket :exec
+-- name: BucketUnlock :exec
 update storage.buckets
 set locked      = false,
     lock_reason = null,
     locked_at   = null
 where id = sqlc.arg('id');
 
--- name: DeleteBucket :exec
+-- name: BucketDelete :exec
 delete
 from storage.buckets
 where id = sqlc.arg('id');
 
--- name: GetBucketById :one
+-- name: BucketGetById :one
 select id,
        version,
        name,
@@ -70,7 +61,7 @@ from storage.buckets
 where id = sqlc.arg('id')
 limit 1;
 
--- name: GetBucketByName :one
+-- name: BucketGetByName :one
 select id,
        version,
        name,
@@ -87,7 +78,7 @@ from storage.buckets
 where name = sqlc.arg('name')
 limit 1;
 
--- name: ListAllBuckets :many
+-- name: BucketListAll :many
 select id,
        version,
        name,
@@ -102,8 +93,9 @@ select id,
        updated_at
 from storage.buckets;
 
--- name: ListBucketsPaginated :many
+-- name: BucketListPaginated :many
 select id,
+       version,
        name,
        allowed_mime_types,
        max_allowed_object_size,
@@ -118,8 +110,9 @@ from storage.buckets
 where id >= sqlc.arg('cursor')
 limit sqlc.arg('limit');
 
--- name: SearchBucketsPaginated :many
+-- name: BucketSearch :many
 select id,
+       version,
        name,
        allowed_mime_types,
        max_allowed_object_size,
@@ -131,22 +124,21 @@ select id,
        created_at,
        updated_at
 from storage.buckets
-where name ilike sqlc.narg('name')
-limit sqlc.narg('limit') offset sqlc.narg('offset');
+where name ilike '%' || sqlc.arg('name')::text || '%';
 
--- name: CountBuckets :one
+-- name: BucketCount :one
 select count(1) as count
 from storage.buckets;
 
--- name: GetBucketSizeById :one
-select o.bucket_id as id, b.name as name, SUM(o.size) as size
-from storage.objects as o
-         join storage.buckets as b on o.bucket_id = b.id
-where o.bucket_id = sqlc.arg('id')
-group by o.bucket_id, b.name;
+-- name: BucketGetSizeById :one
+select object.bucket_id as id, bucket.name as name, SUM(object.size) as size
+from storage.objects as object
+         join storage.buckets as bucket on object.bucket_id = bucket.id
+where object.bucket_id = sqlc.arg('id')
+group by object.bucket_id, bucket.name;
 
--- name: GetBucketObjectCountById :one
-select o.bucket_id as id, count(1) as count
-from storage.objects as o
-where o.bucket_id = sqlc.arg('id')
-group by o.bucket_id;
+-- name: BucketGetObjectCountById :one
+select bucket_id as id, count(1) as count
+from storage.objects
+where bucket_id = sqlc.arg('id')
+group by bucket_id;

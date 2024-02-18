@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const createObject = `-- name: CreateObject :one
+const objectCreate = `-- name: ObjectCreate :one
 insert into storage.objects
     (bucket_id, name, mime_type, size, metadata, upload_status)
 values ($1,
@@ -22,7 +22,7 @@ values ($1,
 returning id
 `
 
-type CreateObjectParams struct {
+type ObjectCreateParams struct {
 	BucketID     string
 	Name         string
 	ContentType  *string
@@ -31,8 +31,8 @@ type CreateObjectParams struct {
 	UploadStatus string
 }
 
-func (q *Queries) CreateObject(ctx context.Context, arg *CreateObjectParams) (string, error) {
-	row := q.db.QueryRow(ctx, createObject,
+func (q *Queries) ObjectCreate(ctx context.Context, arg *ObjectCreateParams) (string, error) {
+	row := q.db.QueryRow(ctx, objectCreate,
 		arg.BucketID,
 		arg.Name,
 		arg.ContentType,
@@ -45,18 +45,18 @@ func (q *Queries) CreateObject(ctx context.Context, arg *CreateObjectParams) (st
 	return id, err
 }
 
-const deleteObject = `-- name: DeleteObject :exec
+const objectDelete = `-- name: ObjectDelete :exec
 delete
 from storage.objects
 where id = $1
 `
 
-func (q *Queries) DeleteObject(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, deleteObject, id)
+func (q *Queries) ObjectDelete(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, objectDelete, id)
 	return err
 }
 
-const getObjectByBucketIdAndName = `-- name: GetObjectByBucketIdAndName :one
+const objectGetByBucketIdAndName = `-- name: ObjectGetByBucketIdAndName :one
 select id,
        version,
        bucket_id,
@@ -74,12 +74,12 @@ where bucket_id = $1
 limit 1
 `
 
-type GetObjectByBucketIdAndNameParams struct {
+type ObjectGetByBucketIdAndNameParams struct {
 	BucketID string
 	Name     string
 }
 
-type GetObjectByBucketIdAndNameRow struct {
+type ObjectGetByBucketIdAndNameRow struct {
 	ID             string
 	Version        int32
 	BucketID       string
@@ -93,9 +93,9 @@ type GetObjectByBucketIdAndNameRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObjectByBucketIdAndNameParams) (*GetObjectByBucketIdAndNameRow, error) {
-	row := q.db.QueryRow(ctx, getObjectByBucketIdAndName, arg.BucketID, arg.Name)
-	var i GetObjectByBucketIdAndNameRow
+func (q *Queries) ObjectGetByBucketIdAndName(ctx context.Context, arg *ObjectGetByBucketIdAndNameParams) (*ObjectGetByBucketIdAndNameRow, error) {
+	row := q.db.QueryRow(ctx, objectGetByBucketIdAndName, arg.BucketID, arg.Name)
+	var i ObjectGetByBucketIdAndNameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
@@ -112,7 +112,7 @@ func (q *Queries) GetObjectByBucketIdAndName(ctx context.Context, arg *GetObject
 	return &i, err
 }
 
-const getObjectById = `-- name: GetObjectById :one
+const objectGetById = `-- name: ObjectGetById :one
 select id,
        version,
        bucket_id,
@@ -129,7 +129,7 @@ where id = $1
 limit 1
 `
 
-type GetObjectByIdRow struct {
+type ObjectGetByIdRow struct {
 	ID             string
 	Version        int32
 	BucketID       string
@@ -143,9 +143,9 @@ type GetObjectByIdRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdRow, error) {
-	row := q.db.QueryRow(ctx, getObjectById, id)
-	var i GetObjectByIdRow
+func (q *Queries) ObjectGetById(ctx context.Context, id string) (*ObjectGetByIdRow, error) {
+	row := q.db.QueryRow(ctx, objectGetById, id)
+	var i ObjectGetByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
@@ -162,7 +162,7 @@ func (q *Queries) GetObjectById(ctx context.Context, id string) (*GetObjectByIdR
 	return &i, err
 }
 
-const getObjectByIdWithBucketName = `-- name: GetObjectByIdWithBucketName :one
+const objectGetByIdWithBucketName = `-- name: ObjectGetByIdWithBucketName :one
 select object.id,
        object.version,
        object.bucket_id,
@@ -181,7 +181,7 @@ where object.id = $1
 limit 1
 `
 
-type GetObjectByIdWithBucketNameRow struct {
+type ObjectGetByIdWithBucketNameRow struct {
 	ID             string
 	Version        int32
 	BucketID       string
@@ -196,9 +196,9 @@ type GetObjectByIdWithBucketNameRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) GetObjectByIdWithBucketName(ctx context.Context, id string) (*GetObjectByIdWithBucketNameRow, error) {
-	row := q.db.QueryRow(ctx, getObjectByIdWithBucketName, id)
-	var i GetObjectByIdWithBucketNameRow
+func (q *Queries) ObjectGetByIdWithBucketName(ctx context.Context, id string) (*ObjectGetByIdWithBucketNameRow, error) {
+	row := q.db.QueryRow(ctx, objectGetByIdWithBucketName, id)
+	var i ObjectGetByIdWithBucketNameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
@@ -216,7 +216,7 @@ func (q *Queries) GetObjectByIdWithBucketName(ctx context.Context, id string) (*
 	return &i, err
 }
 
-const getObjectByName = `-- name: GetObjectByName :one
+const objectGetByName = `-- name: ObjectGetByName :one
 select id,
        version,
        bucket_id,
@@ -233,7 +233,7 @@ where name = $1
 limit 1
 `
 
-type GetObjectByNameRow struct {
+type ObjectGetByNameRow struct {
 	ID             string
 	Version        int32
 	BucketID       string
@@ -247,9 +247,9 @@ type GetObjectByNameRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) GetObjectByName(ctx context.Context, name string) (*GetObjectByNameRow, error) {
-	row := q.db.QueryRow(ctx, getObjectByName, name)
-	var i GetObjectByNameRow
+func (q *Queries) ObjectGetByName(ctx context.Context, name string) (*ObjectGetByNameRow, error) {
+	row := q.db.QueryRow(ctx, objectGetByName, name)
+	var i ObjectGetByNameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
@@ -266,111 +266,7 @@ func (q *Queries) GetObjectByName(ctx context.Context, name string) (*GetObjectB
 	return &i, err
 }
 
-const listObjectsByBucketIdPaged = `-- name: ListObjectsByBucketIdPaged :many
-select id,
-       bucket_id,
-       name,
-       mime_type,
-       size,
-       metadata,
-       upload_status,
-       last_accessed_at,
-       created_at,
-       updated_at
-from storage.objects
-where bucket_id = $1
-limit $3 offset $2
-`
-
-type ListObjectsByBucketIdPagedParams struct {
-	BucketID string
-	Offset   int32
-	Limit    int32
-}
-
-type ListObjectsByBucketIdPagedRow struct {
-	ID             string
-	BucketID       string
-	Name           string
-	MimeType       string
-	Size           int64
-	Metadata       []byte
-	UploadStatus   string
-	LastAccessedAt *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      *time.Time
-}
-
-func (q *Queries) ListObjectsByBucketIdPaged(ctx context.Context, arg *ListObjectsByBucketIdPagedParams) ([]*ListObjectsByBucketIdPagedRow, error) {
-	rows, err := q.db.Query(ctx, listObjectsByBucketIdPaged, arg.BucketID, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []*ListObjectsByBucketIdPagedRow
-	for rows.Next() {
-		var i ListObjectsByBucketIdPagedRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.BucketID,
-			&i.Name,
-			&i.MimeType,
-			&i.Size,
-			&i.Metadata,
-			&i.UploadStatus,
-			&i.LastAccessedAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, &i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const makeObjectPrivate = `-- name: MakeObjectPrivate :exec
-update storage.objects
-set public = false
-where id = $1
-`
-
-func (q *Queries) MakeObjectPrivate(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, makeObjectPrivate, id)
-	return err
-}
-
-const makeObjectPublic = `-- name: MakeObjectPublic :exec
-update storage.objects
-set public = true
-where id = $1
-`
-
-func (q *Queries) MakeObjectPublic(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, makeObjectPublic, id)
-	return err
-}
-
-const mergeObjectMetadata = `-- name: MergeObjectMetadata :exec
-update storage.objects
-set metadata = metadata || $1
-where id = $2
-`
-
-type MergeObjectMetadataParams struct {
-	Metadata []byte
-	ID       string
-}
-
-func (q *Queries) MergeObjectMetadata(ctx context.Context, arg *MergeObjectMetadataParams) error {
-	_, err := q.db.Exec(ctx, mergeObjectMetadata, arg.Metadata, arg.ID)
-	return err
-}
-
-const searchObjectsByBucketNameAndPath = `-- name: SearchObjectsByBucketNameAndPath :many
+const objectSearchByBucketIdAndObjectPath = `-- name: ObjectSearchByBucketIdAndObjectPath :many
 select object.id,
        object.version,
        object.bucket_id,
@@ -383,19 +279,19 @@ select object.id,
        object.created_at,
        object.updated_at
 from storage.objects as object
-where object.bucket_id = (select bucket.id from storage.buckets as bucket where bucket.name = $1)
-  and object.name ilike $2::text || '%'
+where object.bucket_id = $1
+  and object.name ilike '%' || $2::text || '%'
 limit $4 offset $3
 `
 
-type SearchObjectsByBucketNameAndPathParams struct {
-	BucketName string
+type ObjectSearchByBucketIdAndObjectPathParams struct {
+	BucketID   string
 	ObjectPath string
 	Offset     int32
 	Limit      int32
 }
 
-type SearchObjectsByBucketNameAndPathRow struct {
+type ObjectSearchByBucketIdAndObjectPathRow struct {
 	ID             string
 	Version        int32
 	BucketID       string
@@ -409,9 +305,9 @@ type SearchObjectsByBucketNameAndPathRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) SearchObjectsByBucketNameAndPath(ctx context.Context, arg *SearchObjectsByBucketNameAndPathParams) ([]*SearchObjectsByBucketNameAndPathRow, error) {
-	rows, err := q.db.Query(ctx, searchObjectsByBucketNameAndPath,
-		arg.BucketName,
+func (q *Queries) ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketIdAndObjectPathParams) ([]*ObjectSearchByBucketIdAndObjectPathRow, error) {
+	rows, err := q.db.Query(ctx, objectSearchByBucketIdAndObjectPath,
+		arg.BucketID,
 		arg.ObjectPath,
 		arg.Offset,
 		arg.Limit,
@@ -420,9 +316,9 @@ func (q *Queries) SearchObjectsByBucketNameAndPath(ctx context.Context, arg *Sea
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*SearchObjectsByBucketNameAndPathRow
+	var items []*ObjectSearchByBucketIdAndObjectPathRow
 	for rows.Next() {
-		var i SearchObjectsByBucketNameAndPathRow
+		var i ObjectSearchByBucketIdAndObjectPathRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Version,
@@ -446,7 +342,7 @@ func (q *Queries) SearchObjectsByBucketNameAndPath(ctx context.Context, arg *Sea
 	return items, nil
 }
 
-const updateObject = `-- name: UpdateObject :exec
+const objectUpdate = `-- name: ObjectUpdate :exec
 update storage.objects
 set size      = coalesce($1, size),
     mime_type = coalesce($2, mime_type),
@@ -454,15 +350,15 @@ set size      = coalesce($1, size),
 where id = $4
 `
 
-type UpdateObjectParams struct {
-	Size     int64
-	MimeType string
+type ObjectUpdateParams struct {
+	Size     *int64
+	MimeType *string
 	Metadata []byte
 	ID       string
 }
 
-func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) error {
-	_, err := q.db.Exec(ctx, updateObject,
+func (q *Queries) ObjectUpdate(ctx context.Context, arg *ObjectUpdateParams) error {
+	_, err := q.db.Exec(ctx, objectUpdate,
 		arg.Size,
 		arg.MimeType,
 		arg.Metadata,
@@ -471,29 +367,95 @@ func (q *Queries) UpdateObject(ctx context.Context, arg *UpdateObjectParams) err
 	return err
 }
 
-const updateObjectLastAccessedAt = `-- name: UpdateObjectLastAccessedAt :exec
+const objectUpdateLastAccessedAt = `-- name: ObjectUpdateLastAccessedAt :exec
 update storage.objects
 set last_accessed_at = now()
 where id = $1
 `
 
-func (q *Queries) UpdateObjectLastAccessedAt(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, updateObjectLastAccessedAt, id)
+func (q *Queries) ObjectUpdateLastAccessedAt(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, objectUpdateLastAccessedAt, id)
 	return err
 }
 
-const updateObjectUploadStatus = `-- name: UpdateObjectUploadStatus :exec
+const objectUpdateUploadStatus = `-- name: ObjectUpdateUploadStatus :exec
 update storage.objects
 set upload_status = $1
 where id = $2
 `
 
-type UpdateObjectUploadStatusParams struct {
+type ObjectUpdateUploadStatusParams struct {
 	UploadStatus string
 	ID           string
 }
 
-func (q *Queries) UpdateObjectUploadStatus(ctx context.Context, arg *UpdateObjectUploadStatusParams) error {
-	_, err := q.db.Exec(ctx, updateObjectUploadStatus, arg.UploadStatus, arg.ID)
+func (q *Queries) ObjectUpdateUploadStatus(ctx context.Context, arg *ObjectUpdateUploadStatusParams) error {
+	_, err := q.db.Exec(ctx, objectUpdateUploadStatus, arg.UploadStatus, arg.ID)
 	return err
+}
+
+const objectsListBucketIdPaged = `-- name: ObjectsListBucketIdPaged :many
+select id,
+       bucket_id,
+       name,
+       mime_type,
+       size,
+       metadata,
+       upload_status,
+       last_accessed_at,
+       created_at,
+       updated_at
+from storage.objects
+where bucket_id = $1
+limit $3 offset $2
+`
+
+type ObjectsListBucketIdPagedParams struct {
+	BucketID string
+	Offset   int32
+	Limit    int32
+}
+
+type ObjectsListBucketIdPagedRow struct {
+	ID             string
+	BucketID       string
+	Name           string
+	MimeType       string
+	Size           int64
+	Metadata       []byte
+	UploadStatus   string
+	LastAccessedAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      *time.Time
+}
+
+func (q *Queries) ObjectsListBucketIdPaged(ctx context.Context, arg *ObjectsListBucketIdPagedParams) ([]*ObjectsListBucketIdPagedRow, error) {
+	rows, err := q.db.Query(ctx, objectsListBucketIdPaged, arg.BucketID, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*ObjectsListBucketIdPagedRow
+	for rows.Next() {
+		var i ObjectsListBucketIdPagedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.BucketID,
+			&i.Name,
+			&i.MimeType,
+			&i.Size,
+			&i.Metadata,
+			&i.UploadStatus,
+			&i.LastAccessedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

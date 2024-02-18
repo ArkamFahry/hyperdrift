@@ -9,7 +9,7 @@ import (
 	"context"
 )
 
-const createEvent = `-- name: CreateEvent :one
+const eventCreate = `-- name: EventCreate :one
 insert into storage.events
     (aggregate_type, aggregate_id, event_type, payload)
 values ($1,
@@ -18,15 +18,15 @@ values ($1,
         $4) returning id
 `
 
-type CreateEventParams struct {
+type EventCreateParams struct {
 	AggregateType string
 	AggregateID   string
 	EventType     string
 	Payload       []byte
 }
 
-func (q *Queries) CreateEvent(ctx context.Context, arg *CreateEventParams) (string, error) {
-	row := q.db.QueryRow(ctx, createEvent,
+func (q *Queries) EventCreate(ctx context.Context, arg *EventCreateParams) (string, error) {
+	row := q.db.QueryRow(ctx, eventCreate,
 		arg.AggregateType,
 		arg.AggregateID,
 		arg.EventType,

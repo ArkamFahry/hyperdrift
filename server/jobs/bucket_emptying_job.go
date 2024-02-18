@@ -28,7 +28,7 @@ type BucketEmptyingWorker struct {
 func (w *BucketEmptyingWorker) Work(ctx context.Context, bucketEmpty *river.Job[BucketEmptying]) error {
 	const op = "BucketEmptyingWorker.Work"
 
-	bucket, err := w.queries.GetBucketById(ctx, bucketEmpty.Args.BucketId)
+	bucket, err := w.queries.BucketGetById(ctx, bucketEmpty.Args.BucketId)
 	if err != nil {
 		w.logger.Error(
 			"failed to get bucket",
@@ -43,7 +43,7 @@ func (w *BucketEmptyingWorker) Work(ctx context.Context, bucketEmpty *river.Job[
 	offset := int32(0)
 
 	for {
-		objects, err := w.queries.ListObjectsByBucketIdPaged(ctx, &database.ListObjectsByBucketIdPagedParams{
+		objects, err := w.queries.ObjectsListBucketIdPaged(ctx, &database.ObjectsListBucketIdPagedParams{
 			BucketID: bucket.ID,
 			Offset:   offset,
 			Limit:    limit,
@@ -76,7 +76,7 @@ func (w *BucketEmptyingWorker) Work(ctx context.Context, bucketEmpty *river.Job[
 				)
 				return err
 			}
-			err = w.queries.DeleteObject(ctx, object.ID)
+			err = w.queries.ObjectDelete(ctx, object.ID)
 			if err != nil {
 				w.logger.Error(
 					"failed to delete object from database",
@@ -91,7 +91,7 @@ func (w *BucketEmptyingWorker) Work(ctx context.Context, bucketEmpty *river.Job[
 		offset += limit
 	}
 
-	err = w.queries.UnlockBucket(ctx, bucket.ID)
+	err = w.queries.BucketUnlock(ctx, bucket.ID)
 	if err != nil {
 		w.logger.Error(
 			"failed to unlock bucket from database",

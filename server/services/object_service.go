@@ -42,15 +42,15 @@ func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.C
 	}
 }
 
-func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucketName string, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*models.PreSignedUploadSession, error) {
+func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucketId string, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*models.PreSignedUploadSession, error) {
 	const op = "ObjectService.CreatePreSignedUploadSession"
 	reqId := utils.RequestId(ctx)
 
 	var preSignedObject *storage.PreSignedObject
 	var id string
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to create pre-signed upload session", op, reqId, nil)
+	if validateNotEmptyTrimmedString(bucketId) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to create pre-signed upload session", op, reqId, nil)
 	}
 
 	if validateNotEmptyTrimmedString(preSignedUploadSessionCreate.Name) {
@@ -62,7 +62,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 	}
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByNameTxn(ctx, tx, bucketName, op)
+		bucket, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			}
 		}
 
-		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedWildcardMimeType) {
+		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
 			defaultMimeType := models.ObjectDefaultMimeType
 			if preSignedUploadSessionCreate.MimeType == nil || (preSignedUploadSessionCreate.MimeType != nil && *preSignedUploadSessionCreate.MimeType == "") {
 				objectNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
@@ -136,7 +136,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 			return srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata to bytes", op, reqId, err)
 		}
 
-		id, err = os.queries.WithTx(tx).CreateObject(ctx, &database.CreateObjectParams{
+		id, err = os.queries.WithTx(tx).ObjectCreate(ctx, &database.ObjectCreateParams{
 			BucketID:     bucket.Id,
 			Name:         preSignedUploadSessionCreate.Name,
 			ContentType:  preSignedUploadSessionCreate.MimeType,
@@ -176,24 +176,24 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 	}, nil
 }
 
-func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, bucketName string, objectId string) error {
+func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, bucketId string, objectId string) error {
 	const op = "ObjectService.CompletePreSignedUploadSession"
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to complete pre-signed upload session", op, reqId, nil)
+	if validateNotEmptyTrimmedString(bucketId) {
+		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
 	if validateNotEmptyTrimmedString(objectId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object object_id is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
-	bucket, err := os.getBucketByName(ctx, bucketName, op)
+	bucket, err := os.getBucketById(ctx, bucketId, op)
 	if err != nil {
 		return err
 	}
 
-	object, err := os.queries.GetObjectById(ctx, objectId)
+	object, err := os.queries.ObjectGetById(ctx, objectId)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
@@ -216,7 +216,7 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 	}
 
 	if objectExists {
-		err = os.queries.UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+		err = os.queries.ObjectUpdateUploadStatus(ctx, &database.ObjectUpdateUploadStatusParams{
 			ID:           object.ID,
 			UploadStatus: models.ObjectUploadStatusCompleted,
 		})
@@ -231,14 +231,14 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 	return nil
 }
 
-func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, bucketName string, objectId string, expiresIn int64) (*models.PreSignedDownloadSession, error) {
+func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, bucketId string, objectId string, expiresIn int64) (*models.PreSignedDownloadSession, error) {
 	const op = "ObjectService.CreatePreSignedDownloadSession"
 	reqId := utils.RequestId(ctx)
 
 	var preSignedDownloadObject models.PreSignedDownloadSession
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to create pre-signed download session", op, reqId, nil)
+	if validateNotEmptyTrimmedString(bucketId) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to create pre-signed download session", op, reqId, nil)
 	}
 
 	if validateNotEmptyTrimmedString(objectId) {
@@ -255,12 +255,12 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 	}
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByNameTxn(ctx, tx, bucketName, op)
+		bucket, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
 		if err != nil {
 			return err
 		}
 
-		object, err := os.queries.WithTx(tx).GetObjectById(ctx, objectId)
+		object, err := os.queries.WithTx(tx).ObjectGetById(ctx, objectId)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
@@ -280,7 +280,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 			}
 
 			if objectExists {
-				err = os.queries.WithTx(tx).UpdateObjectUploadStatus(ctx, &database.UpdateObjectUploadStatusParams{
+				err = os.queries.WithTx(tx).ObjectUpdateUploadStatus(ctx, &database.ObjectUpdateUploadStatusParams{
 					ID:           object.ID,
 					UploadStatus: models.ObjectUploadStatusCompleted,
 				})
@@ -302,7 +302,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download session", op, reqId, err)
 		}
 
-		err = os.queries.WithTx(tx).UpdateObjectLastAccessedAt(ctx, object.ID)
+		err = os.queries.WithTx(tx).ObjectUpdateLastAccessedAt(ctx, object.ID)
 		if err != nil {
 			os.logger.Error("failed to update object last accessed at", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to update object last accessed at", op, reqId, err)
@@ -323,12 +323,12 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 	return &preSignedDownloadObject, nil
 }
 
-func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, objectId string) error {
+func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, objectId string) error {
 	const op = "ObjectService.DeleteObject"
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to delete object", op, reqId, nil)
+	if validateNotEmptyTrimmedString(bucketId) {
+		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to delete object", op, reqId, nil)
 	}
 
 	if validateNotEmptyTrimmedString(objectId) {
@@ -336,12 +336,12 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 	}
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByNameTxn(ctx, tx, bucketName, op)
+		bucket, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
 		if err != nil {
 			return err
 		}
 
-		object, err := os.queries.WithTx(tx).GetObjectById(ctx, objectId)
+		object, err := os.queries.WithTx(tx).ObjectGetById(ctx, objectId)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
@@ -363,7 +363,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from storage", op, reqId, err)
 		}
 
-		err = os.queries.WithTx(tx).DeleteObject(ctx, object.ID)
+		err = os.queries.WithTx(tx).ObjectDelete(ctx, object.ID)
 		if err != nil {
 			os.logger.Error("failed to delete object from database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
 			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from database", op, reqId, err)
@@ -378,24 +378,24 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketName string, ob
 	return nil
 }
 
-func (os *ObjectService) GetObject(ctx context.Context, bucketName string, objectId string) (*models.Object, error) {
+func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectId string) (*models.Object, error) {
 	const op = "ObjectService.GetObject"
 	reqId := utils.RequestId(ctx)
 
+	if validateNotEmptyTrimmedString(bucketId) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to get object", op, reqId, nil)
+	}
+
 	if validateNotEmptyTrimmedString(objectId) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object id cannot be empty. object id is required to get object", op, reqId, nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to get object", op, reqId, nil)
 	}
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket_name is required to get object", op, reqId, nil)
-	}
-
-	bucket, err := os.getBucketByName(ctx, bucketName, op)
+	bucket, err := os.getBucketById(ctx, bucketId, op)
 	if err != nil {
 		return nil, err
 	}
 
-	object, err := os.queries.GetObjectByBucketIdAndName(ctx, &database.GetObjectByBucketIdAndNameParams{
+	object, err := os.queries.ObjectGetByBucketIdAndName(ctx, &database.ObjectGetByBucketIdAndNameParams{
 		BucketID: bucket.Id,
 		Name:     objectId,
 	})
@@ -426,16 +426,16 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketName string, objec
 	}, nil
 }
 
-func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, objectPath string, limit int32, offset int32) ([]*models.Object, error) {
+func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, objectPath string, limit int32, offset int32) ([]*models.Object, error) {
 	const op = "ObjectService.SearchObjects"
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to search objects", op, reqId, nil)
+	if validateNotEmptyTrimmedString(bucketId) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to search objects", op, reqId, nil)
 	}
 
 	if validateNotEmptyTrimmedString(objectPath) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object name cannot be empty. object name is required to search objects", op, reqId, nil)
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_path cannot be empty. object_path is required to search objects", op, reqId, nil)
 	}
 
 	if limit < 0 {
@@ -450,8 +450,8 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 		limit = 100
 	}
 
-	objects, err := os.queries.SearchObjectsByBucketNameAndPath(ctx, &database.SearchObjectsByBucketNameAndPathParams{
-		BucketName: bucketName,
+	objects, err := os.queries.ObjectSearchByBucketIdAndObjectPath(ctx, &database.ObjectSearchByBucketIdAndObjectPathParams{
+		BucketID:   bucketId,
 		ObjectPath: objectPath,
 		Limit:      limit,
 		Offset:     offset,
@@ -461,7 +461,7 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to search objects", op, reqId, err)
 	}
 	if len(objects) == 0 {
-		return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("no objects found for bucket '%s' with path '%s'", bucketName, objectPath), op, reqId, nil)
+		return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("no objects found for bucket '%s' with path '%s'", bucketId, objectPath), op, reqId, nil)
 	}
 
 	var result []*models.Object
@@ -485,32 +485,28 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketName string, o
 	return result, nil
 }
 
-func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, bucketName string, op string) (*models.Bucket, error) {
+func (os *ObjectService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, bucketId string, op string) (*models.Bucket, error) {
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket name is required", op, reqId, nil)
+	if validateNotEmptyTrimmedString(bucketId) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required", op, reqId, nil)
 	}
 
-	if validateBucketName(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters", op, reqId, nil)
-	}
-
-	bucket, err := os.queries.WithTx(tx).GetBucketByName(ctx, bucketName)
+	bucket, err := os.queries.WithTx(tx).BucketGetById(ctx, bucketId)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketName), op, reqId, err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketId), op, reqId, err)
 		}
-		os.logger.Error("failed to get bucket by name", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by name", op, "", err)
+		os.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, "", err)
 	}
 
 	if bucket.Disabled {
-		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled", bucket.Name), op, reqId, err)
+		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled", bucket.ID), op, reqId, err)
 	}
 
 	if bucket.Locked {
-		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s'", bucket.Name, *bucket.LockReason), op, reqId, err)
+		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s'", bucket.ID, *bucket.LockReason), op, reqId, err)
 	}
 
 	return &models.Bucket{
@@ -529,32 +525,28 @@ func (os *ObjectService) getBucketByNameTxn(ctx context.Context, tx pgx.Tx, buck
 	}, nil
 }
 
-func (os *ObjectService) getBucketByName(ctx context.Context, bucketName string, op string) (*models.Bucket, error) {
+func (os *ObjectService) getBucketById(ctx context.Context, bucketId string, op string) (*models.Bucket, error) {
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name cannot be empty. bucket name is required", op, reqId, nil)
+	if validateNotEmptyTrimmedString(bucketId) {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required", op, reqId, nil)
 	}
 
-	if validateBucketName(bucketName) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters", op, reqId, nil)
-	}
-
-	bucket, err := os.queries.GetBucketByName(ctx, bucketName)
+	bucket, err := os.queries.BucketGetById(ctx, bucketId)
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketName), op, reqId, err)
+			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketId), op, reqId, err)
 		}
-		os.logger.Error("failed to get bucket by name", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by name", op, reqId, err)
+		os.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, reqId, err)
 	}
 
 	if bucket.Disabled {
-		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled", bucket.Name), op, reqId, err)
+		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled", bucket.ID), op, reqId, err)
 	}
 
 	if bucket.Locked {
-		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s'", bucket.Name, *bucket.LockReason), op, reqId, err)
+		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s'", bucket.ID, *bucket.LockReason), op, reqId, err)
 	}
 
 	return &models.Bucket{
