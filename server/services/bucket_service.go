@@ -46,7 +46,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 
 	if bucketCreate.AllowedMimeTypes != nil {
 		if len(bucketCreate.AllowedMimeTypes) > 1 {
-			if lo.Contains[string](bucketCreate.AllowedMimeTypes, models.BucketAllowedWildcardMimeType) {
+			if lo.Contains[string](bucketCreate.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
 				return nil, srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only use '*/*'", op, reqId, nil)
 			}
 		}
@@ -55,7 +55,7 @@ func (bs *BucketService) CreateBucket(ctx context.Context, bucketCreate *models.
 			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 	} else {
-		bucketCreate.AllowedMimeTypes = []string{models.BucketAllowedWildcardMimeType}
+		bucketCreate.AllowedMimeTypes = []string{models.BucketAllowedMimeTypesWildcard}
 	}
 
 	if bucketCreate.MaxAllowedObjectSize != nil {
@@ -110,7 +110,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, id string, bucketUpda
 
 		if bucketUpdate.AllowedMimeTypes != nil {
 			if len(bucketUpdate.AllowedMimeTypes) > 1 {
-				if lo.Contains[string](bucketUpdate.AllowedMimeTypes, models.BucketAllowedWildcardMimeType) {
+				if lo.Contains[string](bucketUpdate.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
 					return srverr.NewServiceError(srverr.InvalidInputError, "wildcard '*/*' is not allowed to be included with other content types. if you want to allow all content types only add '*/*' in allowed content types", op, reqId, nil)
 				}
 			}

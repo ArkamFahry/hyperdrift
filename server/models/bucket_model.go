@@ -6,7 +6,7 @@ const (
 	BucketLockedReasonBucketDeletion = "bucket.deletion"
 	BucketLockedReasonBucketEmptying = "bucket.emptying"
 
-	BucketAllowedWildcardMimeType = "*/*"
+	BucketAllowedMimeTypesWildcard = "*/*"
 )
 
 type Bucket struct {
