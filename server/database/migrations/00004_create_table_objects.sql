@@ -1,6 +1,29 @@
 -- +goose Up
 -- +goose StatementBegin
 
+create or replace function storage.on_object_create()
+    returns trigger as
+$$
+begin
+    new.id = 'object' || '_' || storage.gen_random_ulid();
+    new.version = 0;
+    new.created_at = now();
+
+    return new;
+end;
+$$ language plpgsql;
+
+create or replace function storage.on_object_update()
+    returns trigger as
+$$
+begin
+    new.version = new.version + 1;
+    new.updated_at = now();
+
+    return new;
+end;
+$$ language plpgsql;
+
 create table if not exists storage.objects
 (
     id               text                                           not null check ( storage.text_non_empty_trimmed_text(id) ),
@@ -25,17 +48,17 @@ create table if not exists storage.objects
 
 create index if not exists objects_bucket_id_name_index on storage.objects using btree (bucket_id, name);
 
-create or replace trigger objects_on_create
+create or replace trigger object_on_create
     before insert
     on storage.objects
     for each row
-execute function storage.on_create('object');
+execute function storage.on_object_create();
 
-create or replace trigger objects_on_update
+create or replace trigger object_on_update
     before update
     on storage.objects
     for each row
-execute function storage.on_update();
+execute function storage.on_object_update();
 
 
 
@@ -44,12 +67,16 @@ execute function storage.on_update();
 -- +goose Down
 -- +goose StatementBegin
 
-drop trigger if exists objects_increment_version on storage.objects;
+drop trigger if exists object_on_create on storage.objects;
 
-drop trigger if exists objects_set_updated_at on storage.objects;
+drop trigger if exists object_on_update on storage.objects;
 
 drop index if exists storage.objects_bucket_id_name_idx;
 
 drop table if exists storage.objects;
+
+drop function if exists storage.on_object_update;
+
+drop function if exists storage.on_object_create;
 
 -- +goose StatementEnd

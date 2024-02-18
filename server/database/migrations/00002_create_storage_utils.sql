@@ -124,31 +124,6 @@ begin
 end
 $$ language plpgsql;
 
-
-
-create or replace function storage.on_create()
-    returns trigger as
-$$
-begin
-    new.id = tg_argv[0] || '_' || storage.gen_random_ulid();
-    new.version = 0;
-    new.created_at = now();
-
-    return new;
-end;
-$$ language plpgsql;
-
-create or replace function storage.on_update()
-    returns trigger as
-$$
-begin
-    new.version = new.version + 1;
-    new.updated_at = now();
-
-    return new;
-end;
-$$ language plpgsql;
-
 -- +goose StatementEnd
 
 -- +goose Down
