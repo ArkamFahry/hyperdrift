@@ -31,7 +31,7 @@ type Querier interface {
 	ObjectGetById(ctx context.Context, id string) (*ObjectGetByIdRow, error)
 	ObjectGetByIdWithBucketName(ctx context.Context, id string) (*ObjectGetByIdWithBucketNameRow, error)
 	ObjectGetByName(ctx context.Context, name string) (*ObjectGetByNameRow, error)
-	ObjectSearchByBucketNameAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketNameAndObjectPathParams) ([]*ObjectSearchByBucketNameAndObjectPathRow, error)
+	ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketIdAndObjectPathParams) ([]*ObjectSearchByBucketIdAndObjectPathRow, error)
 	ObjectUpdate(ctx context.Context, arg *ObjectUpdateParams) error
 	ObjectUpdateLastAccessedAt(ctx context.Context, id string) error
 	ObjectUpdateUploadStatus(ctx context.Context, arg *ObjectUpdateUploadStatusParams) error

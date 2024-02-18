@@ -266,7 +266,7 @@ func (q *Queries) ObjectGetByName(ctx context.Context, name string) (*ObjectGetB
 	return &i, err
 }
 
-const objectSearchByBucketNameAndObjectPath = `-- name: ObjectSearchByBucketNameAndObjectPath :many
+const objectSearchByBucketIdAndObjectPath = `-- name: ObjectSearchByBucketIdAndObjectPath :many
 select object.id,
        object.version,
        object.bucket_id,
@@ -279,19 +279,19 @@ select object.id,
        object.created_at,
        object.updated_at
 from storage.objects as object
-where object.bucket_id = (select bucket.id from storage.buckets as bucket where bucket.name = $1)
-  and object.name ilike $2::text || '%'
+where object.bucket_id = $1
+  and object.name ilike '%' || $2::text || '%'
 limit $4 offset $3
 `
 
-type ObjectSearchByBucketNameAndObjectPathParams struct {
-	BucketName string
+type ObjectSearchByBucketIdAndObjectPathParams struct {
+	BucketID   string
 	ObjectPath string
 	Offset     int32
 	Limit      int32
 }
 
-type ObjectSearchByBucketNameAndObjectPathRow struct {
+type ObjectSearchByBucketIdAndObjectPathRow struct {
 	ID             string
 	Version        int32
 	BucketID       string
@@ -305,9 +305,9 @@ type ObjectSearchByBucketNameAndObjectPathRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) ObjectSearchByBucketNameAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketNameAndObjectPathParams) ([]*ObjectSearchByBucketNameAndObjectPathRow, error) {
-	rows, err := q.db.Query(ctx, objectSearchByBucketNameAndObjectPath,
-		arg.BucketName,
+func (q *Queries) ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketIdAndObjectPathParams) ([]*ObjectSearchByBucketIdAndObjectPathRow, error) {
+	rows, err := q.db.Query(ctx, objectSearchByBucketIdAndObjectPath,
+		arg.BucketID,
 		arg.ObjectPath,
 		arg.Offset,
 		arg.Limit,
@@ -316,9 +316,9 @@ func (q *Queries) ObjectSearchByBucketNameAndObjectPath(ctx context.Context, arg
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*ObjectSearchByBucketNameAndObjectPathRow
+	var items []*ObjectSearchByBucketIdAndObjectPathRow
 	for rows.Next() {
-		var i ObjectSearchByBucketNameAndObjectPathRow
+		var i ObjectSearchByBucketIdAndObjectPathRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Version,
