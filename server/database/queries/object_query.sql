@@ -113,7 +113,7 @@ from storage.objects
 where bucket_id = sqlc.arg('bucket_id')
 limit sqlc.arg('limit') offset sqlc.arg('offset');
 
--- name: ObjectSearchByBucketNameAndObjectPath :many
+-- name: ObjectSearchByBucketIdAndObjectPath :many
 select object.id,
        object.version,
        object.bucket_id,
@@ -126,6 +126,6 @@ select object.id,
        object.created_at,
        object.updated_at
 from storage.objects as object
-where object.bucket_id = (select bucket.id from storage.buckets as bucket where bucket.name = sqlc.arg('bucket_name'))
-  and object.name ilike sqlc.arg('object_path')::text || '%'
+where object.bucket_id = sqlc.arg('bucket_id')
+  and object.name ilike '%' || sqlc.arg('object_path')::text || '%'
 limit sqlc.arg('limit') offset sqlc.arg('offset');
