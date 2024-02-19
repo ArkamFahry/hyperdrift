@@ -9,6 +9,10 @@ begin
     new.version = 0;
     new.created_at = now();
 
+    if new.allowed_mime_types is not null then
+        new.allowed_mime_types = array(select distinct unnest(new.allowed_mime_types));
+    end if;
+
     return new;
 end;
 $$ language plpgsql;
@@ -26,25 +30,29 @@ $$ language plpgsql;
 
 create table if not exists storage.buckets
 (
-    id                      text                      not null check ( storage.text_non_empty_trimmed_text(id) ),
-    version                 int         default 0     not null check ( version >= 0 ),
-    name                    text                      not null check ( storage.text_non_empty_trimmed_text(name) ),
-    allowed_mime_types      text[]                    null check (
-        storage.array_null_or_contains_empty_trimmed_text(allowed_mime_types)
-            and
-        storage.array_null_or_text_values_unique(allowed_mime_types)
-        ),
-    max_allowed_object_size bigint                    null check ( storage.bigint_null_or_non_zero_bigint(max_allowed_object_size) ),
+    id                      text                      not null,
+    version                 int         default 0     not null,
+    name                    text                      not null,
+    allowed_mime_types      text[]                    null,
+    max_allowed_object_size bigint                    null,
     public                  boolean     default false not null,
     disabled                boolean     default false not null,
     locked                  boolean     default false not null,
-    lock_reason             text check ( storage.text_null_or_non_empty_trimmed_text(lock_reason) ),
+    lock_reason             text                      null,
     locked_at               timestamptz               null,
     created_at              timestamptz default now() not null,
     updated_at              timestamptz               null,
     constraint buckets_id_primary_key primary key (id),
     constraint buckets_id_version_unique unique (id, version),
-    constraint buckets_name_unique unique (name)
+    constraint buckets_name_unique unique (name),
+    constraint buckets_id_check check ( trim(id) <> '' ),
+    constraint buckets_version_check check ( version >= 0 ),
+    constraint buckets_name_check check ( trim(name) <> '' ),
+    constraint buckets_allowed_mime_types_check check ( allowed_mime_types is null or
+                                                        (array_length(allowed_mime_types, 1) > 0 and
+                                                         not '' = any (allowed_mime_types)) ),
+    constraint buckets_max_allowed_object_size_check check ( max_allowed_object_size is null or max_allowed_object_size > 0 ),
+    constraint buckets_lock_reason_check check ( lock_reason is null or trim(lock_reason) <> '' )
 );
 
 create index if not exists buckets_name_index on storage.buckets using btree (name);
