@@ -29,6 +29,9 @@ func (w *ObjectDeletionWorker) Work(ctx context.Context, objectDeletion *river.J
 
 	object, err := w.queries.ObjectGetByIdWithBucketName(ctx, objectDeletion.Args.ObjectId)
 	if err != nil {
+		if database.IsNotFoundError(err) {
+			return nil
+		}
 		w.logger.Error(
 			"failed to get object",
 			zap.Error(err),

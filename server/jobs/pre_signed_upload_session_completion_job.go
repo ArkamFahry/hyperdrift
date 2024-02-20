@@ -31,6 +31,9 @@ func (w *PreSignedUploadSessionCompletionWorker) Work(ctx context.Context, preSi
 
 	object, err := w.queries.ObjectGetByIdWithBucketName(ctx, preSignedUploadSessionCompletion.Args.ObjectId)
 	if err != nil {
+		if database.IsNotFoundError(err) {
+			return nil
+		}
 		w.logger.Error(
 			"failed to get object",
 			zap.Error(err),
