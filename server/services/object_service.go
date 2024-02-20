@@ -312,7 +312,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, obje
 	}
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
+		_, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
 		if err != nil {
 			return err
 		}
@@ -330,19 +330,12 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, obje
 			return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("upload has not yet been completed for object '%s'. delete operation can only be performed on objects that have been uploaded", object.ID), op, reqId, nil)
 		}
 
-		err = os.storage.DeleteObject(ctx, &storage.ObjectDelete{
-			Bucket: bucket.Name,
-			Name:   object.Name,
-		})
+		_, err = os.job.InsertTx(ctx, tx, jobs.ObjectDeletion{
+			ObjectId: object.ID,
+		}, nil)
 		if err != nil {
-			os.logger.Error("failed to delete object from storage", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from storage", op, reqId, err)
-		}
-
-		err = os.queries.WithTx(tx).ObjectDelete(ctx, object.ID)
-		if err != nil {
-			os.logger.Error("failed to delete object from database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object from database", op, reqId, err)
+			os.logger.Error("failed create object deletion job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create object deletion job", op, reqId, err)
 		}
 
 		return nil
@@ -371,9 +364,9 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectI
 		return nil, err
 	}
 
-	object, err := os.queries.ObjectGetByBucketIdAndName(ctx, &database.ObjectGetByBucketIdAndNameParams{
+	object, err := os.queries.ObjectGetByBucketIdAndId(ctx, &database.ObjectGetByBucketIdAndIdParams{
 		BucketID: bucket.Id,
-		Name:     objectId,
+		ID:       objectId,
 	})
 	if err != nil {
 		if database.IsNotFoundError(err) {
