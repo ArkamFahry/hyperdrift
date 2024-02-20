@@ -20,10 +20,9 @@ func (PreSignedUploadSessionCompletion) Kind() string {
 }
 
 type PreSignedUploadSessionCompletionWorker struct {
-	queries     *database.Queries
-	transaction *database.Transaction
-	storage     *storage.S3Storage
-	logger      *zap.Logger
+	queries *database.Queries
+	storage *storage.S3Storage
+	logger  *zap.Logger
 	river.WorkerDefaults[PreSignedUploadSessionCompletion]
 }
 
