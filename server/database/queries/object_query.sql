@@ -81,7 +81,7 @@ from storage.objects
 where name = sqlc.arg('name')
 limit 1;
 
--- name: ObjectGetByBucketIdAndName :one
+-- name: ObjectGetByBucketIdAndId :one
 select id,
        version,
        bucket_id,
@@ -95,7 +95,7 @@ select id,
        updated_at
 from storage.objects
 where bucket_id = sqlc.arg('bucket_id')
-  and name = sqlc.arg('name')
+  and id = sqlc.arg('id')
 limit 1;
 
 -- name: ObjectsListBucketIdPaged :many
