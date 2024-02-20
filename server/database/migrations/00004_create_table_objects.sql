@@ -35,7 +35,6 @@ create table if not exists storage.objects
     metadata         jsonb                                          null,
     upload_status    text        default 'pending'                  not null,
     last_accessed_at timestamptz                                    null,
-    locked_at        timestamptz                                    null,
     created_at       timestamptz default now()                      not null,
     updated_at       timestamptz                                    null,
     constraint objects_id_primary_key primary key (id),
