@@ -359,15 +359,12 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectI
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to get object", op, reqId, nil)
 	}
 
-	bucket, err := os.getBucketById(ctx, bucketId, op)
+	_, err := os.getBucketById(ctx, bucketId, op)
 	if err != nil {
 		return nil, err
 	}
 
-	object, err := os.queries.ObjectGetByBucketIdAndId(ctx, &database.ObjectGetByBucketIdAndIdParams{
-		BucketID: bucket.Id,
-		ID:       objectId,
-	})
+	object, err := os.queries.ObjectGetById(ctx, objectId)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
