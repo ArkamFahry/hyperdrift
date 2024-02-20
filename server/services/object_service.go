@@ -53,12 +53,12 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 	}
 
-	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByIdTxn(ctx, tx, preSignedUploadSessionCreate.BucketId, op)
-		if err != nil {
-			return err
-		}
+	bucket, err := os.getBucketById(ctx, preSignedUploadSessionCreate.BucketId, op)
+	if err != nil {
+		return nil, err
+	}
 
+	err = os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
 		if preSignedUploadSessionCreate.ExpiresIn == nil {
 			preSignedUploadSessionCreate.ExpiresIn = &os.config.DefaultPreSignedUploadUrlExpiry
 		}
@@ -230,12 +230,12 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 		}
 	}
 
-	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
-		if err != nil {
-			return err
-		}
+	bucket, err := os.getBucketById(ctx, bucketId, op)
+	if err != nil {
+		return nil, err
+	}
 
+	err = os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
 		object, err := os.queries.WithTx(tx).ObjectGetById(ctx, objectId)
 		if err != nil {
 			if database.IsNotFoundError(err) {
@@ -311,12 +311,12 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, obje
 		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to delete object", op, reqId, nil)
 	}
 
-	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		_, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
-		if err != nil {
-			return err
-		}
+	_, err := os.getBucketById(ctx, bucketId, op)
+	if err != nil {
+		return err
+	}
 
+	err = os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
 		object, err := os.queries.WithTx(tx).ObjectGetById(ctx, objectId)
 		if err != nil {
 			if database.IsNotFoundError(err) {
@@ -452,46 +452,6 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 	}
 
 	return result, nil
-}
-
-func (os *ObjectService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, bucketId string, op string) (*models.Bucket, error) {
-	reqId := utils.RequestId(ctx)
-
-	if !isNotEmptyTrimmedString(bucketId) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required", op, reqId, nil)
-	}
-
-	bucket, err := os.queries.WithTx(tx).BucketGetById(ctx, bucketId)
-	if err != nil {
-		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketId), op, reqId, err)
-		}
-		os.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, "", err)
-	}
-
-	if bucket.Disabled {
-		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is disabled", bucket.ID), op, reqId, err)
-	}
-
-	if bucket.Locked {
-		return nil, srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s'", bucket.ID, *bucket.LockReason), op, reqId, err)
-	}
-
-	return &models.Bucket{
-		Id:                   bucket.ID,
-		Version:              bucket.Version,
-		Name:                 bucket.Name,
-		AllowedMimeTypes:     bucket.AllowedMimeTypes,
-		MaxAllowedObjectSize: bucket.MaxAllowedObjectSize,
-		Public:               bucket.Public,
-		Disabled:             bucket.Disabled,
-		Locked:               bucket.Locked,
-		LockReason:           bucket.LockReason,
-		LockedAt:             bucket.LockedAt,
-		CreatedAt:            bucket.CreatedAt,
-		UpdatedAt:            bucket.UpdatedAt,
-	}, nil
 }
 
 func (os *ObjectService) getBucketById(ctx context.Context, bucketId string, op string) (*models.Bucket, error) {
