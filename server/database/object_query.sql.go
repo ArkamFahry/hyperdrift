@@ -79,23 +79,9 @@ type ObjectGetByBucketIdAndIdParams struct {
 	ID       string
 }
 
-type ObjectGetByBucketIdAndIdRow struct {
-	ID             string
-	Version        int32
-	BucketID       string
-	Name           string
-	MimeType       string
-	Size           int64
-	Metadata       []byte
-	UploadStatus   string
-	LastAccessedAt *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      *time.Time
-}
-
-func (q *Queries) ObjectGetByBucketIdAndId(ctx context.Context, arg *ObjectGetByBucketIdAndIdParams) (*ObjectGetByBucketIdAndIdRow, error) {
+func (q *Queries) ObjectGetByBucketIdAndId(ctx context.Context, arg *ObjectGetByBucketIdAndIdParams) (*StorageObject, error) {
 	row := q.db.QueryRow(ctx, objectGetByBucketIdAndId, arg.BucketID, arg.ID)
-	var i ObjectGetByBucketIdAndIdRow
+	var i StorageObject
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
@@ -129,23 +115,9 @@ where id = $1
 limit 1
 `
 
-type ObjectGetByIdRow struct {
-	ID             string
-	Version        int32
-	BucketID       string
-	Name           string
-	MimeType       string
-	Size           int64
-	Metadata       []byte
-	UploadStatus   string
-	LastAccessedAt *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      *time.Time
-}
-
-func (q *Queries) ObjectGetById(ctx context.Context, id string) (*ObjectGetByIdRow, error) {
+func (q *Queries) ObjectGetById(ctx context.Context, id string) (*StorageObject, error) {
 	row := q.db.QueryRow(ctx, objectGetById, id)
-	var i ObjectGetByIdRow
+	var i StorageObject
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
@@ -233,23 +205,9 @@ where name = $1
 limit 1
 `
 
-type ObjectGetByNameRow struct {
-	ID             string
-	Version        int32
-	BucketID       string
-	Name           string
-	MimeType       string
-	Size           int64
-	Metadata       []byte
-	UploadStatus   string
-	LastAccessedAt *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      *time.Time
-}
-
-func (q *Queries) ObjectGetByName(ctx context.Context, name string) (*ObjectGetByNameRow, error) {
+func (q *Queries) ObjectGetByName(ctx context.Context, name string) (*StorageObject, error) {
 	row := q.db.QueryRow(ctx, objectGetByName, name)
-	var i ObjectGetByNameRow
+	var i StorageObject
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
@@ -291,21 +249,7 @@ type ObjectSearchByBucketIdAndObjectPathParams struct {
 	Limit      int32
 }
 
-type ObjectSearchByBucketIdAndObjectPathRow struct {
-	ID             string
-	Version        int32
-	BucketID       string
-	Name           string
-	MimeType       string
-	Size           int64
-	Metadata       []byte
-	UploadStatus   string
-	LastAccessedAt *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      *time.Time
-}
-
-func (q *Queries) ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketIdAndObjectPathParams) ([]*ObjectSearchByBucketIdAndObjectPathRow, error) {
+func (q *Queries) ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketIdAndObjectPathParams) ([]*StorageObject, error) {
 	rows, err := q.db.Query(ctx, objectSearchByBucketIdAndObjectPath,
 		arg.BucketID,
 		arg.ObjectPath,
@@ -316,9 +260,9 @@ func (q *Queries) ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*ObjectSearchByBucketIdAndObjectPathRow
+	var items []*StorageObject
 	for rows.Next() {
-		var i ObjectSearchByBucketIdAndObjectPathRow
+		var i StorageObject
 		if err := rows.Scan(
 			&i.ID,
 			&i.Version,

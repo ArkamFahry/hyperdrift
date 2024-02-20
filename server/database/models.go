@@ -42,7 +42,6 @@ type StorageObject struct {
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
-	LockedAt       *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      *time.Time
 }

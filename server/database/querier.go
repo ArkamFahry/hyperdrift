@@ -15,6 +15,7 @@ type Querier interface {
 	BucketDisable(ctx context.Context, id string) error
 	BucketEnable(ctx context.Context, id string) error
 	BucketGetById(ctx context.Context, id string) (*StorageBucket, error)
+	BucketGetByIdForUpdate(ctx context.Context, id string) (*StorageBucket, error)
 	BucketGetByName(ctx context.Context, name string) (*StorageBucket, error)
 	BucketGetObjectCountById(ctx context.Context, id string) (*BucketGetObjectCountByIdRow, error)
 	BucketGetSizeById(ctx context.Context, id string) (*BucketGetSizeByIdRow, error)
@@ -27,11 +28,11 @@ type Querier interface {
 	EventCreate(ctx context.Context, arg *EventCreateParams) (string, error)
 	ObjectCreate(ctx context.Context, arg *ObjectCreateParams) (string, error)
 	ObjectDelete(ctx context.Context, id string) error
-	ObjectGetByBucketIdAndId(ctx context.Context, arg *ObjectGetByBucketIdAndIdParams) (*ObjectGetByBucketIdAndIdRow, error)
-	ObjectGetById(ctx context.Context, id string) (*ObjectGetByIdRow, error)
+	ObjectGetByBucketIdAndId(ctx context.Context, arg *ObjectGetByBucketIdAndIdParams) (*StorageObject, error)
+	ObjectGetById(ctx context.Context, id string) (*StorageObject, error)
 	ObjectGetByIdWithBucketName(ctx context.Context, id string) (*ObjectGetByIdWithBucketNameRow, error)
-	ObjectGetByName(ctx context.Context, name string) (*ObjectGetByNameRow, error)
-	ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketIdAndObjectPathParams) ([]*ObjectSearchByBucketIdAndObjectPathRow, error)
+	ObjectGetByName(ctx context.Context, name string) (*StorageObject, error)
+	ObjectSearchByBucketIdAndObjectPath(ctx context.Context, arg *ObjectSearchByBucketIdAndObjectPathParams) ([]*StorageObject, error)
 	ObjectUpdate(ctx context.Context, arg *ObjectUpdateParams) error
 	ObjectUpdateLastAccessedAt(ctx context.Context, id string) error
 	ObjectUpdateUploadStatus(ctx context.Context, arg *ObjectUpdateUploadStatusParams) error
