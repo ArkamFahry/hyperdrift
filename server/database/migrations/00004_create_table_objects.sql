@@ -5,7 +5,7 @@ create or replace function storage.on_object_create()
     returns trigger as
 $$
 begin
-    new.id = 'object' || '_' || storage.gen_random_ulid();
+    new.id = 'object_' || storage.gen_random_ulid();
     new.version = 0;
     new.created_at = now();
 

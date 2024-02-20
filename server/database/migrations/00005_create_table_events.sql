@@ -5,7 +5,7 @@ create or replace function storage.on_event_create()
     returns trigger as
 $$
 begin
-    new.id = 'event' || '_' || storage.gen_random_ulid();
+    new.id = 'event_' || storage.gen_random_ulid();
     new.version = 0;
     new.created_at = now();
 
