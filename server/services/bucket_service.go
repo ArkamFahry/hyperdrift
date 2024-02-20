@@ -68,9 +68,13 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, bucketUpdate *models.
 	reqId := utils.RequestId(ctx)
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, bucketUpdate.Id, op)
+		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, bucketUpdate.Id)
 		if err != nil {
-			return err
+			if database.IsNotFoundError(err) {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for update", bucketUpdate.Id), op, reqId, err)
+			}
+			bs.logger.Error("failed to get bucket by id for update", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for update", op, reqId, err)
 		}
 
 		if bucket.Disabled {
@@ -131,9 +135,13 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
+		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, id)
 		if err != nil {
-			return err
+			if database.IsNotFoundError(err) {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for enabling", id), op, reqId, err)
+			}
+			bs.logger.Error("failed to get bucket by id for enabling", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for enabling", op, reqId, err)
 		}
 
 		if bucket.Locked {
@@ -173,9 +181,13 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
+		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, id)
 		if err != nil {
-			return err
+			if database.IsNotFoundError(err) {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for disabling", id), op, reqId, err)
+			}
+			bs.logger.Error("failed to get bucket by id for disabling", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for disabling", op, reqId, err)
 		}
 
 		if bucket.Locked {
@@ -215,9 +227,13 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
+		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, id)
 		if err != nil {
-			return err
+			if database.IsNotFoundError(err) {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for emptying", id), op, reqId, err)
+			}
+			bs.logger.Error("failed to get bucket by id for emptying", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for emptying", op, reqId, err)
 		}
 
 		if bucket.Disabled {
@@ -263,9 +279,13 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.getBucketByIdTxn(ctx, tx, id, op)
+		bucket, err := bs.query.BucketGetByIdForUpdate(ctx, id)
 		if err != nil {
-			return err
+			if database.IsNotFoundError(err) {
+				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for deletion", id), op, reqId, err)
+			}
+			bs.logger.Error("failed to get bucket for deletion", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket for deletion", op, reqId, err)
 		}
 
 		if bucket.Disabled {
@@ -431,18 +451,4 @@ func (bs *BucketService) SearchBuckets(ctx context.Context, name string) ([]*mod
 	}
 
 	return result, nil
-}
-
-func (bs *BucketService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, id string, op string) (*database.StorageBucket, error) {
-	reqId := utils.RequestId(ctx)
-
-	bucket, err := bs.query.WithTx(tx).BucketGetById(ctx, id)
-	if err != nil {
-		if database.IsNotFoundError(err) {
-			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", id), op, reqId, err)
-		}
-		bs.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, reqId, err)
-	}
-	return bucket, nil
 }
