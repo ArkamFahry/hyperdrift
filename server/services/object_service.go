@@ -42,42 +42,30 @@ func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.C
 	}
 }
 
-func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucketId string, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*models.PreSignedUploadSession, error) {
+func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*models.PreSignedUploadSession, error) {
 	const op = "ObjectService.CreatePreSignedUploadSession"
 	reqId := utils.RequestId(ctx)
 
 	var preSignedObject *storage.PreSignedObject
 	var id string
 
-	if validateNotEmptyTrimmedString(bucketId) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to create pre-signed upload session", op, reqId, nil)
-	}
-
-	if validateNotEmptyTrimmedString(preSignedUploadSessionCreate.Name) {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, "name cannot be empty. name is required to create pre-signed upload session", op, reqId, nil)
-	}
-
-	if err := validateObjectName(preSignedUploadSessionCreate.Name); err != nil {
-		return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, nil)
+	if err := preSignedUploadSessionCreate.IsValid(); err != nil {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 	}
 
 	err := os.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := os.getBucketByIdTxn(ctx, tx, bucketId, op)
+		bucket, err := os.getBucketByIdTxn(ctx, tx, preSignedUploadSessionCreate.BucketId, op)
 		if err != nil {
 			return err
 		}
 
 		if preSignedUploadSessionCreate.ExpiresIn == nil {
 			preSignedUploadSessionCreate.ExpiresIn = &os.config.DefaultPreSignedUploadUrlExpiry
-		} else {
-			if err = validateExpiration(*preSignedUploadSessionCreate.ExpiresIn); err != nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
-			}
 		}
 
 		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
 			defaultMimeType := models.ObjectDefaultMimeType
-			if preSignedUploadSessionCreate.MimeType == nil || (preSignedUploadSessionCreate.MimeType != nil && *preSignedUploadSessionCreate.MimeType == "") {
+			if preSignedUploadSessionCreate.MimeType == nil || (preSignedUploadSessionCreate.MimeType != nil && strings.Trim(*preSignedUploadSessionCreate.MimeType, " ") == "") {
 				objectNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
 				if len(objectNameParts) > 1 {
 					objectExtension := objectNameParts[len(objectNameParts)-1]
@@ -90,26 +78,15 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, bucke
 				} else {
 					preSignedUploadSessionCreate.MimeType = &defaultMimeType
 				}
-			} else {
-				if err = validateMimeType(*preSignedUploadSessionCreate.MimeType); err != nil {
-					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
-				}
 			}
 		} else {
 			if preSignedUploadSessionCreate.MimeType == nil {
 				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify a allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 			} else {
-				if err = validateMimeType(*preSignedUploadSessionCreate.MimeType); err != nil {
-					return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
-				}
 				if !lo.Contains[string](bucket.AllowedMimeTypes, *preSignedUploadSessionCreate.MimeType) {
 					return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type '%s' is not allowed. bucket only allows [%s] mime types. please specify a allowed mime type", *preSignedUploadSessionCreate.MimeType, strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 				}
 			}
-		}
-
-		if err = validateObjectSize(preSignedUploadSessionCreate.Size); err != nil {
-			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 
 		if bucket.MaxAllowedObjectSize != nil {
@@ -180,11 +157,11 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 	const op = "ObjectService.CompletePreSignedUploadSession"
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketId) {
+	if !isNotEmptyTrimmedString(bucketId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
-	if validateNotEmptyTrimmedString(objectId) {
+	if !isNotEmptyTrimmedString(objectId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object object_id is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
@@ -237,20 +214,19 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 
 	var preSignedDownloadObject models.PreSignedDownloadSession
 
-	if validateNotEmptyTrimmedString(bucketId) {
+	if !isNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to create pre-signed download session", op, reqId, nil)
 	}
 
-	if validateNotEmptyTrimmedString(objectId) {
+	if !isNotEmptyTrimmedString(objectId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to create pre-signed download session", op, reqId, nil)
 	}
 
 	if expiresIn == 0 {
 		expiresIn = os.config.DefaultPreSignedUploadUrlExpiry
 	} else {
-		err := validateExpiration(expiresIn)
-		if err != nil {
-			return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
+		if expiresIn < 0 {
+			return nil, srverr.NewServiceError(srverr.InvalidInputError, "expires_in must be greater than 0", op, reqId, nil)
 		}
 	}
 
@@ -327,11 +303,11 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, obje
 	const op = "ObjectService.DeleteObject"
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketId) {
+	if !isNotEmptyTrimmedString(bucketId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to delete object", op, reqId, nil)
 	}
 
-	if validateNotEmptyTrimmedString(objectId) {
+	if !isNotEmptyTrimmedString(objectId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to delete object", op, reqId, nil)
 	}
 
@@ -382,11 +358,11 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectI
 	const op = "ObjectService.GetObject"
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketId) {
+	if !isNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to get object", op, reqId, nil)
 	}
 
-	if validateNotEmptyTrimmedString(objectId) {
+	if !isNotEmptyTrimmedString(objectId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to get object", op, reqId, nil)
 	}
 
@@ -430,11 +406,11 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 	const op = "ObjectService.SearchObjects"
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketId) {
+	if !isNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to search objects", op, reqId, nil)
 	}
 
-	if validateNotEmptyTrimmedString(objectPath) {
+	if !isNotEmptyTrimmedString(objectPath) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_path cannot be empty. object_path is required to search objects", op, reqId, nil)
 	}
 
@@ -488,7 +464,7 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 func (os *ObjectService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, bucketId string, op string) (*models.Bucket, error) {
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketId) {
+	if !isNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required", op, reqId, nil)
 	}
 
@@ -528,7 +504,7 @@ func (os *ObjectService) getBucketByIdTxn(ctx context.Context, tx pgx.Tx, bucket
 func (os *ObjectService) getBucketById(ctx context.Context, bucketId string, op string) (*models.Bucket, error) {
 	reqId := utils.RequestId(ctx)
 
-	if validateNotEmptyTrimmedString(bucketId) {
+	if !isNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required", op, reqId, nil)
 	}
 
