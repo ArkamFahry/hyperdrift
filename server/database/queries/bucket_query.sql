@@ -78,6 +78,23 @@ from storage.buckets
 where name = sqlc.arg('name')
 limit 1;
 
+-- name: BucketGetByIdForUpdate :one
+select id,
+       version,
+       name,
+       allowed_mime_types,
+       max_allowed_object_size,
+       public,
+       disabled,
+       locked,
+       lock_reason,
+       locked_at,
+       created_at,
+       updated_at
+from storage.buckets
+where id = sqlc.arg('id')
+limit 1 for update;
+
 -- name: BucketListAll :many
 select id,
        version,
