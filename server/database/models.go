@@ -27,7 +27,6 @@ type StorageEvent struct {
 	ID            string
 	Version       int32
 	AggregateType string
-	AggregateID   string
 	EventType     string
 	Payload       []byte
 	CreatedAt     time.Time

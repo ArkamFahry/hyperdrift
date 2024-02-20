@@ -27,7 +27,7 @@ type Querier interface {
 	EventCreate(ctx context.Context, arg *EventCreateParams) (string, error)
 	ObjectCreate(ctx context.Context, arg *ObjectCreateParams) (string, error)
 	ObjectDelete(ctx context.Context, id string) error
-	ObjectGetByBucketIdAndName(ctx context.Context, arg *ObjectGetByBucketIdAndNameParams) (*ObjectGetByBucketIdAndNameRow, error)
+	ObjectGetByBucketIdAndId(ctx context.Context, arg *ObjectGetByBucketIdAndIdParams) (*ObjectGetByBucketIdAndIdRow, error)
 	ObjectGetById(ctx context.Context, id string) (*ObjectGetByIdRow, error)
 	ObjectGetByIdWithBucketName(ctx context.Context, id string) (*ObjectGetByIdWithBucketNameRow, error)
 	ObjectGetByName(ctx context.Context, name string) (*ObjectGetByNameRow, error)

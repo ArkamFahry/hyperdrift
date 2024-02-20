@@ -56,7 +56,7 @@ func (q *Queries) ObjectDelete(ctx context.Context, id string) error {
 	return err
 }
 
-const objectGetByBucketIdAndName = `-- name: ObjectGetByBucketIdAndName :one
+const objectGetByBucketIdAndId = `-- name: ObjectGetByBucketIdAndId :one
 select id,
        version,
        bucket_id,
@@ -70,16 +70,16 @@ select id,
        updated_at
 from storage.objects
 where bucket_id = $1
-  and name = $2
+  and id = $2
 limit 1
 `
 
-type ObjectGetByBucketIdAndNameParams struct {
+type ObjectGetByBucketIdAndIdParams struct {
 	BucketID string
-	Name     string
+	ID       string
 }
 
-type ObjectGetByBucketIdAndNameRow struct {
+type ObjectGetByBucketIdAndIdRow struct {
 	ID             string
 	Version        int32
 	BucketID       string
@@ -93,9 +93,9 @@ type ObjectGetByBucketIdAndNameRow struct {
 	UpdatedAt      *time.Time
 }
 
-func (q *Queries) ObjectGetByBucketIdAndName(ctx context.Context, arg *ObjectGetByBucketIdAndNameParams) (*ObjectGetByBucketIdAndNameRow, error) {
-	row := q.db.QueryRow(ctx, objectGetByBucketIdAndName, arg.BucketID, arg.Name)
-	var i ObjectGetByBucketIdAndNameRow
+func (q *Queries) ObjectGetByBucketIdAndId(ctx context.Context, arg *ObjectGetByBucketIdAndIdParams) (*ObjectGetByBucketIdAndIdRow, error) {
+	row := q.db.QueryRow(ctx, objectGetByBucketIdAndId, arg.BucketID, arg.ID)
+	var i ObjectGetByBucketIdAndIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,
