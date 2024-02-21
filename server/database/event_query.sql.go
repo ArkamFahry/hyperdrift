@@ -11,27 +11,20 @@ import (
 
 const eventCreate = `-- name: EventCreate :one
 insert into storage.events
-    (aggregate_type, aggregate_id, event_type, payload)
+    (aggregate_type, event_type, payload)
 values ($1,
         $2,
-        $3,
-        $4) returning id
+        $3) returning id
 `
 
 type EventCreateParams struct {
 	AggregateType string
-	AggregateID   string
 	EventType     string
 	Payload       []byte
 }
 
 func (q *Queries) EventCreate(ctx context.Context, arg *EventCreateParams) (string, error) {
-	row := q.db.QueryRow(ctx, eventCreate,
-		arg.AggregateType,
-		arg.AggregateID,
-		arg.EventType,
-		arg.Payload,
-	)
+	row := q.db.QueryRow(ctx, eventCreate, arg.AggregateType, arg.EventType, arg.Payload)
 	var id string
 	err := row.Scan(&id)
 	return id, err

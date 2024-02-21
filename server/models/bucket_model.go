@@ -1,6 +1,11 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"github.com/samber/lo"
+	"strings"
+	"time"
+)
 
 const (
 	BucketLockedReasonBucketDeletion = "bucket.deletion"
@@ -57,7 +62,51 @@ type BucketCreate struct {
 	Public bool `json:"public" default:"false" example:"false" extensions:"x-nullable"`
 }
 
+func (b *BucketCreate) IsValid() error {
+	if !isNotEmptyTrimmedString(b.Name) {
+		return fmt.Errorf("bucket name cannot be empty. bucket name is required to create bucket")
+	}
+
+	if !isValidBucketName(b.Name) {
+		return fmt.Errorf("bucket name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters")
+	}
+
+	if b.AllowedMimeTypes != nil {
+		if len(b.AllowedMimeTypes) > 1 {
+			if lo.Contains[string](b.AllowedMimeTypes, BucketAllowedMimeTypesWildcard) {
+				return fmt.Errorf("bucket allowed_mime_types cannot contain wild card ('*/*') and other mime types at the same time")
+			}
+		}
+
+		var invalidMimeTypes []string
+		for _, allowedMimeType := range b.AllowedMimeTypes {
+			if !isValidMimeType(allowedMimeType) {
+				invalidMimeTypes = append(invalidMimeTypes, allowedMimeType)
+			}
+		}
+
+		if len(invalidMimeTypes) > 0 {
+			return fmt.Errorf("bucket allowed_mime_types is not valid. invalid mime types: [%s]. allowed mime types must be in the format 'type/subtype'", strings.Join(invalidMimeTypes, ", "))
+		}
+	}
+
+	if b.MaxAllowedObjectSize != nil {
+		if *b.MaxAllowedObjectSize <= 0 {
+			return fmt.Errorf("bucket max_allowed_object_size must be greater than 0")
+		}
+	}
+
+	return nil
+}
+
+func (b *BucketCreate) PreSave() {
+	if b.AllowedMimeTypes == nil {
+		b.AllowedMimeTypes = []string{BucketAllowedMimeTypesWildcard}
+	}
+}
+
 type BucketUpdate struct {
+	Id string `json:"-" params:"id" example:"bucket_01HPG4GN5JY2Z6S0638ERSG375"`
 	//	`allowed_mime_types` should be a list of valid mimetypes,
 	//	or it can be empty list or `null` then the system would infer it as wild card `*/*` allowing all content types.
 	//	if a list mime types are being sent all of them should be valid.
@@ -76,4 +125,37 @@ type BucketUpdate struct {
 		if public is false the bucket will only accessible with authentication. if set to `null` defaults to `false`
 	*/
 	Public *bool `json:"public" example:"false" extensions:"x-nullable"`
+}
+
+func (b *BucketUpdate) IsValid() error {
+	if !isNotEmptyTrimmedString(b.Id) {
+		return fmt.Errorf("bucket id cannot be empty. bucket id is required to update bucket")
+	}
+
+	if b.AllowedMimeTypes != nil {
+		if len(b.AllowedMimeTypes) > 1 {
+			if lo.Contains[string](b.AllowedMimeTypes, BucketAllowedMimeTypesWildcard) {
+				return fmt.Errorf("bucket allowed_mime_types cannot contain wild card ('*/*') and other mime types at the same time")
+			}
+		}
+
+		var invalidMimeTypes []string
+		for _, allowedMimeType := range b.AllowedMimeTypes {
+			if !isValidMimeType(allowedMimeType) {
+				invalidMimeTypes = append(invalidMimeTypes, allowedMimeType)
+			}
+		}
+
+		if len(invalidMimeTypes) > 0 {
+			return fmt.Errorf("bucket allowed_mime_types is not valid. invalid mime types: [%s], allowed mime types must be in the format 'type/subtype'", strings.Join(invalidMimeTypes, ", "))
+		}
+	}
+
+	if b.MaxAllowedObjectSize != nil {
+		if *b.MaxAllowedObjectSize <= 0 {
+			return fmt.Errorf("bucket max_allowed_object_size must be greater than 0")
+		}
+	}
+
+	return nil
 }

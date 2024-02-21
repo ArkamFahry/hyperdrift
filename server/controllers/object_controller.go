@@ -44,14 +44,14 @@ func (oc *ObjectController) RegisterObjectRoutes(app *fiber.App) {
 func (oc *ObjectController) CreatePreSignedUploadSession(ctx *fiber.Ctx) error {
 	var preSignedUploadObjectCreate models.PreSignedUploadSessionCreate
 
-	bucketId := ctx.Params("bucket_id")
+	preSignedUploadObjectCreate.BucketId = ctx.Params("bucket_id")
 
 	err := ctx.BodyParser(&preSignedUploadObjectCreate)
 	if err != nil {
 		return err
 	}
 
-	preSignedUploadObject, err := oc.objectService.CreatePreSignedUploadSession(ctx.Context(), bucketId, &preSignedUploadObjectCreate)
+	preSignedUploadObject, err := oc.objectService.CreatePreSignedUploadSession(ctx.Context(), &preSignedUploadObjectCreate)
 	if err != nil {
 		return err
 	}

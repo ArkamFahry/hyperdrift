@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const (
 	ObjectUploadStatusPending   = "pending"
@@ -37,9 +40,36 @@ type PreSignedDownloadSession struct {
 }
 
 type PreSignedUploadSessionCreate struct {
+	BucketId  string         `json:"-" params:"bucket_id" example:"bucket_01HPG4GN5JY2Z6S0638ERSG375"`
 	Name      string         `json:"name" example:"user/david/avatar.jpg"`
 	MimeType  *string        `json:"mime_type" example:"image/jpeg" extensions:"x-nullable"`
 	Size      int64          `json:"size" example:"1218077"`
 	Metadata  map[string]any `json:"metadata" extensions:"x-nullable"`
 	ExpiresIn *int64         `json:"expires_in" example:"600" extensions:"x-nullable"`
+}
+
+func (p *PreSignedUploadSessionCreate) IsValid() error {
+	if !isNotEmptyTrimmedString(p.BucketId) {
+		return fmt.Errorf("bucket id cannot be empty. bucket id is required to create a pre-signed upload session for an object")
+	}
+	if !isNotEmptyTrimmedString(p.Name) {
+		return fmt.Errorf("object name cannot be empty. name is required to create a pre-signed upload session for an object")
+	}
+
+	if !isValidObjectName(p.Name) {
+		return fmt.Errorf("invalid object name '%s'. object name cannot start or end with '/' and must be between 1 and 961 characters", p.Name)
+	}
+
+	if p.MimeType != nil {
+		if !isValidMimeType(*p.MimeType) {
+			return fmt.Errorf("invalid mime type '%s'. mime type must be in the format 'type/subtype'", *p.MimeType)
+		}
+	}
+
+	if p.ExpiresIn != nil {
+		if *p.ExpiresIn <= 0 {
+			return fmt.Errorf("expires in must be greater than 0")
+		}
+	}
+	return nil
 }

@@ -27,7 +27,6 @@ type StorageEvent struct {
 	ID            string
 	Version       int32
 	AggregateType string
-	AggregateID   string
 	EventType     string
 	Payload       []byte
 	CreatedAt     time.Time
@@ -43,7 +42,6 @@ type StorageObject struct {
 	Metadata       []byte
 	UploadStatus   string
 	LastAccessedAt *time.Time
-	LockedAt       *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      *time.Time
 }

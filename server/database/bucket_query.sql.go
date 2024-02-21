@@ -121,6 +121,44 @@ func (q *Queries) BucketGetById(ctx context.Context, id string) (*StorageBucket,
 	return &i, err
 }
 
+const bucketGetByIdForUpdate = `-- name: BucketGetByIdForUpdate :one
+select id,
+       version,
+       name,
+       allowed_mime_types,
+       max_allowed_object_size,
+       public,
+       disabled,
+       locked,
+       lock_reason,
+       locked_at,
+       created_at,
+       updated_at
+from storage.buckets
+where id = $1
+limit 1 for update
+`
+
+func (q *Queries) BucketGetByIdForUpdate(ctx context.Context, id string) (*StorageBucket, error) {
+	row := q.db.QueryRow(ctx, bucketGetByIdForUpdate, id)
+	var i StorageBucket
+	err := row.Scan(
+		&i.ID,
+		&i.Version,
+		&i.Name,
+		&i.AllowedMimeTypes,
+		&i.MaxAllowedObjectSize,
+		&i.Public,
+		&i.Disabled,
+		&i.Locked,
+		&i.LockReason,
+		&i.LockedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
 const bucketGetByName = `-- name: BucketGetByName :one
 select id,
        version,

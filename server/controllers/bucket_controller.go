@@ -75,14 +75,14 @@ func (bc *BucketController) CreateBucket(ctx *fiber.Ctx) error {
 func (bc *BucketController) UpdateBucket(ctx *fiber.Ctx) error {
 	var bucketUpdate models.BucketUpdate
 
-	id := ctx.Params("bucket_id")
+	bucketUpdate.Id = ctx.Params("bucket_id")
 
 	err := ctx.BodyParser(&bucketUpdate)
 	if err != nil {
 		return err
 	}
 
-	updatedBucket, err := bc.bucketService.UpdateBucket(ctx.Context(), id, &bucketUpdate)
+	updatedBucket, err := bc.bucketService.UpdateBucket(ctx.Context(), &bucketUpdate)
 	if err != nil {
 		return err
 	}
