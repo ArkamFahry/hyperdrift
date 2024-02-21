@@ -126,7 +126,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 		_, err = os.job.InsertTx(ctx, tx, jobs.PreSignedUploadSessionCompletion{
 			ObjectId: id,
 		}, &river.InsertOpts{
-			ScheduledAt: time.Unix(preSignedObject.ExpiresAt, 0).Add(time.Second * 10),
+			ScheduledAt: time.Unix(preSignedObject.ExpiresAt, 0).Add(time.Minute * 1),
 		})
 		if err != nil {
 			os.logger.Error("failed to create pre-signed object upload completion job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
@@ -368,15 +368,16 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectI
 	}
 
 	return &models.Object{
-		Id:           object.ID,
-		BucketId:     object.BucketID,
-		Name:         object.Name,
-		MimeType:     object.MimeType,
-		Size:         object.Size,
-		Metadata:     bytesToMetadata(object.Metadata),
-		UploadStatus: object.UploadStatus,
-		CreatedAt:    object.CreatedAt,
-		UpdatedAt:    object.UpdatedAt,
+		Id:             object.ID,
+		BucketId:       object.BucketID,
+		Name:           object.Name,
+		MimeType:       object.MimeType,
+		Size:           object.Size,
+		Metadata:       bytesToMetadata(object.Metadata),
+		UploadStatus:   object.UploadStatus,
+		LastAccessedAt: object.LastAccessedAt,
+		CreatedAt:      object.CreatedAt,
+		UpdatedAt:      object.UpdatedAt,
 	}, nil
 }
 
@@ -422,16 +423,17 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 
 	for _, object := range objects {
 		result = append(result, &models.Object{
-			Id:           object.ID,
-			Version:      object.Version,
-			BucketId:     object.BucketID,
-			Name:         object.Name,
-			MimeType:     object.MimeType,
-			Size:         object.Size,
-			Metadata:     bytesToMetadata(object.Metadata),
-			UploadStatus: object.UploadStatus,
-			CreatedAt:    object.CreatedAt,
-			UpdatedAt:    object.UpdatedAt,
+			Id:             object.ID,
+			Version:        object.Version,
+			BucketId:       object.BucketID,
+			Name:           object.Name,
+			MimeType:       object.MimeType,
+			Size:           object.Size,
+			Metadata:       bytesToMetadata(object.Metadata),
+			UploadStatus:   object.UploadStatus,
+			LastAccessedAt: object.LastAccessedAt,
+			CreatedAt:      object.CreatedAt,
+			UpdatedAt:      object.UpdatedAt,
 		})
 	}
 
