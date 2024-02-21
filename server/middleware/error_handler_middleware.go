@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/ArkamFahry/storage/server/srverr"
 	"github.com/ArkamFahry/storage/server/utils"
@@ -29,11 +30,12 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 		StatusCode: fiber.StatusInternalServerError,
 		Message:    "internal server error",
 		Path:       ctx.Path(),
-		RequestId:  ctx.Get("X-Request-Id"),
+		RequestId:  utils.RequestId(ctx.Context()),
 	}
 
 	var srvError srverr.ServiceError
 	var fiberError *fiber.Error
+	var jsonSyntaxError *json.SyntaxError
 
 	if err != nil {
 		if errors.As(err, &srvError) {
@@ -59,6 +61,13 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 		if errors.As(err, &fiberError) {
 			httpError.StatusCode = fiberError.Code
 			httpError.Message = fiberError.Message
+			httpError.Path = ctx.Path()
+			httpError.RequestId = utils.RequestId(ctx.Context())
+		}
+
+		if errors.As(err, &jsonSyntaxError) {
+			httpError.StatusCode = fiber.StatusBadRequest
+			httpError.Message = jsonSyntaxError.Error()
 			httpError.Path = ctx.Path()
 			httpError.RequestId = utils.RequestId(ctx.Context())
 		}
