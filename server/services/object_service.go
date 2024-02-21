@@ -81,10 +81,10 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 			}
 		} else {
 			if preSignedUploadSessionCreate.MimeType == nil {
-				return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify a allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
+				return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify a allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 			} else {
 				if !lo.Contains[string](bucket.AllowedMimeTypes, *preSignedUploadSessionCreate.MimeType) {
-					return srverr.NewServiceError(srverr.InvalidInputError, fmt.Sprintf("mime_type '%s' is not allowed. bucket only allows [%s] mime types. please specify a allowed mime type", *preSignedUploadSessionCreate.MimeType, strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
+					return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("mime_type '%s' is not allowed. bucket only allows [%s] mime types. please specify a allowed mime type", *preSignedUploadSessionCreate.MimeType, strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
 				}
 			}
 		}
@@ -104,13 +104,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 		})
 		if err != nil {
 			os.logger.Error("failed to create pre-signed upload object", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed upload object", op, reqId, err)
-		}
-
-		metadataBytes, err := metadataToBytes(preSignedUploadSessionCreate.Metadata)
-		if err != nil {
-			os.logger.Error("failed to convert metadata to bytes", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata to bytes", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed upload session", op, reqId, err)
 		}
 
 		id, err = os.queries.WithTx(tx).ObjectCreate(ctx, &database.ObjectCreateParams{
@@ -118,7 +112,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 			Name:         preSignedUploadSessionCreate.Name,
 			ContentType:  preSignedUploadSessionCreate.MimeType,
 			Size:         preSignedUploadSessionCreate.Size,
-			Metadata:     metadataBytes,
+			Metadata:     metadataToBytes(preSignedUploadSessionCreate.Metadata),
 			UploadStatus: models.ObjectUploadStatusPending,
 		})
 		if err != nil {
@@ -126,7 +120,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 				return srverr.NewServiceError(srverr.ConflictError, fmt.Sprintf("object with name '%s' already exists", preSignedUploadSessionCreate.Name), op, reqId, err)
 			}
 			os.logger.Error("failed to create object in database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create object in database", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed upload session", op, reqId, err)
 		}
 
 		_, err = os.job.InsertTx(ctx, tx, jobs.PreSignedUploadSessionCompletion{
@@ -136,7 +130,7 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 		})
 		if err != nil {
 			os.logger.Error("failed to create pre-signed object upload completion job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed object upload completion job", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed upload session", op, reqId, err)
 		}
 
 		return nil
@@ -176,7 +170,7 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 			return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
 		}
 		os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, reqId, err)
+		return srverr.NewServiceError(srverr.UnknownError, "failed to complete pre-signed upload session", op, reqId, err)
 	}
 
 	if object.UploadStatus == models.ObjectUploadStatusCompleted {
@@ -189,7 +183,7 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 	})
 	if err != nil {
 		os.logger.Error("failed to check if object exists in storage", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return srverr.NewServiceError(srverr.UnknownError, "failed to check if object exists in storage", op, reqId, err)
+		return srverr.NewServiceError(srverr.UnknownError, "failed to complete pre-signed upload session", op, reqId, err)
 	}
 
 	if objectExists {
@@ -199,10 +193,10 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 		})
 		if err != nil {
 			os.logger.Error("failed to update object upload status in database to completed", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to update object upload status to completed", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to complete pre-signed upload session", op, reqId, err)
 		}
 	} else {
-		return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' has not yet been uploaded to storage", objectId), op, reqId, nil)
+		return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("object '%s' has not yet been uploaded to storage", objectId), op, reqId, nil)
 	}
 
 	return nil
@@ -242,7 +236,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
 			}
 			os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download session", op, reqId, err)
 		}
 
 		if object.UploadStatus == models.ObjectUploadStatusPending {
@@ -252,7 +246,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 			})
 			if err != nil {
 				os.logger.Error("failed to check if object exists in storage", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-				return srverr.NewServiceError(srverr.UnknownError, "failed to check if object exists in storage", op, reqId, err)
+				return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download session", op, reqId, err)
 			}
 
 			if objectExists {
@@ -262,7 +256,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 				})
 				if err != nil {
 					os.logger.Error("failed to update object upload status in database to completed", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-					return srverr.NewServiceError(srverr.UnknownError, "failed to update object upload status in database to completed", op, reqId, err)
+					return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download session", op, reqId, err)
 				}
 			} else {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' upload has not been completed", object.ID), op, reqId, nil)
@@ -281,7 +275,7 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 		err = os.queries.WithTx(tx).ObjectUpdateLastAccessedAt(ctx, object.ID)
 		if err != nil {
 			os.logger.Error("failed to update object last accessed at", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to update object last accessed at", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create pre-signed download session", op, reqId, err)
 		}
 
 		preSignedDownloadObject = models.PreSignedDownloadSession{
@@ -323,7 +317,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, obje
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
 			}
 			os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object", op, reqId, err)
 		}
 
 		if object.UploadStatus == models.ObjectUploadStatusPending {
@@ -335,7 +329,7 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, obje
 		}, nil)
 		if err != nil {
 			os.logger.Error("failed create object deletion job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create object deletion job", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to delete object", op, reqId, err)
 		}
 
 		return nil
@@ -369,14 +363,8 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectI
 		if database.IsNotFoundError(err) {
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("object '%s' not found", objectId), op, reqId, err)
 		}
-		os.logger.Error("failed to get object from database", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get object from database", op, reqId, err)
-	}
-
-	metadataMap, err := bytesToMetadata(object.Metadata)
-	if err != nil {
-		os.logger.Error("failed to convert metadata from bytes", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to convert metadata from bytes", op, reqId, err)
+		os.logger.Error("failed to get object", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get object", op, reqId, err)
 	}
 
 	return &models.Object{
@@ -385,7 +373,7 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectI
 		Name:         object.Name,
 		MimeType:     object.MimeType,
 		Size:         object.Size,
-		Metadata:     metadataMap,
+		Metadata:     bytesToMetadata(object.Metadata),
 		UploadStatus: object.UploadStatus,
 		CreatedAt:    object.CreatedAt,
 		UpdatedAt:    object.UpdatedAt,
@@ -433,7 +421,6 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 	var result []*models.Object
 
 	for _, object := range objects {
-		metadataMap, _ := bytesToMetadata(object.Metadata)
 		result = append(result, &models.Object{
 			Id:           object.ID,
 			Version:      object.Version,
@@ -441,7 +428,7 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 			Name:         object.Name,
 			MimeType:     object.MimeType,
 			Size:         object.Size,
-			Metadata:     metadataMap,
+			Metadata:     bytesToMetadata(object.Metadata),
 			UploadStatus: object.UploadStatus,
 			CreatedAt:    object.CreatedAt,
 			UpdatedAt:    object.UpdatedAt,
@@ -464,7 +451,7 @@ func (os *ObjectService) getBucketById(ctx context.Context, bucketId string, op 
 			return nil, srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found", bucketId), op, reqId, err)
 		}
 		os.logger.Error("failed to get bucket by id", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id", op, reqId, err)
+		return nil, srverr.NewServiceError(srverr.UnknownError, "failed to get bucket", op, reqId, err)
 	}
 
 	if bucket.Disabled {
