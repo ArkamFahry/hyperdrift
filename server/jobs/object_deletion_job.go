@@ -5,6 +5,7 @@ import (
 	"github.com/ArkamFahry/storage/server/database"
 	"github.com/ArkamFahry/storage/server/storage"
 	"github.com/ArkamFahry/storage/server/zapfield"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"
 )
@@ -68,4 +69,12 @@ func (w *ObjectDeletionWorker) Work(ctx context.Context, objectDeletion *river.J
 	}
 
 	return nil
+}
+
+func NewObjectDeletionWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *ObjectDeletionWorker {
+	return &ObjectDeletionWorker{
+		queries: database.New(db),
+		storage: storage,
+		logger:  logger,
+	}
 }

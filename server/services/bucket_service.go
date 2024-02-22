@@ -74,7 +74,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, bucketUpdate *models.
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for update", bucketUpdate.Id), op, reqId, err)
 			}
 			bs.logger.Error("failed to get bucket by id for update", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for update", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to update bucket", op, reqId, err)
 		}
 
 		if bucket.Disabled {
@@ -141,7 +141,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for enabling", id), op, reqId, err)
 			}
 			bs.logger.Error("failed to get bucket by id for enabling", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for enabling", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed enable bucket", op, reqId, err)
 		}
 
 		if bucket.Locked {
@@ -187,7 +187,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for disabling", id), op, reqId, err)
 			}
 			bs.logger.Error("failed to get bucket by id for disabling", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for disabling", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to disable bucket", op, reqId, err)
 		}
 
 		if bucket.Locked {
@@ -233,7 +233,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for emptying", id), op, reqId, err)
 			}
 			bs.logger.Error("failed to get bucket by id for emptying", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket by id for emptying", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to empty bucket", op, reqId, err)
 		}
 
 		if bucket.Disabled {
@@ -257,8 +257,8 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 			BucketId: bucket.ID,
 		}, nil)
 		if err != nil {
-			bs.logger.Error("failed to create bucket empty job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket empty job", op, reqId, err)
+			bs.logger.Error("failed to create bucket emptying job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket emptying job", op, reqId, err)
 		}
 
 		return nil
@@ -285,7 +285,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for deletion", id), op, reqId, err)
 			}
 			bs.logger.Error("failed to get bucket for deletion", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to get bucket for deletion", op, reqId, err)
+			return srverr.NewServiceError(srverr.UnknownError, "failed to to delete bucket", op, reqId, err)
 		}
 
 		if bucket.Disabled {
@@ -309,8 +309,8 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 			BucketId: bucket.ID,
 		}, nil)
 		if err != nil {
-			bs.logger.Error("failed to create bucket delete job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
-			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket delete job", op, reqId, err)
+			bs.logger.Error("failed to create bucket deletion job", zap.Error(err), zapfield.Operation(op), zapfield.RequestId(reqId))
+			return srverr.NewServiceError(srverr.UnknownError, "failed to create bucket deletion job", op, reqId, err)
 		}
 
 		return nil

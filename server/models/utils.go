@@ -15,9 +15,9 @@ func isValidBucketName(name string) bool {
 	}
 
 	if regex.MatchString(name) {
-		return false
-	} else {
 		return true
+	} else {
+		return false
 	}
 }
 

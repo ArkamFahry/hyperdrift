@@ -127,6 +127,13 @@ func main() {
 		)
 	}
 
+	if err = river.AddWorkerSafely[jobs.ObjectDeletion](workers, jobs.NewObjectDeletionWorker(pgxPool, appStorage, appLogger)); err != nil {
+		appLogger.Fatal("error adding object deletion worker",
+			zap.Error(err),
+			zapfield.Operation(op),
+		)
+	}
+
 	riverClient, err := river.NewClient[pgx.Tx](riverPgx, &river.Config{
 		Queues: map[string]river.QueueConfig{
 			river.QueueDefault: {MaxWorkers: 100},
