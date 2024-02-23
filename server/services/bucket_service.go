@@ -67,6 +67,10 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, bucketUpdate *models.
 	const op = "BucketService.UpdateBucket"
 	reqId := utils.RequestId(ctx)
 
+	if err := bucketUpdate.IsValid(); err != nil {
+		return nil, srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
+	}
+
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
 		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, bucketUpdate.Id)
 		if err != nil {
@@ -83,10 +87,6 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, bucketUpdate *models.
 
 		if bucket.Locked {
 			return srverr.NewServiceError(srverr.ForbiddenError, fmt.Sprintf("bucket '%s' is locked for '%s' and cannot be updated", bucket.ID, *bucket.LockReason), op, reqId, nil)
-		}
-
-		if err = bucketUpdate.IsValid(); err != nil {
-			return srverr.NewServiceError(srverr.InvalidInputError, err.Error(), op, reqId, err)
 		}
 
 		if bucketUpdate.AllowedMimeTypes != nil {
