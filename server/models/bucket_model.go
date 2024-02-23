@@ -100,6 +100,8 @@ func (b *BucketCreate) IsValid() error {
 }
 
 func (b *BucketCreate) PreSave() {
+	b.Name = strings.TrimSpace(b.Name)
+
 	if b.AllowedMimeTypes == nil {
 		b.AllowedMimeTypes = []string{BucketAllowedMimeTypesWildcard}
 	}
