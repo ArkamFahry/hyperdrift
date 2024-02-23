@@ -11,7 +11,7 @@ func isValidBucketName(name string) bool {
 	regex := regexp.MustCompile(regexPattern)
 
 	if len(name) < 3 || len(name) > 63 {
-		return true
+		return false
 	}
 
 	if regex.MatchString(name) {
@@ -26,14 +26,18 @@ func isValidObjectName(name string) bool {
 		return false
 	}
 
+	if strings.ContainsRune(name, '\n') || strings.ContainsRune(name, '\t') {
+		return false
+	}
+
 	if len(name) < 1 || len(name) > 961 {
 		return false
 	}
 
 	pattern := `^[\s\S]+$`
-	re := regexp.MustCompile(pattern)
+	regex := regexp.MustCompile(pattern)
 
-	if re.MatchString(name) {
+	if regex.MatchString(name) {
 		return true
 	} else {
 		return false
@@ -43,9 +47,9 @@ func isValidObjectName(name string) bool {
 func isValidMimeType(mimeType string) bool {
 	mimeTypePattern := `^[a-zA-Z]+/[a-zA-Z0-9\-\.\+]+$`
 
-	re := regexp.MustCompile(mimeTypePattern)
+	regex := regexp.MustCompile(mimeTypePattern)
 
-	if re.MatchString(mimeType) {
+	if regex.MatchString(mimeType) {
 		return true
 	} else {
 		return false
