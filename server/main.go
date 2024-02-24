@@ -183,11 +183,11 @@ func main() {
 		)
 	}
 
-	err = appServer.Listen(":" + appConfig.ServerPort)
+	err = appServer.Listen(":" + appConfig.ServicePort)
 	if err != nil {
 		appLogger.Fatal("error starting fiber server",
 			zap.Error(err),
-			zap.String("port", appConfig.ServerPort),
+			zap.String("port", appConfig.ServicePort),
 			zapfield.Operation(op),
 		)
 	}

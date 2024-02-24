@@ -9,12 +9,12 @@ import (
 )
 
 type Config struct {
-	ServerId          string `json:"server_id" mapstructure:"server_id"`
-	ServerName        string `json:"server_name" mapstructure:"server_name"`
-	ServerEnvironment string `json:"server_environment" mapstructure:"server_environment"`
-	ServerHost        string `json:"server_host" mapstructure:"server_host"`
-	ServerPort        string `json:"server_port" mapstructure:"server_port"`
-	ServerApiKey      string `json:"server_api_key" mapstructure:"server_api_key"`
+	ServiceId          string `json:"service_id" mapstructure:"service_id"`
+	ServiceName        string `json:"service_name" mapstructure:"service_name"`
+	ServiceEnvironment string `json:"service_environment" mapstructure:"service_environment"`
+	ServiceHost        string `json:"service_host" mapstructure:"service_host"`
+	ServicePort        string `json:"service_port" mapstructure:"service_port"`
+	ServiceApiKey      string `json:"service_api_key" mapstructure:"service_api_key"`
 
 	PostgresUrl string `json:"postgres_url" mapstructure:"postgres_url"`
 
@@ -37,6 +37,68 @@ type Config struct {
 
 	DefaultPreSignedUploadUrlExpiry   int64 `json:"default_pre_signed_upload_url_expiry" mapstructure:"default_pre_signed_upload_url_expiry"`
 	DefaultPreSignedDownloadUrlExpiry int64 `json:"default_pre_signed_download_url_expiry" mapstructure:"default_pre_signed_download_url_expiry"`
+}
+
+func (c *Config) SetDefaults() {
+	if c.ServiceId == "" {
+		c.ServiceId = uuid.New().String()
+	}
+
+	if c.ServiceName == "" {
+		c.ServiceName = "hyperdrift-storage"
+	}
+
+	if c.ServiceEnvironment == "" {
+		c.ServiceEnvironment = "prod"
+	}
+
+	if c.ServiceHost == "" {
+		c.ServiceHost = "0.0.0.0"
+	}
+
+	if c.ServicePort == "" {
+		c.ServicePort = "3001"
+	}
+
+	if c.S3Region == "" {
+		c.S3Region = "us-east-1"
+	}
+
+	if c.DefaultPreSignedUploadUrlExpiry == 0 {
+		c.DefaultPreSignedUploadUrlExpiry = 120
+	}
+
+	if c.DefaultPreSignedDownloadUrlExpiry == 0 {
+		c.DefaultPreSignedDownloadUrlExpiry = 300
+	}
+}
+
+func (c *Config) IsValid() error {
+	if c.ServiceApiKey == "" {
+		return errors.New("server_api_key is a required")
+	}
+
+	if c.PostgresUrl == "" {
+		return errors.New("postgres_url is a required")
+	}
+
+	if c.S3Endpoint == "" {
+		return errors.New("s3_endpoint is a required")
+	}
+
+	if c.S3AccessKeyId == "" {
+		return errors.New("s3_access_key_id is a required")
+	}
+
+	if c.S3SecretAccessKey == "" {
+		return errors.New("s3_secret_access_key is a required")
+	}
+
+	if c.S3Bucket == "" {
+		return errors.New("s3_bucket_name is a required")
+	}
+
+	return nil
 }
 
 func NewConfig() *Config {
@@ -63,74 +125,12 @@ func NewConfig() *Config {
 		logger.Fatal("error unmarshaling config", zap.Error(err), zapfield.Operation(op))
 	}
 
-	setDefaultConfig(&config)
+	config.SetDefaults()
 
-	err = validateConfig(&config)
+	err = config.IsValid()
 	if err != nil {
 		logger.Fatal("error validating config", zap.Error(err), zapfield.Operation(op))
 	}
 
 	return &config
-}
-
-func setDefaultConfig(config *Config) {
-	if config.ServerId == "" {
-		config.ServerId = uuid.New().String()
-	}
-
-	if config.ServerName == "" {
-		config.ServerName = "hyperdrift-storage"
-	}
-
-	if config.ServerEnvironment == "" {
-		config.ServerEnvironment = "prod"
-	}
-
-	if config.ServerHost == "" {
-		config.ServerHost = "0.0.0.0"
-	}
-
-	if config.ServerPort == "" {
-		config.ServerPort = "3001"
-	}
-
-	if config.S3Region == "" {
-		config.S3Region = "us-east-1"
-	}
-
-	if config.DefaultPreSignedUploadUrlExpiry == 0 {
-		config.DefaultPreSignedUploadUrlExpiry = 120
-	}
-
-	if config.DefaultPreSignedDownloadUrlExpiry == 0 {
-		config.DefaultPreSignedDownloadUrlExpiry = 300
-	}
-}
-
-func validateConfig(config *Config) error {
-	if config.ServerApiKey == "" {
-		return errors.New("server_api_key is a required")
-	}
-
-	if config.PostgresUrl == "" {
-		return errors.New("postgres_url is a required")
-	}
-
-	if config.S3Endpoint == "" {
-		return errors.New("s3_endpoint is a required")
-	}
-
-	if config.S3AccessKeyId == "" {
-		return errors.New("s3_access_key_id is a required")
-	}
-
-	if config.S3SecretAccessKey == "" {
-		return errors.New("s3_secret_access_key is a required")
-	}
-
-	if config.S3Bucket == "" {
-		return errors.New("s3_bucket_name is a required")
-	}
-
-	return nil
 }
