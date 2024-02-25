@@ -10,7 +10,7 @@ import (
 func NewLogger(config *config.Config) *zap.Logger {
 	var logger *zap.Logger
 
-	serverEnvironment := config.ServerEnvironment
+	serverEnvironment := config.ServiceEnvironment
 
 	switch serverEnvironment {
 	case "dev":

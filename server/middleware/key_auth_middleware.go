@@ -28,7 +28,7 @@ func KeyAuth(config *config.Config) fiber.Handler {
 		},
 		KeyLookup: "header:X-STORAGE-API-KEY",
 		Validator: func(ctx *fiber.Ctx, apiKey string) (bool, error) {
-			if apiKey == config.ServerApiKey {
+			if apiKey == config.ServiceApiKey {
 				return true, nil
 			} else {
 				return false, ctx.Status(fiber.StatusUnauthorized).JSON(&HttpError{

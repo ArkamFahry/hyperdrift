@@ -23,7 +23,7 @@ func bytesToMetadata(metadataBytes []byte) map[string]any {
 }
 
 func isNotEmptyTrimmedString(value string) bool {
-	if strings.Trim(value, " ") != "" {
+	if strings.TrimSpace(value) != "" {
 		return true
 	} else {
 		return false

@@ -20,7 +20,7 @@ func (BucketDeletion) Kind() string {
 
 type BucketDeletionWorker struct {
 	queries *database.Queries
-	storage *storage.S3Storage
+	storage *storage.Storage
 	logger  *zap.Logger
 	river.WorkerDefaults[BucketDeletion]
 }
@@ -108,7 +108,7 @@ func (w *BucketDeletionWorker) Work(ctx context.Context, bucketDeletion *river.J
 	return nil
 }
 
-func NewBucketDeletionWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketDeletionWorker {
+func NewBucketDeletionWorker(db *pgxpool.Pool, storage *storage.Storage, logger *zap.Logger) *BucketDeletionWorker {
 	return &BucketDeletionWorker{
 		queries: database.New(db),
 		storage: storage,
