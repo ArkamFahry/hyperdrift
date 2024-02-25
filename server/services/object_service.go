@@ -25,13 +25,13 @@ import (
 type ObjectService struct {
 	queries     *database.Queries
 	transaction *database.Transaction
-	storage     *storage.S3Storage
+	storage     *storage.Storage
 	job         *river.Client[pgx.Tx]
 	config      *config.Config
 	logger      *zap.Logger
 }
 
-func NewObjectService(db *pgxpool.Pool, storage *storage.S3Storage, job *river.Client[pgx.Tx], config *config.Config, logger *zap.Logger) *ObjectService {
+func NewObjectService(db *pgxpool.Pool, storage *storage.Storage, job *river.Client[pgx.Tx], config *config.Config, logger *zap.Logger) *ObjectService {
 	return &ObjectService{
 		queries:     database.New(db),
 		transaction: database.NewTransaction(db),

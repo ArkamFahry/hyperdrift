@@ -20,7 +20,7 @@ func (BucketEmptying) Kind() string {
 
 type BucketEmptyingWorker struct {
 	queries *database.Queries
-	storage *storage.S3Storage
+	storage *storage.Storage
 	logger  *zap.Logger
 	river.WorkerDefaults[BucketEmptying]
 }
@@ -105,7 +105,7 @@ func (w *BucketEmptyingWorker) Work(ctx context.Context, bucketEmpty *river.Job[
 	return nil
 }
 
-func NewBucketEmptyingWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *BucketEmptyingWorker {
+func NewBucketEmptyingWorker(db *pgxpool.Pool, storage *storage.Storage, logger *zap.Logger) *BucketEmptyingWorker {
 	return &BucketEmptyingWorker{
 		queries: database.New(db),
 		storage: storage,

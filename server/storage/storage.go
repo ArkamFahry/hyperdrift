@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type S3Storage struct {
+type Storage struct {
 	s3Client          *s3.Client
 	s3PreSignedClient *s3.PresignClient
 	bucket            string
@@ -23,8 +23,8 @@ type S3Storage struct {
 	logger            *zap.Logger
 }
 
-func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) *S3Storage {
-	return &S3Storage{
+func NewStorage(s3Client *s3.Client, config *config.Config, logger *zap.Logger) *Storage {
+	return &Storage{
 		s3Client:          s3Client,
 		s3PreSignedClient: s3.NewPresignClient(s3Client),
 		bucket:            config.S3Bucket,
@@ -33,8 +33,8 @@ func NewS3Storage(s3Client *s3.Client, config *config.Config, logger *zap.Logger
 	}
 }
 
-func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload) error {
-	const op = "S3Storage.UploadObject"
+func (s *Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload) error {
+	const op = "Storage.UploadObject"
 
 	key := createS3Key(objectUpload.Bucket, objectUpload.Name)
 
@@ -52,8 +52,8 @@ func (s *S3Storage) UploadObject(ctx context.Context, objectUpload *ObjectUpload
 	return nil
 }
 
-func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *PreSignedUploadObjectCreate) (*PreSignedObject, error) {
-	const op = "S3Storage.CreatePreSignedUploadObject"
+func (s *Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUploadObjectCreate *PreSignedUploadObjectCreate) (*PreSignedObject, error) {
+	const op = "Storage.CreatePreSignedUploadObject"
 
 	var expiresIn time.Duration
 
@@ -85,8 +85,8 @@ func (s *S3Storage) CreatePreSignedUploadObject(ctx context.Context, preSignedUp
 	}, nil
 }
 
-func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *PreSignedDownloadObjectCreate) (*PreSignedObject, error) {
-	const op = "S3Storage.CreatePreSignedDownloadObject"
+func (s *Storage) CreatePreSignedDownloadObject(ctx context.Context, preSignedDownloadObjectCreate *PreSignedDownloadObjectCreate) (*PreSignedObject, error) {
+	const op = "Storage.CreatePreSignedDownloadObject"
 
 	var expiresIn time.Duration
 
@@ -116,8 +116,8 @@ func (s *S3Storage) CreatePreSignedDownloadObject(ctx context.Context, preSigned
 	}, nil
 }
 
-func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *ObjectExistsCheck) (bool, error) {
-	const op = "S3Storage.ObjectExistsCheck"
+func (s *Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *ObjectExistsCheck) (bool, error) {
+	const op = "Storage.ObjectExistsCheck"
 
 	key := createS3Key(objectExistsCheck.Bucket, objectExistsCheck.Name)
 
@@ -137,8 +137,8 @@ func (s *S3Storage) CheckIfObjectExists(ctx context.Context, objectExistsCheck *
 	return true, nil
 }
 
-func (s *S3Storage) DeleteObject(ctx context.Context, objectDelete *ObjectDelete) error {
-	const op = "S3Storage.DeleteObject"
+func (s *Storage) DeleteObject(ctx context.Context, objectDelete *ObjectDelete) error {
+	const op = "Storage.DeleteObject"
 
 	key := createS3Key(objectDelete.Bucket, objectDelete.Name)
 

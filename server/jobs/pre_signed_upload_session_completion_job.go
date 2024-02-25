@@ -21,7 +21,7 @@ func (PreSignedUploadSessionCompletion) Kind() string {
 
 type PreSignedUploadSessionCompletionWorker struct {
 	queries *database.Queries
-	storage *storage.S3Storage
+	storage *storage.Storage
 	logger  *zap.Logger
 	river.WorkerDefaults[PreSignedUploadSessionCompletion]
 }
@@ -103,7 +103,7 @@ func (w *PreSignedUploadSessionCompletionWorker) Work(ctx context.Context, preSi
 	return nil
 }
 
-func NewPreSignedUploadSessionCompletionWorker(db *pgxpool.Pool, storage *storage.S3Storage, logger *zap.Logger) *PreSignedUploadSessionCompletionWorker {
+func NewPreSignedUploadSessionCompletionWorker(db *pgxpool.Pool, storage *storage.Storage, logger *zap.Logger) *PreSignedUploadSessionCompletionWorker {
 	return &PreSignedUploadSessionCompletionWorker{
 		queries: database.New(db),
 		storage: storage,
