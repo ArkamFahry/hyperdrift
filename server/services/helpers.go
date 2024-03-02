@@ -26,14 +26,6 @@ func bytesToMetadata(metadataBytes []byte) map[string]any {
 	return metadata
 }
 
-func isNotEmptyTrimmedString(value string) bool {
-	if strings.TrimSpace(value) != "" {
-		return true
-	} else {
-		return false
-	}
-}
-
 func determineMimeType(bucket *models.Bucket, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*string, error) {
 	if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
 		defaultMimeType := models.ObjectDefaultMimeType
@@ -60,6 +52,6 @@ func determineMimeType(bucket *models.Bucket, preSignedUploadSessionCreate *mode
 			}
 		}
 	}
-	
+
 	return preSignedUploadSessionCreate.MimeType, nil
 }
