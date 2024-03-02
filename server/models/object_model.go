@@ -49,19 +49,19 @@ type PreSignedUploadSessionCreate struct {
 }
 
 func (p *PreSignedUploadSessionCreate) IsValid() error {
-	if !isNotEmptyTrimmedString(p.BucketId) {
+	if !IsNotEmptyTrimmedString(p.BucketId) {
 		return fmt.Errorf("bucket id cannot be empty. bucket id is required to create a pre-signed upload session for an object")
 	}
-	if !isNotEmptyTrimmedString(p.Name) {
+	if !IsNotEmptyTrimmedString(p.Name) {
 		return fmt.Errorf("object name cannot be empty. name is required to create a pre-signed upload session for an object")
 	}
 
-	if !isValidObjectName(p.Name) {
+	if !IsValidObjectName(p.Name) {
 		return fmt.Errorf("invalid object name '%s'. object name cannot start or end with '/' and must be between 1 and 961 characters", p.Name)
 	}
 
 	if p.MimeType != nil {
-		if !isValidMimeType(*p.MimeType) {
+		if !IsValidMimeType(*p.MimeType) {
 			return fmt.Errorf("invalid mime type '%s'. mime type must be in the format 'type/subtype'", *p.MimeType)
 		}
 	}

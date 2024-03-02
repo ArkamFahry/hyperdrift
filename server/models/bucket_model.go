@@ -63,11 +63,11 @@ type BucketCreate struct {
 }
 
 func (b *BucketCreate) IsValid() error {
-	if !isNotEmptyTrimmedString(b.Name) {
+	if !IsNotEmptyTrimmedString(b.Name) {
 		return fmt.Errorf("bucket name cannot be empty. bucket name is required to create bucket")
 	}
 
-	if !isValidBucketName(b.Name) {
+	if !IsValidBucketName(b.Name) {
 		return fmt.Errorf("bucket name is not valid. it must start and end with an alphanumeric character, and can include alphanumeric characters, hyphens, and dots. The total length must be between 3 and 63 characters")
 	}
 
@@ -80,7 +80,7 @@ func (b *BucketCreate) IsValid() error {
 
 		var invalidMimeTypes []string
 		for _, allowedMimeType := range b.AllowedMimeTypes {
-			if !isValidMimeType(allowedMimeType) {
+			if !IsValidMimeType(allowedMimeType) {
 				invalidMimeTypes = append(invalidMimeTypes, allowedMimeType)
 			}
 		}
@@ -130,7 +130,7 @@ type BucketUpdate struct {
 }
 
 func (b *BucketUpdate) IsValid() error {
-	if !isNotEmptyTrimmedString(b.Id) {
+	if !IsNotEmptyTrimmedString(b.Id) {
 		return fmt.Errorf("bucket id cannot be empty. bucket id is required to update bucket")
 	}
 
@@ -143,7 +143,7 @@ func (b *BucketUpdate) IsValid() error {
 
 		var invalidMimeTypes []string
 		for _, allowedMimeType := range b.AllowedMimeTypes {
-			if !isValidMimeType(allowedMimeType) {
+			if !IsValidMimeType(allowedMimeType) {
 				invalidMimeTypes = append(invalidMimeTypes, allowedMimeType)
 			}
 		}

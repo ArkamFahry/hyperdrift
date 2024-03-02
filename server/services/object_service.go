@@ -127,11 +127,11 @@ func (os *ObjectService) CompletePreSignedUploadSession(ctx context.Context, buc
 	const op = "ObjectService.CompletePreSignedUploadSession"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(bucketId) {
+	if !models.IsNotEmptyTrimmedString(bucketId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
-	if !isNotEmptyTrimmedString(objectId) {
+	if !models.IsNotEmptyTrimmedString(objectId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object object_id is required to complete pre-signed upload session", op, reqId, nil)
 	}
 
@@ -184,11 +184,11 @@ func (os *ObjectService) CreatePreSignedDownloadSession(ctx context.Context, buc
 
 	var preSignedDownloadObject models.PreSignedDownloadSession
 
-	if !isNotEmptyTrimmedString(bucketId) {
+	if !models.IsNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to create pre-signed download session", op, reqId, nil)
 	}
 
-	if !isNotEmptyTrimmedString(objectId) {
+	if !models.IsNotEmptyTrimmedString(objectId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to create pre-signed download session", op, reqId, nil)
 	}
 
@@ -273,11 +273,11 @@ func (os *ObjectService) DeleteObject(ctx context.Context, bucketId string, obje
 	const op = "ObjectService.DeleteObject"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(bucketId) {
+	if !models.IsNotEmptyTrimmedString(bucketId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to delete object", op, reqId, nil)
 	}
 
-	if !isNotEmptyTrimmedString(objectId) {
+	if !models.IsNotEmptyTrimmedString(objectId) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to delete object", op, reqId, nil)
 	}
 
@@ -321,11 +321,11 @@ func (os *ObjectService) GetObject(ctx context.Context, bucketId string, objectI
 	const op = "ObjectService.GetObject"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(bucketId) {
+	if !models.IsNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to get object", op, reqId, nil)
 	}
 
-	if !isNotEmptyTrimmedString(objectId) {
+	if !models.IsNotEmptyTrimmedString(objectId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_id cannot be empty. object_id is required to get object", op, reqId, nil)
 	}
 
@@ -361,11 +361,11 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 	const op = "ObjectService.SearchObjects"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(bucketId) {
+	if !models.IsNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required to search objects", op, reqId, nil)
 	}
 
-	if !isNotEmptyTrimmedString(objectPath) {
+	if !models.IsNotEmptyTrimmedString(objectPath) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "object_path cannot be empty. object_path is required to search objects", op, reqId, nil)
 	}
 
@@ -419,7 +419,7 @@ func (os *ObjectService) SearchObjects(ctx context.Context, bucketId string, obj
 func (os *ObjectService) getBucketById(ctx context.Context, bucketId string, op string) (*models.Bucket, error) {
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(bucketId) {
+	if !models.IsNotEmptyTrimmedString(bucketId) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket_id cannot be empty. bucket_id is required", op, reqId, nil)
 	}
 

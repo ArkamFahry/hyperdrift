@@ -130,7 +130,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 	const op = "BucketService.EnableBucket"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(id) {
+	if !models.IsNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to enable bucket", op, reqId, nil)
 	}
 
@@ -176,7 +176,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 	const op = "BucketService.DisableBucket"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(id) {
+	if !models.IsNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to disable bucket", op, reqId, nil)
 	}
 
@@ -222,7 +222,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 	const op = "BucketService.EmptyBucket"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(id) {
+	if !models.IsNotEmptyTrimmedString(id) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to empty bucket", op, reqId, nil)
 	}
 
@@ -274,7 +274,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	const op = "BucketService.DeleteBucket"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(id) {
+	if !models.IsNotEmptyTrimmedString(id) {
 		return srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to delete bucket", op, reqId, nil)
 	}
 
@@ -326,7 +326,7 @@ func (bs *BucketService) GetBucket(ctx context.Context, id string) (*models.Buck
 	const op = "BucketService.GetBucket"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(id) {
+	if !models.IsNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket", op, reqId, nil)
 	}
 
@@ -359,7 +359,7 @@ func (bs *BucketService) GetBucketSize(ctx context.Context, id string) (*models.
 	const op = "BucketService.GetBucketSize"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(id) {
+	if !models.IsNotEmptyTrimmedString(id) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket id cannot be empty. bucket id is required to get bucket size", op, reqId, nil)
 	}
 
@@ -418,7 +418,7 @@ func (bs *BucketService) SearchBuckets(ctx context.Context, name string) ([]*mod
 	const op = "BucketService.SearchBuckets"
 	reqId := utils.RequestId(ctx)
 
-	if !isNotEmptyTrimmedString(name) {
+	if !models.IsNotEmptyTrimmedString(name) {
 		return nil, srverr.NewServiceError(srverr.InvalidInputError, "bucket name cannot be empty. bucket name is required to search buckets", op, reqId, nil)
 	}
 
