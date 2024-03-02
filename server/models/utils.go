@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func isValidBucketName(name string) bool {
+func IsValidBucketName(name string) bool {
 	regexPattern := `^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`
 
 	regex := regexp.MustCompile(regexPattern)
@@ -21,7 +21,7 @@ func isValidBucketName(name string) bool {
 	}
 }
 
-func isValidObjectName(name string) bool {
+func IsValidObjectName(name string) bool {
 	if strings.HasSuffix(name, "/") || strings.HasPrefix(name, "/") {
 		return false
 	}
@@ -44,7 +44,7 @@ func isValidObjectName(name string) bool {
 	}
 }
 
-func isValidMimeType(mimeType string) bool {
+func IsValidMimeType(mimeType string) bool {
 	mimeTypePattern := `^[a-zA-Z]+/[a-zA-Z0-9\-\.\+]+$`
 
 	regex := regexp.MustCompile(mimeTypePattern)
@@ -56,7 +56,7 @@ func isValidMimeType(mimeType string) bool {
 	}
 }
 
-func isNotEmptyTrimmedString(value string) bool {
+func IsNotEmptyTrimmedString(value string) bool {
 	if strings.TrimSpace(value) != "" {
 		return true
 	} else {
