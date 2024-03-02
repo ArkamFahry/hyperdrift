@@ -27,9 +27,23 @@ func bytesToMetadata(metadataBytes []byte) map[string]any {
 }
 
 func determineMimeType(bucket *models.Bucket, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*string, error) {
-	if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
+	if preSignedUploadSessionCreate.MimeType != nil && strings.TrimSpace(*preSignedUploadSessionCreate.MimeType) != "" {
+		if !models.IsValidMimeType(*preSignedUploadSessionCreate.MimeType) {
+			return nil, fmt.Errorf("mime_type '%s' is not valid. please specify a valid mime type", *preSignedUploadSessionCreate.MimeType)
+		}
+
+		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
+			return preSignedUploadSessionCreate.MimeType, nil
+		} else {
+			if !lo.Contains[string](bucket.AllowedMimeTypes, *preSignedUploadSessionCreate.MimeType) {
+				return nil, fmt.Errorf("mime_type '%s' is not allowed. bucket only allows [%s] mime types. please specify an allowed mime type", *preSignedUploadSessionCreate.MimeType, strings.Join(bucket.AllowedMimeTypes, ", "))
+			}
+		}
+
+		return preSignedUploadSessionCreate.MimeType, nil
+	} else {
 		defaultMimeType := models.ObjectDefaultMimeType
-		if preSignedUploadSessionCreate.MimeType == nil || (preSignedUploadSessionCreate.MimeType != nil && strings.Trim(*preSignedUploadSessionCreate.MimeType, " ") == "") {
+		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
 			objectNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
 			if len(objectNameParts) > 1 {
 				objectExtension := objectNameParts[len(objectNameParts)-1]
@@ -42,16 +56,8 @@ func determineMimeType(bucket *models.Bucket, preSignedUploadSessionCreate *mode
 			} else {
 				return &defaultMimeType, nil
 			}
-		}
-	} else {
-		if preSignedUploadSessionCreate.MimeType == nil {
-			return nil, fmt.Errorf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify an allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", "))
 		} else {
-			if !lo.Contains[string](bucket.AllowedMimeTypes, *preSignedUploadSessionCreate.MimeType) {
-				return nil, fmt.Errorf("mime_type '%s' is not allowed. bucket only allows [%s] mime types. please specify an allowed mime type", *preSignedUploadSessionCreate.MimeType, strings.Join(bucket.AllowedMimeTypes, ", "))
-			}
+			return nil, fmt.Errorf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify an allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", "))
 		}
 	}
-
-	return preSignedUploadSessionCreate.MimeType, nil
 }
