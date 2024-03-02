@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/ArkamFahry/storage/server/utils"
-	"github.com/samber/lo"
-	"github.com/zhooravell/mime"
-	"strings"
 	"time"
 
 	"github.com/ArkamFahry/storage/server/config"
@@ -63,30 +60,9 @@ func (os *ObjectService) CreatePreSignedUploadSession(ctx context.Context, preSi
 			preSignedUploadSessionCreate.ExpiresIn = &os.config.DefaultPreSignedUploadUrlExpiry
 		}
 
-		if lo.Contains[string](bucket.AllowedMimeTypes, models.BucketAllowedMimeTypesWildcard) {
-			defaultMimeType := models.ObjectDefaultMimeType
-			if preSignedUploadSessionCreate.MimeType == nil || (preSignedUploadSessionCreate.MimeType != nil && strings.Trim(*preSignedUploadSessionCreate.MimeType, " ") == "") {
-				objectNameParts := strings.Split(preSignedUploadSessionCreate.Name, ".")
-				if len(objectNameParts) > 1 {
-					objectExtension := objectNameParts[len(objectNameParts)-1]
-					mimeType, err := mime.GetMimeTypes(objectExtension)
-					if err != nil {
-						preSignedUploadSessionCreate.MimeType = &defaultMimeType
-					} else {
-						preSignedUploadSessionCreate.MimeType = &mimeType[0]
-					}
-				} else {
-					preSignedUploadSessionCreate.MimeType = &defaultMimeType
-				}
-			}
-		} else {
-			if preSignedUploadSessionCreate.MimeType == nil {
-				return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("mime_type cannot be empty. bucket only allows [%s] mime types. please specify a allowed mime type", strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
-			} else {
-				if !lo.Contains[string](bucket.AllowedMimeTypes, *preSignedUploadSessionCreate.MimeType) {
-					return srverr.NewServiceError(srverr.BadRequestError, fmt.Sprintf("mime_type '%s' is not allowed. bucket only allows [%s] mime types. please specify a allowed mime type", *preSignedUploadSessionCreate.MimeType, strings.Join(bucket.AllowedMimeTypes, ", ")), op, reqId, nil)
-				}
-			}
+		preSignedUploadSessionCreate.MimeType, err = determineMimeType(bucket, preSignedUploadSessionCreate)
+		if err != nil {
+			return srverr.NewServiceError(srverr.BadRequestError, err.Error(), op, reqId, err)
 		}
 
 		if bucket.MaxAllowedObjectSize != nil {
