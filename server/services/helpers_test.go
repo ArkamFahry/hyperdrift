@@ -42,16 +42,13 @@ func TestDetermineMimeType(t *testing.T) {
 	}
 
 	mimeTypeInferredByExtensionTest := test{
-		name: "Default mime type",
+		name: "Inferred mime type by extension",
 		bucket: &models.Bucket{
 			AllowedMimeTypes: []string{"*/*"},
 		},
 		preSignedUploadSessionCreate: &models.PreSignedUploadSessionCreate{
-			BucketId: "bucket1",
 			Name:     "user/david/avatar.jpg",
 			MimeType: nil,
-			Size:     1218077,
-			Metadata: nil,
 		},
 		expectedMimeType: lo.ToPtr[string]("image/jpeg"),
 		expectedError:    nil,
@@ -67,11 +64,8 @@ func TestDetermineMimeType(t *testing.T) {
 			AllowedMimeTypes: []string{"image/jpeg"},
 		},
 		preSignedUploadSessionCreate: &models.PreSignedUploadSessionCreate{
-			BucketId: "bucket1",
 			Name:     "user/david/avatar.jpg",
 			MimeType: nil,
-			Size:     1218077,
-			Metadata: nil,
 		},
 		expectedMimeType: nil,
 		expectedError:    fmt.Errorf("mime_type cannot be empty. bucket only allows [image/jpeg] mime types. please specify an allowed mime type"),
@@ -81,16 +75,13 @@ func TestDetermineMimeType(t *testing.T) {
 	assert.Equal(t, emptyMimeTypeTest.expectedError, err)
 
 	mimeTypeNotAllowedTest := test{
-		name: "Invalid mime type",
+		name: "Not allowed mime type",
 		bucket: &models.Bucket{
 			AllowedMimeTypes: []string{"image/jpeg"},
 		},
 		preSignedUploadSessionCreate: &models.PreSignedUploadSessionCreate{
-			BucketId: "bucket1",
 			Name:     "user/david/avatar.jpg",
 			MimeType: lo.ToPtr[string]("image/png"),
-			Size:     1218077,
-			Metadata: nil,
 		},
 		expectedMimeType: nil,
 		expectedError:    fmt.Errorf("mime_type 'image/png' is not allowed. bucket only allows [image/jpeg] mime types. please specify an allowed mime type"),
@@ -98,4 +89,36 @@ func TestDetermineMimeType(t *testing.T) {
 
 	_, err = determineMimeType(mimeTypeNotAllowedTest.bucket, mimeTypeNotAllowedTest.preSignedUploadSessionCreate)
 	assert.Equal(t, mimeTypeNotAllowedTest.expectedError, err)
+
+	mimeTypeInvalidTest := test{
+		name: "Invalid mime type",
+		bucket: &models.Bucket{
+			AllowedMimeTypes: []string{"image/jpeg"},
+		},
+		preSignedUploadSessionCreate: &models.PreSignedUploadSessionCreate{
+			Name:     "user/david/avatar.jpg",
+			MimeType: lo.ToPtr[string]("image"),
+		},
+		expectedMimeType: nil,
+		expectedError:    fmt.Errorf("mime_type 'image' is not valid. please specify a valid mime type"),
+	}
+
+	_, err = determineMimeType(mimeTypeInvalidTest.bucket, mimeTypeInvalidTest.preSignedUploadSessionCreate)
+	assert.Equal(t, mimeTypeInvalidTest.expectedError, err)
+
+	mimeTypeEmptyStringTest := test{
+		name: "Empty mime type",
+		bucket: &models.Bucket{
+			AllowedMimeTypes: []string{"*/*"},
+		},
+		preSignedUploadSessionCreate: &models.PreSignedUploadSessionCreate{
+			Name:     "user/david/avatar.jpg",
+			MimeType: lo.ToPtr[string](""),
+		},
+		expectedMimeType: nil,
+		expectedError:    fmt.Errorf("mime_type cannot be empty. please specify a valid mime type"),
+	}
+
+	_, err = determineMimeType(mimeTypeEmptyStringTest.bucket, mimeTypeEmptyStringTest.preSignedUploadSessionCreate)
+	assert.Equal(t, mimeTypeEmptyStringTest.expectedError, err)
 }
