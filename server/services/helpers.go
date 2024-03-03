@@ -27,7 +27,11 @@ func bytesToMetadata(metadataBytes []byte) map[string]any {
 }
 
 func determineMimeType(bucket *models.Bucket, preSignedUploadSessionCreate *models.PreSignedUploadSessionCreate) (*string, error) {
-	if preSignedUploadSessionCreate.MimeType != nil && strings.TrimSpace(*preSignedUploadSessionCreate.MimeType) != "" {
+	if preSignedUploadSessionCreate.MimeType != nil {
+		if !models.IsNotEmptyTrimmedString(*preSignedUploadSessionCreate.MimeType) {
+			return nil, fmt.Errorf("mime_type cannot be empty. please specify a valid mime type")
+		}
+
 		if !models.IsValidMimeType(*preSignedUploadSessionCreate.MimeType) {
 			return nil, fmt.Errorf("mime_type '%s' is not valid. please specify a valid mime type", *preSignedUploadSessionCreate.MimeType)
 		}
