@@ -72,7 +72,7 @@ func (bs *BucketService) UpdateBucket(ctx context.Context, bucketUpdate *models.
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, bucketUpdate.Id)
+		bucket, err := bs.query.WithTx(tx).BucketGetById(ctx, bucketUpdate.Id)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for update", bucketUpdate.Id), op, reqId, err)
@@ -135,7 +135,7 @@ func (bs *BucketService) EnableBucket(ctx context.Context, id string) (*models.B
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, id)
+		bucket, err := bs.query.WithTx(tx).BucketGetById(ctx, id)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for enabling", id), op, reqId, err)
@@ -181,7 +181,7 @@ func (bs *BucketService) DisableBucket(ctx context.Context, id string) (*models.
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, id)
+		bucket, err := bs.query.WithTx(tx).BucketGetById(ctx, id)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for disabling", id), op, reqId, err)
@@ -227,7 +227,7 @@ func (bs *BucketService) EmptyBucket(ctx context.Context, id string) error {
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.WithTx(tx).BucketGetByIdForUpdate(ctx, id)
+		bucket, err := bs.query.WithTx(tx).BucketGetById(ctx, id)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for emptying", id), op, reqId, err)
@@ -279,7 +279,7 @@ func (bs *BucketService) DeleteBucket(ctx context.Context, id string) error {
 	}
 
 	err := bs.transaction.WithTransaction(ctx, func(tx pgx.Tx) error {
-		bucket, err := bs.query.BucketGetByIdForUpdate(ctx, id)
+		bucket, err := bs.query.BucketGetById(ctx, id)
 		if err != nil {
 			if database.IsNotFoundError(err) {
 				return srverr.NewServiceError(srverr.NotFoundError, fmt.Sprintf("bucket '%s' not found for deletion", id), op, reqId, err)

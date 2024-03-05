@@ -15,7 +15,6 @@ type Querier interface {
 	BucketDisable(ctx context.Context, id string) error
 	BucketEnable(ctx context.Context, id string) error
 	BucketGetById(ctx context.Context, id string) (*StorageBucket, error)
-	BucketGetByIdForUpdate(ctx context.Context, id string) (*StorageBucket, error)
 	BucketGetByName(ctx context.Context, name string) (*StorageBucket, error)
 	BucketGetObjectCountById(ctx context.Context, id string) (*BucketGetObjectCountByIdRow, error)
 	BucketGetSizeById(ctx context.Context, id string) (*BucketGetSizeByIdRow, error)
