@@ -24,7 +24,6 @@ type Querier interface {
 	BucketSearch(ctx context.Context, name string) ([]*StorageBucket, error)
 	BucketUnlock(ctx context.Context, id string) error
 	BucketUpdate(ctx context.Context, arg *BucketUpdateParams) error
-	EventCreate(ctx context.Context, arg *EventCreateParams) (string, error)
 	ObjectCreate(ctx context.Context, arg *ObjectCreateParams) (string, error)
 	ObjectDelete(ctx context.Context, id string) error
 	ObjectGetByBucketIdAndId(ctx context.Context, arg *ObjectGetByBucketIdAndIdParams) (*StorageObject, error)

@@ -1,6 +1,6 @@
 module github.com/ArkamFahry/storage/server
 
-go 1.22.0
+go 1.22.1
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.24.1
@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.16
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.48.0
 	github.com/gofiber/contrib/fiberzap/v2 v2.1.2
-	github.com/gofiber/fiber/v2 v2.52.0
+	github.com/gofiber/fiber/v2 v2.52.2
 	github.com/google/uuid v1.5.0
 	github.com/jackc/pgx/v5 v5.5.2
 	github.com/oklog/ulid/v2 v2.1.0
@@ -17,6 +17,8 @@ require (
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.0.17
 	github.com/samber/lo v1.39.0
 	github.com/spf13/viper v1.18.2
+	github.com/stretchr/testify v1.8.4
+	github.com/zhooravell/mime v0.0.2
 	go.uber.org/zap v1.26.0
 )
 
@@ -38,7 +40,6 @@ require (
 	github.com/aws/smithy-go v1.19.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
@@ -60,17 +61,13 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	github.com/zhooravell/mime v0.0.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

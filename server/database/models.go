@@ -23,15 +23,6 @@ type StorageBucket struct {
 	UpdatedAt            *time.Time
 }
 
-type StorageEvent struct {
-	ID            string
-	Version       int32
-	AggregateType string
-	EventType     string
-	Payload       []byte
-	CreatedAt     time.Time
-}
-
 type StorageObject struct {
 	ID             string
 	Version        int32
