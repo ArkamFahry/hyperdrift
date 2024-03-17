@@ -3,10 +3,10 @@ package utils
 import "context"
 
 func RequestId(ctx context.Context) string {
-	var requestId string
-	if reqId, ok := ctx.Value("request_id").(string); ok {
-		requestId = reqId
+	requestId, ok := ctx.Value("request_id").(string)
+	if ok {
+		return requestId
+	} else {
+		return ""
 	}
-
-	return requestId
 }
