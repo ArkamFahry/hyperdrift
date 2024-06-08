@@ -2,8 +2,8 @@ package database
 
 import (
 	"context"
-	"github.com/ArkamFahry/storage/server/config"
-	"github.com/ArkamFahry/storage/server/zapfield"
+	"github.com/driftdev/storage/server/config"
+	"github.com/driftdev/storage/server/zapfield"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )

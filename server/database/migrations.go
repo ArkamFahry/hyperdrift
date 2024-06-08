@@ -3,10 +3,9 @@ package database
 import (
 	"database/sql"
 	"embed"
-	"github.com/ArkamFahry/storage/server/config"
+	"github.com/driftdev/storage/server/config"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
 )
 

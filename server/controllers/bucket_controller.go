@@ -1,9 +1,8 @@
 package controllers
 
 import (
-	"github.com/ArkamFahry/storage/server/models"
-	"github.com/ArkamFahry/storage/server/services"
-	"github.com/gofiber/fiber/v2"
+	"github.com/driftdev/storage/server/models"
+	"github.com/driftdev/storage/server/services"
 )
 
 type BucketController struct {

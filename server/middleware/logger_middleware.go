@@ -1,9 +1,7 @@
 package middleware
 
 import (
-	"github.com/ArkamFahry/storage/server/utils"
-	"github.com/gofiber/contrib/fiberzap/v2"
-	"github.com/gofiber/fiber/v2"
+	"github.com/driftdev/storage/server/utils"
 	"go.uber.org/zap"
 )
 

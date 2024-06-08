@@ -2,9 +2,8 @@ package middleware
 
 import (
 	"errors"
-	"github.com/ArkamFahry/storage/server/config"
-	"github.com/ArkamFahry/storage/server/utils"
-	"github.com/gofiber/fiber/v2"
+	"github.com/driftdev/storage/server/config"
+	"github.com/driftdev/storage/server/utils"
 	"github.com/gofiber/fiber/v2/middleware/keyauth"
 )
 

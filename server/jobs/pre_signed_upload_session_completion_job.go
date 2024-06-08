@@ -2,10 +2,10 @@ package jobs
 
 import (
 	"context"
-	"github.com/ArkamFahry/storage/server/database"
-	"github.com/ArkamFahry/storage/server/models"
-	"github.com/ArkamFahry/storage/server/storage"
-	"github.com/ArkamFahry/storage/server/zapfield"
+	"github.com/driftdev/storage/server/database"
+	"github.com/driftdev/storage/server/models"
+	"github.com/driftdev/storage/server/storage"
+	"github.com/driftdev/storage/server/zapfield"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"go.uber.org/zap"

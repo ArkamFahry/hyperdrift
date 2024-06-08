@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ArkamFahry/storage/server/config"
-	"github.com/ArkamFahry/storage/server/zapfield"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/driftdev/storage/server/config"
+	"github.com/driftdev/storage/server/zapfield"
 	"go.uber.org/zap"
 )
 

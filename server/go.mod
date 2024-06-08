@@ -1,4 +1,4 @@
-module github.com/ArkamFahry/storage/server
+module github.com/driftdev/storage/server
 
 go 1.22.1
 
