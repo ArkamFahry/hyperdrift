@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/driftdev/storage/server/config"
-	"github.com/driftdev/storage/server/zapfield"
+	"github.com/teapartydev/storage/server/config"
+	"github.com/teapartydev/storage/server/zapfield"
 	"go.uber.org/zap"
 )
 

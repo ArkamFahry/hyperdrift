@@ -2,9 +2,9 @@ package config
 
 import (
 	"errors"
-	"github.com/driftdev/storage/server/zapfield"
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
+	"github.com/teapartydev/storage/server/zapfield"
 	"go.uber.org/zap"
 )
 

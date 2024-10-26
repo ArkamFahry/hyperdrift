@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"errors"
-	"github.com/driftdev/storage/server/config"
-	"github.com/driftdev/storage/server/utils"
 	"github.com/gofiber/fiber/v2/middleware/keyauth"
+	"github.com/teapartydev/storage/server/config"
+	"github.com/teapartydev/storage/server/utils"
 )
 
 func KeyAuth(config *config.Config) fiber.Handler {

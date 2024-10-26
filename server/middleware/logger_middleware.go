@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/driftdev/storage/server/utils"
+	"github.com/teapartydev/storage/server/utils"
 	"go.uber.org/zap"
 )
 

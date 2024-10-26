@@ -1,4 +1,4 @@
-module github.com/driftdev/storage/server
+module github.com/teapartydev/storage/server
 
 go 1.22.1
 

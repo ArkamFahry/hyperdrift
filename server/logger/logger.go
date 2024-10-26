@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/driftdev/storage/server/config"
+	"github.com/teapartydev/storage/server/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"

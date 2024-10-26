@@ -3,8 +3,8 @@ package middleware
 import (
 	"encoding/json"
 	"errors"
-	"github.com/driftdev/storage/server/srverr"
-	"github.com/driftdev/storage/server/utils"
+	"github.com/teapartydev/storage/server/srverr"
+	"github.com/teapartydev/storage/server/utils"
 )
 
 type HttpError struct {

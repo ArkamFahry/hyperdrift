@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"github.com/driftdev/storage/server/models"
-	"github.com/driftdev/storage/server/services"
+	"github.com/teapartydev/storage/server/models"
+	"github.com/teapartydev/storage/server/services"
 )
 
 type ObjectController struct {

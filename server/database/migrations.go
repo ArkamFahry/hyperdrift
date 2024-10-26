@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"embed"
-	"github.com/driftdev/storage/server/config"
+	"github.com/teapartydev/storage/server/config"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
